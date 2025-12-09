@@ -179,6 +179,7 @@ const state = {
 };
 let current = { col: -1, row: -1, q: null, id: null };
 let timerInt = null;
+let remoteRoomId = 'default';
 
 /* ======= Init ======= */
 init();
@@ -195,7 +196,11 @@ async function init() {
   renderBoard();
   renderOverlay();
   attachGlobalHandlers();
-  if (role === 'host') sendSync();
+  if (role === 'host') {
+    sendSync();
+  } else {
+    setupRemoteListener();
+  }
 }
 
 async function loadContent(urlOrFileText) {
@@ -596,6 +601,23 @@ function removePlayer(idx){
   saveState(); renderPlayersBar(); renderOverlay(); sendSync();
 }
 
+
+function setupRemoteListener() {
+  if (role !== 'screen') return;
+  if (!window.db) return;
+  try {
+    const roomRef = window.db.collection('rooms').doc(remoteRoomId);
+    roomRef.onSnapshot((doc) => {
+      if (!doc.exists) return;
+      const payload = doc.data();
+      if (!payload) return;
+      handleMsg({ type: 'SYNC_STATE', payload });
+    });
+  } catch (e) {
+    console.warn('Remote-Listener konnte nicht gestartet werden', e);
+  }
+}
+
 /* ======= Publikum ======= */
 function showForAudience(payload){
   const { id, q } = payload;
@@ -761,7 +783,7 @@ function sendSync() {
     jokers: p.jokers || {}
   }));
 
-  send('SYNC_STATE', {
+  const payload = {
     state: {
       players: cleanPlayers,
       scores: state.scores,
@@ -771,7 +793,23 @@ function sendSync() {
       turn: state.turn
     },
     data
-  });
+  };
+
+  // lokal an andere Tabs (selber Browser)
+  send('SYNC_STATE', payload);
+
+  // remote an Firestore, falls verfügbar
+  if (role === 'host' && window.db) {
+    try {
+      const roomRef = window.db.collection('rooms').doc(remoteRoomId);
+      roomRef.set({
+        ...payload,
+        updatedAt: Date.now()
+      });
+    } catch (e) {
+      console.warn('Remote-Sync fehlgeschlagen', e);
+    }
+  }
 }
 function sendScores(){ send('SCORES', { scores: state.scores }); }
 function sendTurn(){ send('TURN', { turn: state.turn }); }
