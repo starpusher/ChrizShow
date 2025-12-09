@@ -1,0 +1,181 @@
+:root{
+  --bg:#0b0b12;--panel:#17172a;--accent:#9b6bff;--text:#f4f5f9;--muted:#9aa0b4;
+  --ok:#3fbf6c;--bad:#ff5c74;--glow:#b693ff;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;color:var(--text);font:16px/1.45 system-ui;
+  background: var(--bg);
+  /* dezentes SVG-Punktmuster */
+  background-image: url("data:image/svg+xml;utf8,  <svg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'>    <rect width='32' height='32' fill='rgba(0,0,0,0)'/>    <circle cx='2' cy='2' r='1' fill='%23262a3f'/>    <circle cx='18' cy='10' r='1' fill='%23262a3f'/>    <circle cx='28' cy='22' r='1' fill='%23262a3f'/>  </svg>");
+}
+
+/* ===== Topbar / Branding ===== */
+.topbar{
+  display:grid; grid-template-columns: 280px 1fr auto; align-items:center;
+  gap:1rem; padding:12px 16px; border-bottom:1px solid #23233d;
+  position:sticky; top:0; background:rgba(11,11,18,.92); backdrop-filter:blur(6px); z-index:5;
+}
+.brand{display:flex;flex-direction:column;align-items:flex-start}
+.brand .logo{ font-weight:900; letter-spacing:.1em; font-size:32px; display:inline-block; text-shadow:0 0 10px rgba(182,147,255,.25) }
+.brand .logo span{ color:var(--glow) }
+.brand .subtitle{ font-size:12px; color:var(--muted); margin-top:2px }
+.brand .title-full{ display:none; font-weight:800; font-size:20px }
+
+/* Publikum: Titel mittig und eigenständige Zeile */
+body.audience .topbar{ grid-template-columns: 1fr }
+body.audience .brand{
+  align-items:center; justify-content:center; grid-column:1/-1; padding:6px 0;
+}
+body.audience .brand .title-full{
+  display:block; font-size:clamp(26px,3.5vw,40px); font-weight:900; letter-spacing:.02em;
+}
+body.audience .brand .subtitle{ font-size:clamp(12px,1.4vw,16px) }
+body.audience .brand .logo{ display:none }
+
+/* ===== Host-Leiste (Pills) ===== */
+.controls button{background:var(--panel);border:1px solid #2b2b47;color:var(--text);padding:.5rem .75rem;border-radius:.5rem;cursor:pointer}
+.players{display:flex;gap:.75rem;flex-wrap:wrap;align-items:flex-start}
+.pill{
+  display:flex;align-items:center;gap:.6rem;background:var(--panel);
+  border:1px solid #2b2b47;border-radius:.9rem;padding:.45rem .6rem;
+  flex:0 0 auto;                 /* << verhindert Vollbreite */
+}
+.pill input[type="text"]{width:9.5rem;background:transparent;border:1px solid #34344f;border-radius:.4rem;color:var(--text);padding:.25rem .4rem}
+.pill .score{font-weight:800;min-width:3.8rem;text-align:right;padding:.2rem .45rem;border:1px dashed transparent;border-radius:.3rem;cursor:text}
+.pill .score[contenteditable="true"]{border-color:#34344f}
+.pill .avatar{width:30px;height:30px;border-radius:999px;object-fit:cover;border:1px solid #34344f;background:#0e0e17}
+.pill .rm{background:#2a193f;border:1px solid #3a2a60;border-radius:.4rem;color:#d6c9ff;padding:.25rem .4rem;cursor:pointer}
+.pill .file{display:none}
+.pill .jokers{display:flex;gap:.4rem;margin-left:.25rem}
+.pill .joker{width:28px;height:28px;border-radius:999px;display:grid;place-items:center;font-size:16px;color:white;border:2px solid rgba(255,255,255,.15);box-shadow:0 2px 6px rgba(0,0,0,.35);cursor:pointer;user-select:none}
+.pill .joker.off{ filter:grayscale(1) brightness(.6); opacity:.6 }
+.pill .joker.j1{ background:#3b82f6 }   /* Zuschiebe */
+.pill .joker.j2{ background:#f59e0b }   /* Risiko   */
+.pill .joker.j3{ background:#06b6d4 }   /* Publikum */
+
+/* ===== Board / Kacheln ===== */
+.board{max-width:1300px;margin:18px auto 160px;padding:0 16px;display:grid;gap:12px}
+.tile{
+  background:#151528;border:1px solid #2f2f4b;border-radius:12px;padding:16px;
+  display:flex;align-items:center;justify-content:center;font-weight:800;
+  font-size:1.25rem;cursor:pointer;min-height:74px;text-align:center;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.03)
+}
+.tile.category{
+  background:#211c3a;text-transform:uppercase;font-family:'Bebas Neue',system-ui;
+  letter-spacing:.04em;font-size:clamp(18px,1.6vw + 6px,26px); padding:18px;
+}
+.tile{ min-height:84px; font-size:1.35rem }
+.tile.used{opacity:.35;pointer-events:none}
+.tile.busy{outline:2px dashed var(--accent)}
+
+/* ===== Modal ===== */
+dialog::backdrop{background:rgba(0,0,0,.6)}
+.modal{min-width:60vw;max-width:960px;border-radius:16px;overflow:hidden}
+.qhead{display:flex;align-items:center;gap:.75rem}
+.qhead h3{margin-right:auto}
+.qpts{ opacity:.95; font-weight:700 }
+.qpts .pos{ color:#3fbf6c }
+.qpts .neg{ color:#ff5c74; margin-left:.5rem }
+.turnbadge{background:#2a2a45;border:1px solid #3a3a60;padding:.25rem .5rem;border-radius:.5rem}
+.timer{margin-left:auto}
+.timerbox{background:#2a2a45;border:1px solid #3a3a60;padding:.25rem .5rem;border-radius:.5rem}
+.qtext{font-size:1.6rem;margin:.8rem 0}
+.qimg,.qvid{max-width:100%;max-height:48vh;border-radius:.8rem;border:1px solid #333;margin:.6rem 0;}
+.qimg[hidden], .qvid[hidden]{ display:none !important; }
+.qimg:not([hidden]), .qvid:not([hidden]){ display:block; }.answer{margin-top:.6rem;padding:.8rem;border:1px dashed #666;border-radius:.6rem;background:#12121f;font-size:1.4rem;text-align:left}
+.attempts{display:flex;align-items:center;gap:.6rem;margin-top:.6rem}
+.actions{display:flex;gap:.6rem;margin-top:.85rem}
+.actions .ok{background:var(--ok);border-color:#2a8a50}
+.actions .bad{background:var(--bad);border-color:#cc475c}
+
+/* ===== Overlay (Spieler unten) ===== */
+.overlay{
+  position:fixed;left:0;right:0;bottom:0;padding:12px 16px;background:rgba(10,10,18,.92);
+  backdrop-filter:blur(4px);display:flex;gap:12px;justify-content:center;flex-wrap:wrap;z-index:4
+}
+/* Karte neu ausrichten: oben Avatar/Name/Score, unten Joker nebeneinander */
+.card{
+  display:flex;flex-direction:column;align-items:center;gap:.55rem;background:var(--panel);
+  border:1px solid #2b2b47;border-radius:16px;padding:.75rem .9rem;min-width:240px;box-shadow:0 0 0 2px transparent
+}
+.card.active{box-shadow:0 0 0 2px var(--glow), 0 0 18px 2px rgba(182,147,255,.35)}
+.card .avatar{width:56px;height:56px;border-radius:999px;object-fit:cover;border:1px solid #34344f;background:#0e0e17}
+.card .meta{display:flex;flex-direction:column;align-items:center;line-height:1.15}
+.card .name{font-weight:800;font-size:1.05rem}
+.card .pts{opacity:.95;font-variant-numeric:tabular-nums}
+.card .jokers{display:flex;gap:.5rem;justify-content:center}
+
+/* << Diese fehlten – sorgen für die runden farbigen Joker unten */
+.card .joker{
+  width:28px;height:28px;border-radius:999px;display:grid;place-items:center;
+  font-size:16px;color:white;border:2px solid rgba(255,255,255,.15);
+  box-shadow:0 2px 6px rgba(0,0,0,.35); user-select:none; cursor:pointer;
+}
+.card .joker.off{ filter:grayscale(1) brightness(.6); opacity:.6 }
+.card .joker.j1{ background:#3b82f6 }  /* Zuschiebe */
+.card .joker.j2{ background:#f59e0b }  /* Risiko   */
+.card .joker.j3{ background:#06b6d4 }  /* Publikum */
+
+/* ===== Publikum-Ansicht ===== */
+body.audience .players, body.audience .controls { display:none }
+body.audience .tile { pointer-events:none }
+body.audience dialog .actions,
+body.audience dialog .attempts,
+body.audience dialog menu { display:none }
+body.audience #revealBtn { display:none }
+body.audience .qtext, body.audience .answer { text-align:center }
+/* Publikum: Fortschritt sichtbar, aber nicht klickbar */
+body.audience audio, body.audience video { pointer-events:none }
+
+/* Effekte */
+#fx{position:fixed;inset:0;pointer-events:none;opacity:0}
+#fx.show{animation:fxflash .6s ease}
+@keyframes fxflash{ 0%{opacity:0} 10%{opacity:.7} 100%{opacity:0} }
+
+
+/* === Quiz patches (ChrizShow) === */
+
+/* Header layout */
+.qhead{ display:flex; align-items:center; gap:.75rem; }
+#qPts{ margin-left:auto; display:flex; flex-direction:column; align-items:flex-end; line-height:1.05; }
+#qPts .neg{ margin-top:.15rem; }
+
+/* Audience: hide timer button, bigger timer */
+body.audience #timerBtn{ display:none !important; }
+body.audience #timerBox:not([hidden]){ display:inline-flex !important; font-size:clamp(26px,4vw,44px); padding:.35rem .7rem; border-radius:.6rem; }
+
+/* Order: timer before points */
+#timerBtn, #timerBox, #turnBadge{ order:2; }
+#qPts{ order:3; }
+
+/* Center media */
+#qImg, .qimg, .qvid{ display:block; margin:.6rem auto; max-width:92%; max-height:42vh; object-fit:contain; }
+
+/* Fancy audience title */
+body.audience .brand .title-full{
+  display:block; font-size:clamp(28px,4vw,48px); font-weight:900; letter-spacing:.03em;
+  background: linear-gradient(90deg,#b693ff,#5de1ff,#b693ff);
+  -webkit-background-clip:text; background-clip:text; color:transparent;
+  text-shadow:0 0 18px rgba(182,147,255,.25);
+}
+body.audience .brand .logo{ display:none; }
+
+/* Softer background */
+body{
+  background:
+    radial-gradient(1200px 800px at 10% 0%, #141429 0%, var(--bg) 60%),
+    radial-gradient(1000px 700px at 120% 100%, #0f1a2b 0%, transparent 50%);
+}
+
+/* FX overlay flash */
+#fx{ position:fixed; inset:0; pointer-events:none; opacity:0; z-index:999; }
+#fx.show{ animation:fxflash .6s ease; }
+@keyframes fxflash{ 0%{opacity:0} 10%{opacity:.75} 100%{opacity:0} }
+
+/* Answer images (two originals) */
+.answrap{ display:flex; justify-content:center; align-items:center; gap:16px; margin-top:.6rem; }
+.ansimg{ max-width:min(42%, 380px); max-height:36vh; border-radius:.6rem; border:1px solid #333; object-fit:cover; }
+
+[hidden]{display:none!important}

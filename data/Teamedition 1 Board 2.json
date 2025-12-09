@@ -1,0 +1,59 @@
+{
+  "settings": {
+    "media_base": "media/",
+    "allow_steal": true
+  },
+  "players": ["Spieler 1", "Spieler 2", "Spieler 3"],
+  "categories": [
+    {
+      "title": "Internet",
+      "questions": [
+        { "id": "S-200-1", "points": 200, "text": "Wie heißt das Online-Format, bei dem Zuschauer anderen Menschen beim Spielen zuschauen, oft mit Chat-Interaktion in Echtzeit?", "answer": "Live-Streaming" },
+        { "id": "S-400-1", "points": 400, "text": "Welche Social-Media-Plattform war ursprünglich als App zum Teilen von Kurzvideos mit Lippensynchronisation gedacht, bevor sie 2018 zu ihrem heutigen Namen fusionierte?", "answer": "TikTok" },
+        { "id": "S-600-1", "points": 600, "text": "Was 'findet' man, wenn man bei Google nach 'do a barrel roll' sucht?", "answer": "Der Bildschirm dreht sich." },
+        { "id": "S-800-1", "points": 800, "text": "Wofür steht die Abkürzung 'GIF'?", "answer": "Graphics Interchange Format" },
+        { "id": "S-1000-1", "points": 1000, "text": "Was ist der Unterschied zwischen 'http' und 'https'? ", "answer": "Das 's' steht für secure, also eine verschlüsselte Verbindung zum Server." }
+      ]
+    },
+    {
+      "title": "Was bin ich sehend?",
+      "questions": [
+        { "id": "G-200-1", "points": 200, "text": "Ein Internatsschüler gewinnt jedes Jahr eine Art Sportturnier, indem er fast stirbt.", "answer": "Harry Potter" },
+        { "id": "G-400-1", "points": 400, "text": "Ein kleiner Junge macht eine Weltreise mit Luftunterstützung, weil ein alter Mann nach einem Todesfall schlechte Laune hat.", "answer": "Oben" },
+        { "id": "G-600-1", "points": 600, "text": "Ein Alter gründet ein Startup, das ziemlich schnell skaliert, aber alle Kunden verlieren Zähne.", "answer": "Breaking Bad" },
+        { "id": "G-800-1", "points": 800, "text": "Ein Wissenschaftler macht einen Fehler im Labor und ist darüber sehr wütend.", "answer": "Hulk" },
+        { "id": "G-1000-1", "points": 1000, "text": "Ein Büroangestellter merkt irgendwann, dass sein Chef ein riesiger Käfer ist und niemanden stört es.", "answer": "Men in Black" }
+      ]
+    },
+    {
+      "title": "Kartenkunde",
+      "questions": [
+        { "id": "F-200-1", "points": 200, "text": "Wie heißt der Punkt, an dem sich auf Karten alle Längengrade treffen?", "answer": "Die Pole (Nordpol / Südpol)" },
+        { "id": "F-400-1", "points": 400, "text": "Welche Stadt ist hier gesucht?", "image": "stuttgart.png", "answer": "Stuttgart" },
+        { "id": "F-600-1", "points": 600, "text": "Welche Nachbarländer hat die Schweiz?", "answer": "Deutschland, Frankreich, Italien, Österreich, Liechtenstein" },
+        { "id": "F-800-1", "points": 800, "text": "Nenne alle skandinavischen Länder", "answer": "Norwegen, Schweden, Finnland, Island, Dänemark" },
+        { "id": "F-1000-1", "points": 1000, "text": "Welche Farben fehlen hier?", "image": "brasilien.png", "answer": "außen grün, innen gelb, die Welt ist blau" }
+      ]
+    },
+    {
+      "title": "Lyrics",
+      "questions": [
+        { "id": "Y-200-1", "points": 200, "text": "I'm down on my knees, I wanna take you there   In the midnight hour, I can feel your power", "answer": "Like a Prayer, Madonna" },
+        { "id": "Y-400-1", "points": 400, "text": "I'm gonna miss you wherever I go   I'm gonna come back to walk these streets again", "answer": "Hollywood Hills, Sunrise Avenue" },
+        { "id": "Y-600-1", "points": 600, "text": "Second thing second   Don't you tell me what you think that I could be   I'm the one at the sail, I'm the master of my sea", "answer": "Believer, Imagine Dragons" },
+        { "id": "Y-800-1", "points": 800, "text": "Ich war Teil der Lösung und mein größtes Problem   Ich stand vor mir und konnte mich nicht seh'n", "answer": "Auf gute Freunde, Böse Onkelz" },
+        { "id": "Y-1000-1", "points": 1000, "text": "I need to go down   Won't you let me go down.", "answer": "Boat on the River, Styx" }
+      ]
+    },
+    {
+      "title": "Unnützes Wissen",
+      "questions": [
+        { "id": "B-200-1", "points": 200, "text": "Welchen Beruf hat Klaas Heufer-Umlauf gelernt?", "answer": "Friseur"},
+        { "id": "B-400-1", "points": 400, "text": "Welches Insekt schläft nie?", "answer": "Die Ameise" },
+        { "id": "B-600-1", "points": 600, "text": "Was ist Hippopotomonstrosesquipedaliophobie?", "answer": "Die Angst vor langen Wörtern" },
+        { "id": "B-800-1", "points": 800, "text": "Welches Land hat als offizielles Nationaltier ein Einhorn?", "answer": "Schottland" },
+        { "id": "B-1000-1", "points": 1000, "text": "Welcher Planet unseres Sonnensystems könnte auf Wasser schwimmen?", "answer": "Saturn" }
+      ]
+    }
+  ]
+}

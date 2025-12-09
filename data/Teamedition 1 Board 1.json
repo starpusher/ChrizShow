@@ -1,0 +1,59 @@
+{
+  "settings": {
+    "media_base": "media/",
+    "allow_steal": true
+  },
+  "players": ["Spieler 1", "Spieler 2", "Spieler 3"],
+  "categories": [
+    {
+      "title": "Kennste?",
+      "questions": [
+        { "id": "S-200-1", "points": 100, "text": "Kennste den?", "image": "apache207_21.jpg","answer": "Apache207" },
+        { "id": "S-400-1", "points": 200, "text": "Kennste den?", "image": "willsmith_cut.jpg", "answer": "Will Smith" },
+        { "id": "S-600-1", "points": 300, "text": "Kennste den?", "image": "chrishemsworth_cut.jpg", "answer": "Chris Hemsworth" },
+        { "id": "S-800-1", "points": 400, "text": "Kennste die?", "image": "heidiklum_cut.jpg", "answer": "Heidi Klum" },
+        { "id": "S-1000-1", "points": 500, "text": "Kennste die?", "image": "angelinajolie_cut.jpg", "answer": "Angelina Jolie" }
+      ]
+    },
+    {
+      "title": "Wikipedia",
+      "questions": [
+        { "id": "G-200-1", "points": 100, "text": "Das aromatische Gewächs aus warmen Klimaregionen fand bereits in der Antike Verwendung und wird heute vor allem in der Küche und traditionellen Heilkunst geschätzt. Vorallem für Pesto, sowie Tomaten-Mozzarella gilt es als unverzichtbar. ", "answer": "Basilikum" },
+        { "id": "G-400-1", "points": 200, "text": "Das Unternehmen zählt zu den ältesten noch bestehenden Technologiekonzernen Europas und war maßgeblich an der Elektrifizierung und Industrialisierung verschiedener Länder beteiligt. Das Unternehmen hat seinen Sitz in Seoul.", "answer": "Siemens" },
+        { "id": "G-600-1", "points": 300, "text": "Der grünliche, teils transluzente Edelstein spielte in mehreren frühen Hochkulturen eine bedeutende Rolle und gilt bis heute als Symbol für Beständigkeit und Wohlstand.", "answer": "Jade" },
+        { "id": "G-800-1", "points": 400, "text": "Die historische Persönlichkeit stieg in einer Zeit politischer Umbrüche rasant auf und beeinflusste mit ihren Feldzügen und Reformen die europäische Ordnung nachhaltig. Gestorben ist diese Person auf der Insel St.Helena.", "answer": "Napoleon" },
+        { "id": "G-1000-1", "points": 500, "text": "Die Marke entwickelte sich im 20. Jahrhundert zu einem der weltweit bekanntesten Konsumgüter und prägte über Jahrzehnte die Popkultur sowie zahlreiche Sport- und Werbeformate.", "answer": "Marlboro" }
+      ]
+    },
+    {
+      "title": "Tierwissen",
+      "questions": [
+        { "id": "F-200-1", "points": 100, "text": "Welches Tier hat das größte Herz im gesamten Tierreich, das mehrere hundert Kilogramm wiegen kann?", "answer": "Blauwal" },
+        { "id": "F-400-1", "points": 200, "text": "Wie nennt man eine Gruppe von Fliegen?", "answer": "Schwarm" },
+        { "id": "F-600-1", "points": 300, "text": "Wie nennt man ein männliches Wildschwein?", "answer": "Keiler" },
+        { "id": "F-800-1", "points": 400, "text": "Welches Insekt verständigt sich durch „Tanzbewegungen“, um Futterquellen anzuzeigen?", "answer": "Honigbiene" },
+        { "id": "F-1000-1", "points": 500, "text": "Wie nennt man eine Gruppe von Delfinen?", "answer": "Schule" }
+      ]
+    },
+    {
+      "title": "2010er",
+      "questions": [
+        { "id": "Y-200-1", "points": 100, "text": "Welcher virale Social-Media-Trend von 2014 bestand darin, sich einen Eimer eiskaltes Wasser über den Kopf zu schütten?", "answer": "Ice Bucket Challenge" },
+        { "id": "Y-400-1", "points": 200, "text": "Welcher Kinofilm von 2012 wurde zum erfolgreichsten Animationsfilm seiner Zeit und machte gelbe Nebenfiguren weltberühmt?", "answer": "Ich Einfach unverbesserlich / Die Minions" },
+        { "id": "Y-600-1", "points": 300, "text": "Welche App revolutionierte ab 2016 das Thema Augmented Reality im Alltag, indem Menschen plötzlich überall durch Städte liefen und suchten?", "answer": "Pokemon GO" },
+        { "id": "Y-800-1", "points": 400, "text": "Welches Musikalbum sorgte 2015 für Rekordverkäufe und markierte das große Comeback einer britischen Sängerin?", "answer": "Adele, 25)" },
+        { "id": "Y-1000-1", "points": 500, "text": "Welches literarische Werk von 2011 bildet den Abschluss einer Jugendbuchreihe, in der eine junge Protagonistin unfreiwillig zum Katalysator gesellschaftlicher Umbrüche wird?", "answer": "Tribute von Panem" }
+      ]
+    },
+    {
+      "title": "Sprachen",
+      "questions": [
+        { "id": "B-200-1", "points": 100, "text": "Welche Sprache hat weltweit die meisten Muttersprachler?", "answer": "Mandarin-Chinesisch)" },
+        { "id": "B-400-1", "points": 200, "text": "Welche Sprache wird in Europa von den meisten Menschen als Muttersprache gesprochen?", "answer": "Deutsch (bzw. Russisch)" },
+        { "id": "B-600-1", "points": 300, "text": "Welche Sprache hat nur 12 Buchstaben und wird auf einer abgelegenen Insel im Pazifik gesprochen?", "answer": "Hawaiianisch" },
+        { "id": "B-800-1", "points": 400, "text": "Welche Sprache ist die einzige auf dem amerikanischen Kontinent, die noch in Hieroglyphen überliefert ist?", "answer": "Maya" },
+        { "id": "B-1000-1", "points": 500, "text": "In welcher Sprache hängt die Bedeutung eines Wortes nicht nur vom Ton, sondern auch von der Länge und der Reihenfolge der Silben ab, was sie zu einer der komplexesten Tonsprachen macht?", "answer": "Thai (oder Laotisch)" }
+      ]
+    }
+  ]
+}

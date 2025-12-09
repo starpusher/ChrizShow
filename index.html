@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>House of Questions</title>
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap" rel="stylesheet">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <div class="logo">CS</div>
+      <div class="title-full">ChrizShow</div>
+      <div class="subtitle">hosted by Chris</div>
+    </div>
+
+    <div class="players" id="playersBar"></div>
+
+    <div class="controls">
+      <button id="presentBtn" title="Publikumsfenster öffnen">Präsentation</button>
+      <button id="addPlayerBtn">+ Spieler</button>
+      <button id="undoBtn" title="Letzte Aktion rückgängig (Strg+Z)">Undo</button>
+      <button id="exportBtn">Export</button>
+      <button id="importBtn">Import</button>
+      <input id="importFile" type="file" accept="application/json" hidden />
+      <button id="resetBtn">Reset</button>
+      <button id="roundResetBtn" title="Nur Board leeren (Punkte/Spieler bleiben)">Board reset</button>
+      <select id="boardSelect">
+        <option value="">Board wählen…</option>
+      </select>
+      <button id="loadBtn">Spiel laden</button>
+      <input id="loadFile" type="file" accept="application/json" hidden />
+    </div>
+  </header>
+
+  <main>
+    <section id="board" class="board" aria-live="polite"></section>
+  </main>
+
+  <!-- Overlay unten -->
+  <footer id="overlay" class="overlay"></footer>
+
+  <!-- Frage-Modal -->
+  <dialog id="qModal">
+    <form method="dialog" class="modal">
+      <header class="qhead">
+        <h3 id="qCat"></h3>
+        <span id="qPts" class="qpts"></span>
+        <div id="turnBadge" class="turnbadge" hidden></div>
+        <button id="timerBtn" type="button" class="timer">⏱ 10s</button>
+        <div id="timerBox" class="timerbox" hidden>10</div>
+      </header>
+
+      <div id="qText" class="qtext"></div>
+      <img id="qImg" class="qimg" alt="" hidden />
+      <audio id="qAud" controls hidden></audio>
+      <video id="qVid" controls class="qvid" hidden></video>
+
+      <div class="answer-wrap">
+        <button id="revealBtn" type="button">Antwort zeigen</button>
+        <button id="swapImageBtn" type="button" hidden>Bild umschalten</button>
+        <div id="answer" class="answer" hidden></div>
+<div id="answerImages" class="answrap" hidden>
+  <img id="ansImg1" class="ansimg" alt="">
+  <img id="ansImg2" class="ansimg" alt="">
+</div>
+      </div>
+
+      <div class="attempts">
+        <label>Spieler:</label>
+        <select id="playerSelect"></select>
+        <span id="attemptInfo"></span>
+      </div>
+
+      <div class="actions">
+        <button id="correctBtn" type="button" class="ok">Richtig</button>
+        <button id="wrongBtn"   type="button" class="bad">Falsch (−½)</button>
+        <button id="skipBtn"    type="button">Überspringen</button>
+        <button id="pauseAud" type="button">⏸ Audio</button>
+        <button id="playAud" type="button">▶ Audio</button>
+      </div>
+
+      <menu>
+        <button id="closeBtn" value="close">Schließen</button>
+      </menu>
+    </form>
+  </dialog>
+
+  <!-- FX overlay for correct/wrong -->
+  <div id="fx"></div>
+
+  <audio id="sfxCorrect" preload="auto" hidden></audio>
+<audio id="sfxWrong" preload="auto" hidden></audio>
+<script src="app.js" defer></script>
+</body>
+</html>
