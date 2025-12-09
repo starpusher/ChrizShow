@@ -108,9 +108,10 @@ if (els.answerImages && ((Array.isArray(imgs) && imgs.length >= 2) || (a1 && a2)
       data = payload.data;
       window.SFX_BASE = (payload.data && payload.data.settings && payload.data.settings.media_base) || window.SFX_BASE || 'media/';
 if (!window.SFX_BASE.endsWith('/')) window.SFX_BASE += '/';
-      Object.assign(state, { players: payload.state.players, scores: payload.state.scores, q: payload.state.q||{}, settings: payload.state.settings||{}, turn: payload.state.turn||0 });
+      Object.assign(state, { players: payload.state.players, scores: payload.state.scores, q: payload.state.q||{}, settings: payload.state.settings||{}, turn: payload.state.turn||0, current: payload.state.current || null });
       state.used = new Set(payload.state.used || []);
       renderPlayersBar(true); renderBoard(); renderOverlay();
+      applyCurrentForScreen();
       break;
   }
 }
@@ -177,6 +178,7 @@ const state = {
   used: new Set(),
   settings: {},
   history: [],
+  current: null,                  // aktuell offene Frage (für Publikum)
   turn: 0                         // Index des aktuellen Spielers
 };
 let current = { col: -1, row: -1, q: null, id: null };
@@ -481,13 +483,27 @@ if (els.answerImages) {
   const qst = state.q[id] ||= { status: 'open', attempts: [], starter: starterId };
   qst.status = 'open';
 
+  // aktuell offene Frage im globalen State merken (für Publikum)
+  state.current = { id, answerRevealed: false };
+  saveState();
+  sendSync();
+
   send('SHOW_Q', { id, q: { cat: cat.title, points: q.points, text: q.text, answer: q.answer, image: q.image, image_reveal: q.image_reveal, audio: q.audio, video: q.video, answer_images: q.answer_images, ans1: q.ans1, ans2: q.ans2 }});
 
   populatePlayerSelect(id, starterId);
   updateAttemptInfo(id);
 
   els.revealBtn.onclick = () => {
-    els.answer.hidden = false; send('REVEAL_ANSWER');
+    els.answer.hidden = false; 
+    // Antwort als aufgedeckt im globalen State markieren
+    if (state.current && state.current.id === current.id) {
+      state.current.answerRevealed = true;
+    } else {
+      state.current = { id: current.id, answerRevealed: true };
+    }
+    saveState();
+    sendSync();
+    send('REVEAL_ANSWER');
     const base = (data.settings && data.settings.media_base) || '';
     // optional single reveal image
     if (current.q.answer_image) {
@@ -609,11 +625,15 @@ function finishQuestion(winnerId) {
   advanceTurn();
   pushHistory({ type:'RESOLVE', qid });
 
+  // aktuelle Frage im State zurücksetzen
+  state.current = null;
+
   saveState(); renderBoard(); renderOverlay();
   els.modal.close();
 
   send('RESOLVE_Q', { id: qid });
   sendScores(); sendTurn();
+  sendSync();
 }
 
 function advanceTurn(){ if (state.players.length) state.turn = (state.turn + 1) % state.players.length; }
@@ -626,6 +646,81 @@ function removePlayer(idx){
   saveState(); renderPlayersBar(); renderOverlay(); sendSync();
 }
 
+
+
+function applyCurrentForScreen() {
+  if (role !== 'screen') return;
+  const cur = state.current;
+  // Wenn keine aktuelle Frage vorhanden, Modal schließen
+  if (!cur || !cur.id) {
+    try {
+      if (els.modal && typeof els.modal.close === 'function' && els.modal.open) {
+        els.modal.close();
+      }
+      if (els.timerBox) els.timerBox.hidden = true;
+      if (els.answerImages) {
+        els.answerImages.hidden = true;
+        if (els.ansImg1) els.ansImg1.src = '';
+        if (els.ansImg2) els.ansImg2.src = '';
+      }
+    } catch (e) {}
+    return;
+  }
+
+  // passende Frage zu dieser ID finden
+  if (!data || !Array.isArray(data.categories)) return;
+  let found = null;
+  for (let c = 0; c < data.categories.length; c++) {
+    const cat = data.categories[c];
+    for (let r = 0; r < cat.questions.length; r++) {
+      const q = cat.questions[r];
+      if (!q) continue;
+      const qid = q.id || `${c}-${r}`;
+      if (qid === cur.id) {
+        found = {
+          id: qid,
+          q: {
+            cat: cat.title,
+            points: q.points,
+            text: q.text,
+            answer: q.answer,
+            image: q.image,
+            image_reveal: q.image_reveal,
+            audio: q.audio,
+            video: q.video,
+            answer_images: q.answer_images,
+            ans1: q.ans1,
+            ans2: q.ans2
+          }
+        };
+        break;
+      }
+    }
+    if (found) break;
+  }
+  if (!found) return;
+
+  // Frage beim Publikum anzeigen
+  showForAudience(found);
+
+  // Falls Antwort bereits aufgedeckt wurde, auch beim Publikum anzeigen
+  if (cur.answerRevealed) {
+    try {
+      const base = (data.settings && data.settings.media_base) || 'media/';
+      const q = current.q || {};
+      const imgs = q.answer_images;
+      const a1 = q.ans1, a2 = q.ans2;
+      if (els.answerImages && ((Array.isArray(imgs) && imgs.length >= 2) || (a1 && a2))) {
+        const s1 = Array.isArray(imgs) ? imgs[0] : a1;
+        const s2 = Array.isArray(imgs) ? imgs[1] : a2;
+        els.ansImg1.src = base + s1;
+        els.ansImg2.src = base + s2;
+        els.answerImages.hidden = false;
+      }
+    } catch (e) {}
+    els.answer.hidden = false;
+  }
+}
 
 function setupRemoteListener() {
   if (role !== 'screen') return;
@@ -761,7 +856,8 @@ function saveState() {
     q: state.q,
     used: Array.from(state.used),
     settings: state.settings,
-    turn: state.turn
+    turn: state.turn,
+    current: state.current
   };
   localStorage.setItem('quiz_state', JSON.stringify(payload));
 }
@@ -775,6 +871,7 @@ function loadState() {
     state.q = s.q || {};
     state.used = new Set(s.used || []);
     state.turn = s.turn || 0;
+    state.current = s.current || null;
   } catch {}
 }
 
@@ -815,7 +912,8 @@ function sendSync() {
       q: state.q,
       used: Array.from(state.used),
       settings: state.settings,
-      turn: state.turn
+      turn: state.turn,
+      current: state.current
     },
     data
   };
@@ -916,7 +1014,9 @@ function attachGlobalHandlers() {
   // Shortcuts nur für Host & nur im Modal
   window.addEventListener('keydown', (ev) => {
     if (role !== 'host' || !els.modal.open) return;
-    if (ev.key === 'a') els.answer.hidden = false, send('REVEAL_ANSWER');
+    if (ev.key === 'a') {
+      els.revealBtn.click();
+    }
     if (ev.key.toLowerCase() === 'r') els.correctBtn.click();
     if (ev.key.toLowerCase() === 'f') els.wrongBtn.click();
     if (ev.key.toLowerCase() === 's') els.skipBtn.click();
