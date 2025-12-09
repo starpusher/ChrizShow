@@ -391,6 +391,13 @@ img.onclick = () => {
 }
 
 function renderBoard() {
+  // Wenn noch keine Daten synchronisiert wurden (Publikum vor Host-Sync),
+  // einfach nichts anzeigen und auf den ersten SYNC_STATE warten.
+  if (!data || !Array.isArray(data.categories) || !data.categories.length) {
+    els.board.innerHTML = '';
+    return;
+  }
+
   const cats = data.categories;
   const cols = cats.length;
   const maxRows = Math.max(...cats.map(c => c.questions.length));
