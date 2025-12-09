@@ -3,7 +3,7 @@ const params = new URLSearchParams(location.search);
 
 const HOST_SECRET = '314159';
 
-let role = params.get('view') || 'host';  // 'host' | 'screen'
+let role = params.get('view') || 'screen';  // 'host' | 'screen'
 if (role === 'host') {
   const key = params.get('key');
   if (key !== HOST_SECRET) {
@@ -184,7 +184,7 @@ let timerInt = null;
 init();
 async function init() {
   if (role === 'host') {
-    await loadBoardsList();               // optional: lädt data/boards.json, falls vorhanden
+    await loadBoardsList();               // lädt data/boards.json, falls vorhanden
     const startUrl = getInitialBoardUrl();
     await loadContent(startUrl);
   } else {
@@ -210,86 +210,6 @@ async function loadContent(urlOrFileText) {
   state.settings = data.settings || {};
   state.players = (data.players || ['Spieler 1','Spieler 2']).map((name, i) => ({ id: `p${i+1}`, name, avatar: null, jokers:{j1:true,j2:true,j3:true} }));
   for (const p of state.players) if (!(p.id in state.scores)) state.scores[p.id] = 0;
-}
-
-async function loadBoardsList() {
-  if (role !== 'host') return;
-  try {
-    const res = await fetch('data/boards.json', { cache: 'no-store' });
-    if (!res.ok) return;
-    const raw = await res.json();
-    if (!Array.isArray(raw)) return;
-
-    boards = raw.map((item, idx) => {
-      if (typeof item === 'string') {
-        const file = item.replace(/^data\//, '');
-        const url = 'data/' + file;
-        return {
-          id: `b${idx}`,
-          label: file.replace(/\.json$/,''),
-          url
-        };
-      }
-      const file = (item.file || item.path || item.name || '').replace(/^data\//, '');
-      const url = file ? ('data/' + file) : null;
-      return {
-        id: item.id || `b${idx}`,
-        label: item.label || item.name || (file && file.replace(/\.json$/,'')) || `Board ${idx+1}`,
-        url
-      };
-    }).filter(b => !!b.url);
-
-    if (els.boardSelect) {
-      els.boardSelect.innerHTML = '';
-      const opt0 = document.createElement('option');
-      opt0.value = '';
-      opt0.textContent = boards.length ? 'Board wählen…' : 'Keine Boards gefunden';
-      els.boardSelect.appendChild(opt0);
-      boards.forEach(b => {
-        const opt = document.createElement('option');
-        opt.value = b.id;
-        opt.textContent = b.label;
-        opt.dataset.url = b.url;
-        els.boardSelect.appendChild(opt);
-      });
-      els.boardSelect.hidden = boards.length === 0;
-    }
-  } catch (e) {
-    console.warn('boards.json konnte nicht geladen werden', e);
-  }
-}
-
-function getInitialBoardUrl() {
-  const saved = localStorage.getItem('quiz_board_file');
-  if (saved && boards.some(b => b.url === saved)) {
-    const b = boards.find(b => b.url === saved);
-    if (els.boardSelect && b) els.boardSelect.value = b.id;
-    return saved;
-  }
-  if (boards.length) {
-    const first = boards[0];
-    if (els.boardSelect) els.boardSelect.value = first.id;
-    localStorage.setItem('quiz_board_file', first.url);
-    return first.url;
-  }
-  return 'data/questions.json';
-}
-
-async function loadBoardFromUrl(url) {
-  if (!url) return;
-  await loadContent(url);
-  state.q = {};
-  state.used = new Set();
-  state.history = [];
-  state.turn = 0;
-  state.scores = {};
-  for (const p of state.players) state.scores[p.id] = 0;
-  localStorage.setItem('quiz_board_file', url);
-  saveState();
-  renderPlayersBar();
-  renderBoard();
-  renderOverlay();
-  sendSync();
 }
 window.SFX_BASE = (data && data.settings && data.settings.media_base) || 'media/';
 if (!window.SFX_BASE.endsWith('/')) window.SFX_BASE += '/';
@@ -595,6 +515,104 @@ function removePlayer(idx){
   if (state.turn >= state.players.length) state.turn = 0;
   saveState(); renderPlayersBar(); renderOverlay(); sendSync();
 }
+
+
+async function loadBoardsList() {
+  if (role !== 'host') return;
+  try {
+    const res = await fetch('data/boards.json', { cache: 'no-store' });
+    if (!res.ok) return;
+    const raw = await res.json();
+    if (!Array.isArray(raw)) return;
+
+    boards = raw.map((item, idx) => {
+      if (typeof item === 'string') {
+        const file = item.replace(/^data\//, '');
+        const url = 'data/' + file;
+        return {
+          id: `b${idx}`,
+          label: file.replace(/\.json$/,''),
+          url
+        };
+      }
+      const file = (item.file || item.path || item.name || '').replace(/^data\//, '');
+      const url = file ? ('data/' + file) : null;
+      return {
+        id: item.id || `b${idx}`,
+        label: item.label || item.name || (file && file.replace(/\.json$/,'')) || `Board ${idx+1}`,
+        url
+      };
+    }).filter(b => !!b.url);
+
+    if (els.boardSelect) {
+      els.boardSelect.innerHTML = '';
+      const opt0 = document.createElement('option');
+      opt0.value = '';
+      opt0.textContent = boards.length ? 'Board wählen…' : 'Keine Boards gefunden';
+      els.boardSelect.appendChild(opt0);
+      boards.forEach(b => {
+        const opt = document.createElement('option');
+        opt.value = b.id;
+        opt.textContent = b.label;
+        opt.dataset.url = b.url;
+        els.boardSelect.appendChild(opt);
+      });
+      els.boardSelect.hidden = boards.length === 0;
+    }
+  } catch (e) {
+    console.warn('boards.json konnte nicht geladen werden', e);
+  }
+}
+
+function getInitialBoardUrl() {
+  const saved = localStorage.getItem('quiz_board_file');
+  if (saved && boards.some(b => b.url === saved)) {
+    const b = boards.find(b => b.url === saved);
+    if (els.boardSelect && b) els.boardSelect.value = b.id;
+    return saved;
+  }
+  if (boards.length) {
+    const first = boards[0];
+    if (els.boardSelect) els.boardSelect.value = first.id;
+    localStorage.setItem('quiz_board_file', first.url);
+    return first.url;
+  }
+  return 'data/questions.json';
+}
+
+async function loadBoardFromUrl(url) {
+  if (!url) return;
+
+  // Vorherige Spieler, Scores und Zug merken
+  const prevPlayers = state.players.map(p => ({
+    id: p.id,
+    name: p.name,
+    avatar: p.avatar || null,
+    jokers: p.jokers || { j1: true, j2: true, j3: true }
+  }));
+  const prevScores = Object.assign({}, state.scores);
+  const prevTurn = state.turn;
+
+  await loadContent(url);
+
+  // Spieler & Punkte wiederherstellen
+  state.players = prevPlayers;
+  state.scores = prevScores;
+  state.turn = prevTurn;
+
+  // Nur Fragen-Fortschritt zurücksetzen
+  state.q = {};
+  state.used = new Set();
+  state.history = [];
+
+  localStorage.setItem('quiz_board_file', url);
+  saveState();
+  renderPlayersBar();
+  renderBoard();
+  renderOverlay();
+  sendSync();
+}
+
 
 /* ======= Publikum ======= */
 function showForAudience(payload){
