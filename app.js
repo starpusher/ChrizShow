@@ -1,6 +1,16 @@
 /* ======= Rollen & Broadcast ======= */
 const params = new URLSearchParams(location.search);
-const role = params.get('view') || 'host';  // 'host' | 'screen'
+
+const HOST_SECRET = '314159';
+
+let role = params.get('view') || 'screen';  // 'host' | 'screen'
+if (role === 'host') {
+  const key = params.get('key');
+  if (key !== HOST_SECRET) {
+    // Falscher oder fehlender Schlüssel → auf Screen-Ansicht zurückfallen
+    role = 'screen';
+  }
+}
 if (role === 'screen') document.body.classList.add('audience');
 
 const chan = new BroadcastChannel('quiz-show');
@@ -145,6 +155,7 @@ const els = {
   importFile: document.getElementById('importFile'),
   loadBtn: document.getElementById('loadBtn'),
   loadFile: document.getElementById('loadFile'),
+  boardSelect: document.getElementById('boardSelect'),
   presentBtn: document.getElementById('presentBtn'),
   addPlayerBtn: document.getElementById('addPlayerBtn'),
   undoBtn: document.getElementById('undoBtn'),
@@ -156,6 +167,7 @@ const els = {
 
 /* ======= Daten & State ======= */
 let data = null;
+let boards = [];
 const state = {
   players: [],                    // {id,name,avatar?, jokers?}
   scores: {},                     // id -> number
@@ -167,22 +179,23 @@ const state = {
 };
 let current = { col: -1, row: -1, q: null, id: null };
 let timerInt = null;
-let remoteRoomId = 'default';
 
 /* ======= Init ======= */
 init();
 async function init() {
-  await loadContent('data/questions.json');
+  if (role === 'host') {
+    await loadBoardsList();               // optional: lädt data/boards.json, falls vorhanden
+    const startUrl = getInitialBoardUrl();
+    await loadContent(startUrl);
+  } else {
+    await loadContent('data/questions.json');
+  }
   loadState();
   renderPlayersBar(role === 'screen');
   renderBoard();
   renderOverlay();
   attachGlobalHandlers();
-  if (role === 'host') {
-    sendSync();
-  } else {
-    setupRemoteListener();
-  }
+  if (role === 'host') sendSync();
 }
 
 async function loadContent(urlOrFileText) {
@@ -197,6 +210,86 @@ async function loadContent(urlOrFileText) {
   state.settings = data.settings || {};
   state.players = (data.players || ['Spieler 1','Spieler 2']).map((name, i) => ({ id: `p${i+1}`, name, avatar: null, jokers:{j1:true,j2:true,j3:true} }));
   for (const p of state.players) if (!(p.id in state.scores)) state.scores[p.id] = 0;
+}
+
+async function loadBoardsList() {
+  if (role !== 'host') return;
+  try {
+    const res = await fetch('data/boards.json', { cache: 'no-store' });
+    if (!res.ok) return;
+    const raw = await res.json();
+    if (!Array.isArray(raw)) return;
+
+    boards = raw.map((item, idx) => {
+      if (typeof item === 'string') {
+        const file = item.replace(/^data\//, '');
+        const url = 'data/' + file;
+        return {
+          id: `b${idx}`,
+          label: file.replace(/\.json$/,''),
+          url
+        };
+      }
+      const file = (item.file || item.path || item.name || '').replace(/^data\//, '');
+      const url = file ? ('data/' + file) : null;
+      return {
+        id: item.id || `b${idx}`,
+        label: item.label || item.name || (file && file.replace(/\.json$/,'')) || `Board ${idx+1}`,
+        url
+      };
+    }).filter(b => !!b.url);
+
+    if (els.boardSelect) {
+      els.boardSelect.innerHTML = '';
+      const opt0 = document.createElement('option');
+      opt0.value = '';
+      opt0.textContent = boards.length ? 'Board wählen…' : 'Keine Boards gefunden';
+      els.boardSelect.appendChild(opt0);
+      boards.forEach(b => {
+        const opt = document.createElement('option');
+        opt.value = b.id;
+        opt.textContent = b.label;
+        opt.dataset.url = b.url;
+        els.boardSelect.appendChild(opt);
+      });
+      els.boardSelect.hidden = boards.length === 0;
+    }
+  } catch (e) {
+    console.warn('boards.json konnte nicht geladen werden', e);
+  }
+}
+
+function getInitialBoardUrl() {
+  const saved = localStorage.getItem('quiz_board_file');
+  if (saved && boards.some(b => b.url === saved)) {
+    const b = boards.find(b => b.url === saved);
+    if (els.boardSelect && b) els.boardSelect.value = b.id;
+    return saved;
+  }
+  if (boards.length) {
+    const first = boards[0];
+    if (els.boardSelect) els.boardSelect.value = first.id;
+    localStorage.setItem('quiz_board_file', first.url);
+    return first.url;
+  }
+  return 'data/questions.json';
+}
+
+async function loadBoardFromUrl(url) {
+  if (!url) return;
+  await loadContent(url);
+  state.q = {};
+  state.used = new Set();
+  state.history = [];
+  state.turn = 0;
+  state.scores = {};
+  for (const p of state.players) state.scores[p.id] = 0;
+  localStorage.setItem('quiz_board_file', url);
+  saveState();
+  renderPlayersBar();
+  renderBoard();
+  renderOverlay();
+  sendSync();
 }
 window.SFX_BASE = (data && data.settings && data.settings.media_base) || 'media/';
 if (!window.SFX_BASE.endsWith('/')) window.SFX_BASE += '/';
@@ -503,24 +596,6 @@ function removePlayer(idx){
   saveState(); renderPlayersBar(); renderOverlay(); sendSync();
 }
 
-
-function setupRemoteListener() {
-  if (role !== 'screen') return;
-  if (typeof db === 'undefined' || !db) return;
-  try {
-    db.collection('rooms').doc(remoteRoomId).onSnapshot((doc) => {
-      if (!doc || !doc.exists) return;
-      const payload = doc.data();
-      if (!payload) return;
-      // gleiche Behandlung wie bei Broadcast-SYNC
-      handleMsg({ type: 'SYNC_STATE', payload });
-    });
-  } catch (e) {
-    console.warn('Remote-Listener konnte nicht gestartet werden', e);
-  }
-}
-
-
 /* ======= Publikum ======= */
 function showForAudience(payload){
   const { id, q } = payload;
@@ -686,7 +761,7 @@ function sendSync() {
     jokers: p.jokers || {}
   }));
 
-  const payload = {
+  send('SYNC_STATE', {
     state: {
       players: cleanPlayers,
       scores: state.scores,
@@ -696,22 +771,7 @@ function sendSync() {
       turn: state.turn
     },
     data
-  };
-
-  // Lokal an Screen-Tabs im gleichen Browser senden
-  send('SYNC_STATE', payload);
-
-  // Optional: Remote-Sync über Firestore (falls konfiguriert)
-  if (role === 'host' && typeof db !== 'undefined' && db) {
-    try {
-      db.collection('rooms').doc(remoteRoomId).set({
-        ...payload,
-        ts: Date.now()
-      });
-    } catch (e) {
-      console.warn('Remote-Sync fehlgeschlagen', e);
-    }
-  }
+  });
 }
 function sendScores(){ send('SCORES', { scores: state.scores }); }
 function sendTurn(){ send('TURN', { turn: state.turn }); }
@@ -724,6 +784,15 @@ function fx(type){
 }
 
 function attachGlobalHandlers() {
+  if (els.boardSelect && role === 'host') {
+    els.boardSelect.onchange = async (e) => {
+      const id = e.target.value;
+      const board = boards.find(b => b.id === id);
+      if (!board) return;
+      await loadBoardFromUrl(board.url);
+    };
+  }
+
   if (els.presentBtn && role === 'host') {
     els.presentBtn.onclick = () => window.open(`${location.pathname}?view=screen`, 'quiz-screen', 'width=1280,height=800');
   }
