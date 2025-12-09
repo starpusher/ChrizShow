@@ -1,6 +1,16 @@
 /* ======= Rollen & Broadcast ======= */
 const params = new URLSearchParams(location.search);
-const role = params.get('view') || 'host';  // 'host' | 'screen'
+
+const HOST_SECRET = '314159';
+
+let role = params.get('view') || 'host';  // 'host' | 'screen'
+if (role === 'host') {
+  const key = params.get('key');
+  if (key !== HOST_SECRET) {
+    // Falscher oder fehlender Schlüssel → auf Screen-Ansicht zurückfallen
+    role = 'screen';
+  }
+}
 if (role === 'screen') document.body.classList.add('audience');
 
 const chan = new BroadcastChannel('quiz-show');
