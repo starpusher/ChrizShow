@@ -1,6 +1,21 @@
 <!doctype html>
 <html lang="de">
 <head>
+  <script src="https://www.gstatic.com/firebasejs/12.6.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore-compat.js"></script>
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyAQdAqEtJPRC2b85DQx6H0-CLP18KnXUCk",
+    authDomain: "chrizshow-4f8ca.firebaseapp.com",
+    projectId: "chrizshow-4f8ca",
+    storageBucket: "chrizshow-4f8ca.firebasestorage.app",
+    messagingSenderId: "444960924918",
+    appId: "1:444960924918:web:71fd864319bf67e2d3f8d7"
+  };
+  firebase.initializeApp(firebaseConfig);
+  window.db = firebase.firestore();
+</script>
+
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>House of Questions</title>
@@ -93,20 +108,6 @@
 
   <audio id="sfxCorrect" preload="auto" hidden></audio>
 <audio id="sfxWrong" preload="auto" hidden></audio>
-  <script src="https://www.gstatic.com/firebasejs/12.6.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore-compat.js"></script>
-  <script>
-    const firebaseConfig = {
-      apiKey: "AIzaSyAQdAqEtJPRC2b85DQx6H0-CLP18KnXUCk",
-      authDomain: "chrizshow-4f8ca.firebaseapp.com",
-      projectId: "chrizshow-4f8ca",
-      storageBucket: "chrizshow-4f8ca.firebasestorage.app",
-      messagingSenderId: "444960924918",
-      appId: "1:444960924918:web:71fd864319bf67e2d3f8d7"
-    };
-    firebase.initializeApp(firebaseConfig);
-    window.db = firebase.firestore();
-  </script>
   <script src="app.js" defer></script>
 </body>
 </html>
