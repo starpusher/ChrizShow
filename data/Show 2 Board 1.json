@@ -1,0 +1,59 @@
+{
+  "settings": {
+    "media_base": "media/",
+    "allow_steal": true
+  },
+  "players": ["Spieler 1", "Spieler 2", "Spieler 3"],
+  "categories": [
+    {
+      "title": "Emoji",
+      "questions": [
+        { "id": "S-200-1", "points": 100, "text": "", "image": "finalcountdown.jpg", "answer": "The final Countdown" },
+        { "id": "S-400-1", "points": 200, "text": "", "image": "kissedagirl.jpg", "answer": "I kissed a girl" },
+        { "id": "S-600-1", "points": 300, "text": "", "image": "BilderimKopf.jpg", "answer": "Bilder im Kopf" },
+        { "id": "S-800-1", "points": 400, "text": "", "image": "walkingonsunshine.jpg", "answer": "Walking on sunshine" },
+        { "id": "S-1000-1", "points": 500, "text": "", "image": "durchdenmonsun.jpg", "answer": "Durch den Monsun" }
+      ]
+    },
+    {
+      "title": "Wikipedia!",
+      "questions": [
+        { "id": "G-200-1", "points": 100, "text": "Es handelt sich um eine Sportart, die auf einer rechteckigen Spielfläche mit zwei Körben gespielt wird", "answer": "Basketball" },
+        { "id": "G-400-1", "points": 200, "text": "Es ist ein technisches Gerät, das zur Messung ionisierender Strahlung eingesetzt wird", "answer": "Geigerzähler" },
+        { "id": "G-600-1", "points": 300, "text": "Der Begriff beschreibt einen Konflikt zweier Großmächte zwischen 1947 und 1991, der ohne direkte militärische Auseinandersetzung auskam.", "answer": "Kalter Krieg" },
+        { "id": "G-800-1", "points": 400, "text": "Der Ausdruck bezeichnet einen literarischen Stil, der sich im 19. Jahrhundert in Frankreich entwickelte.", "answer": "Realismus" },
+        { "id": "G-1000-1", "points": 500, "text": "Der Begriff steht für ein ökonomisches Ereignis, das 1929 begann und weltweit massive Auswirkungen auf Produktion und Arbeitslosigkeit hatte.", "answer": "Weltwirtschaftskrise" }
+      ]
+    },
+    {
+      "title": "Essen und Trinken",
+      "questions": [
+        { "id": "F-200-1", "points": 100, "text": "Welche Pasta-Art sind kleine Röhrchen mit schrägem Schnitt?", "answer": "Penne" },
+        { "id": "F-400-1", "points": 200, "text": "Wie heißt die spanische kalte Tomatensuppe?", "answer": "Gazpacho" },
+        { "id": "F-600-1", "points": 300, "text": "Aus was wird Tequila klassischer Weise hergestellt?", "answer": "Agaven" },
+        { "id": "F-800-1", "points": 400, "text": "Was ist der Hauptgeschmacksträger in Sojasauce?", "answer": "Umami (Aminosäuren bei der Fermentation)" },
+        { "id": "F-1000-1", "points": 500, "text": "Welche Beere wird traditionell für britische Scones und Konfitüren verwendet und hat einen leichten Säuregeschmack?", "answer": "Johannisbeere" }
+      ]
+    },
+    {
+      "title": "Natur",
+      "questions": [
+        { "id": "Y-200-1", "points": 100, "text": "Welcher Fluss gilt als der breiteste Fluss der Welt?", "answer": "Amazonas" },
+        { "id": "Y-400-1", "points": 200, "text": "Welcher Vogel kann rückwärts fliegen?", "answer": "Kolibri" },
+        { "id": "Y-600-1", "points": 300, "text": "Welcher Ozean ist der tiefste der Erde?", "answer": "Pazifik" },
+        { "id": "Y-800-1", "points": 400, "text": "Welche Pflanze ist das schnellstwachsende bekannte Lebewesen?", "answer": "Bambus" },
+        { "id": "Y-1000-1", "points": 500, "text": "Welches ist das giftigste Landtier der Welt?", "answer": "Pfeilgiftfrosch" }
+      ]
+    },
+    {
+      "title": "Startsounds",
+      "questions": [
+        { "id": "B-200-1", "points": 100, "text": "", "audio": "Netflix.mp3", "answer": "Netflix" },
+        { "id": "B-400-1", "points": 200, "text": "", "audio": "Disney.mp3", "answer": "Disney" },
+        { "id": "B-600-1", "points": 300, "text": "", "audio": "Pixar.mp3", "answer": "Pixar" },
+        { "id": "B-800-1", "points": 400, "text": "", "audio": "Marvel.mp3", "answer": "Marvel" },
+        { "id": "B-1000-1", "points": 500, "text": "", "audio": "Paramount.mp3", "answer": "Paramount" }
+      ]
+    }
+  ]
+}

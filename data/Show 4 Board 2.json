@@ -1,0 +1,59 @@
+{
+  "settings": {
+    "media_base": "media/",
+    "allow_steal": true
+  },
+  "players": ["Spieler 1", "Spieler 2", "Spieler 3"],
+  "categories": [
+    {
+      "title": "Kartenkunde",
+      "questions": [
+        { "id": "S-200-1", "points": 200, "text": "Wie heißt der längste Fluss Deutschlands?", "answer": "Rhein" },
+        { "id": "S-400-1", "points": 400, "text": "Zu welchem Land gehört der markierte Bereich?", "image": "groenlandmarkiert.jpg", "answer": "Dänemark" },
+        { "id": "S-600-1", "points": 600, "text": "In welchem Land liegt der Mount Everest?", "answer": "Nepal (und China/Tibet)" },
+        { "id": "S-800-1", "points": 800, "text": "Nenne 3 der 13 Länder durch die der Äquator verläuft", "answer": "Ecuador, Kolumbien, Brasilien, São Tomé und Príncipe, Gabun, Republik Kongo, Demokratische Republik Kongo, Uganda, Kenia, Somalia, Malediven, Indonesien, Kiribati" },
+        { "id": "S-1000-1", "points": 1000, "text": "Welches ist das Land mit den meisten Zeitzonen?", "answer": "Frankreich" }
+      ]
+    },
+    {
+      "title": "Tierwissen",
+      "questions": [
+        { "id": "G-200-1", "points": 200, "text": "Welches Tier ist das größte Landtier der Welt?", "answer": "Afrikanischer Elefant" },
+        { "id": "G-400-1", "points": 400, "text": "Wie nennt man ein Tier, das sowohl Pflanzen als auch Fleisch frisst?", "answer": "Allesfresser / Omnivore" },
+        { "id": "G-600-1", "points": 600, "text": "Wie wird eine Gruppe von Wildschweinen im Fachjargon genannt?", "answer": "eine Rotte" },
+        { "id": "G-800-1", "points": 800, "text": "Welches Tier kann als einziges Säugetier wirklich fliegen?", "answer": "Fledermaus" },
+        { "id": "G-1000-1", "points": 1000, "text": "Welches Tier kann sein Geschlecht im Laufe des Lebens wechseln?", "answer": "Clownfisch" }
+      ]
+    },
+    {
+      "title": "Filme/Serien",
+      "questions": [
+        { "id": "F-200-1", "points": 200, "text": "Wie heißt diese Serie?", "image": "bigbang.jpg", "answer": "The Big Bang Theory" },
+        { "id": "F-400-1", "points": 400, "text": "Zu welchem Film/welcher Filmreihe gehört dieser Soundtrack?", "audio": "jurassicparktheme.mp3", "answer": "Jurassic Park" },
+        { "id": "F-600-1", "points": 600, "text": "Wie heißt der Planet, auf dem die blauen Wesen aus Avatar leben?", "answer": "Pandora" },
+        { "id": "F-800-1", "points": 800, "text": "Nenne einen Film der 2010-2020 den Oscar für Bester Film gewonnen hat", "answer": "The Hurt Locker, The Kings Speech, The Artist, Argo, 12 Years a Slave, Birdman, Spotlight, Moonlight, The Shape of Water, Green Book, Parasite" },
+        { "id": "F-1000-1", "points": 1000, "text": "Aus welchem Film stammt dieser Screenshot?", "image": "walle.jpg", "answer": "Wall-E" }
+      ]
+    },
+    {
+      "title": "Sport",
+      "questions": [
+        { "id": "Y-200-1", "points": 200, "text": "Wie viele Spieler stehen beim Fußballspiel gleichzeitig auf dem Platz?", "answer": "22" },
+        { "id": "Y-400-1", "points": 400, "text": "Welche ist höchste Erreichbare Punktzahl, die beim Dart in einer Aufnahme (einer Runde) erzielt werden kann? ", "answer": "180" },
+        { "id": "Y-600-1", "points": 600, "text": "In welche Höhe soll ein Basketballkorb laut NBA vorgaben hängen?", "answer": "3,05m (5cm Toleranz)" },
+        { "id": "Y-800-1", "points": 800, "text": "Welcher Sport wird beim „Ironman“ kombiniert?", "answer": "Schwimmen, Radfahren, Laufen" },
+        { "id": "Y-1000-1", "points": 1000, "text": "Wie viele Goldmedaillen konnte Deutschland insgesamt während olympischer Spiele erringen? ", "answer": "613 (Toleranz 100)" }
+      ]
+    },
+    {
+      "title": "Logos",
+      "questions": [
+        { "id": "B-200-1", "points": 200, "text": "Zu welchem Unternehmen gehört dieses Logo?", "image": "youtube.jpg", "answer": "Google (YouTube)" },
+        { "id": "B-400-1", "points": 400, "text": "Was bedeutet der orangene Teil in diesem Logo?", "image": "amazon.jpg", "answer": "Er symbolisiert das große Produktsortiment, das von A bis Z reicht, und er stellt gleichzeitig ein Lächeln dar, das die Kundenzufriedenheit repräsentiert." },
+        { "id": "B-600-1", "points": 600, "text": "Zu welchem Unternehmen gehört dieses Logo?", "image": "airbnb.jpg","answer": "Airbnb" },
+        { "id": "B-800-1", "points": 800, "text": "Wie heißt dieser Vogel?", "image": "twitter.jpg", "answer": "Larry" },
+        { "id": "B-1000-1", "points": 1000, "text": "Zu welcher Marke gehört dieses Logo?", "image": "mitsubishi.jpg", "answer": "Mitsubishi" }
+      ]
+    }
+  ]
+}

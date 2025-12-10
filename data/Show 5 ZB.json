@@ -1,0 +1,19 @@
+{
+  "settings": {
+    "media_base": "media/",
+    "allow_steal": true
+  },
+  "players": ["Spieler 1", "Spieler 2", "Spieler 3"],
+  "categories": [
+    {
+      "title": "GRAMMANA",
+      "questions": [
+        { "id": "S-200-1", "points": 200, "text": "OOGGEL", "answer": "Google" },
+        { "id": "S-400-1", "points": 200, "text": "APNONLOE", "answer": "Napoleon" },
+        { "id": "S-600-1", "points": 200, "text": "HCI AMG GZEUE", "answer": "Ich mag Züge" },
+        { "id": "S-800-1", "points": 200, "text": "HCKAHCNEIN", "answer": "KANINCHEN" },
+        { "id": "S-1000-1", "points": 200, "text": "TAROLSWTA", "answer": "Wortsalat" }
+      ]
+    }
+  ]
+}

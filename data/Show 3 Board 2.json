@@ -1,0 +1,59 @@
+{
+  "settings": {
+    "media_base": "media/",
+    "allow_steal": true
+  },
+  "players": ["Spieler 1", "Spieler 2", "Spieler 3"],
+  "categories": [
+    {
+      "title": "Zahlen bitte!",
+      "questions": [
+        { "id": "S-200-1", "points": 200, "text": "Wie viele Tage hat ein Schaltjahr?", "answer": "366" },
+        { "id": "S-400-1", "points": 400, "text": "Wie viele Planeten hat unser Sonnensystem?", "answer": "8" },
+        { "id": "S-600-1", "points": 600, "text": "In welchem Jahr gewann Deutschland zum ersten Mal die Fußball-Weltmeisterschaft?", "answer": "1954" },
+        { "id": "S-800-1", "points": 800, "text": "Wie viele Sterne befinden sich auf der Flagge der Europäischen Union?", "answer": "12" },
+        { "id": "S-1000-1", "points": 1000, "text": "In welchem Jahr wurde der Euro (als Bargeld) in Deutschland eingeführt?", "answer": "2002" }
+      ]
+    },
+    {
+      "title": "Filme",
+      "questions": [
+        { "id": "G-200-1", "points": 200, "text": "", "answer": "Mission Impossible", "image": "Mission Impossible.png" },
+        { "id": "G-400-1", "points": 400, "text": "", "answer": "Herr der Ringe", "image": "Herr der Ringe.png" },
+        { "id": "G-600-1", "points": 600, "text": "", "answer": "Harry Potter", "image": "Harry Potter.png" },
+        { "id": "G-800-1", "points": 800, "text": "", "answer": "Trueman Show", "image": "Trueman Show.png" },
+        { "id": "G-1000-1", "points": 1000, "text": "", "answer": "Forrest Gump", "image": "Forrest Gump.png" }
+      ]
+    },
+    {
+      "title": "Lyrics",
+      "questions": [
+        { "id": "F-200-1", "points": 200, "text": "Is this the real life? Is this just fantasy?", "answer": "Bohemian Rhapsody, Queen" },
+        { "id": "F-400-1", "points": 400, "text": "Monika, Sarah, Belinda von Instagram auf meine Guestlist", "answer": "Ohne mein Team, 187" },
+        { "id": "F-600-1", "points": 600, "text": "Die Zeit ist rasend schnell verspielt und das Glück muss man jagen", "answer": "Stadt, Cassandra Steen" },
+        { "id": "F-800-1", "points": 800, "text": "Private Spa auf vier Etagen, in Champagner-Becken baden", "answer": "Wildberry Lillet, Nina Chuba" },
+        { "id": "F-1000-1", "points": 1000, "text": "Sie werden nicht verwöhnt, die müssen Fertigsuppe löffeln. Und die spielen mit vom Körperbau entfernten Puppenköpfen.", "answer": "Willst du, Alligatoah" }
+      ]
+    },
+    {
+      "title": "Wer bin ich?",
+      "questions": [
+        { "id": "Y-200-1", "points": 200, "text": "Ich wohne in Springfield und fahre gerne Skateboard", "answer": "Bart Simpson" },
+        { "id": "Y-400-1", "points": 400, "text": "Ich wurde 1958 in Gary, Indiana geboren… Ich war Teil einer Familienband… Mein Album ist das meistverkaufte der Welt.", "answer": "Michael Jackson" },
+        { "id": "Y-600-1", "points": 600, "text": "Ich bin Milliardär, Erfinder und Superheld", "answer": "Iron Man, Tony Stark" },
+        { "id": "Y-800-1", "points": 800, "text": "Ich bin Komponist, der trotz Taubheit Meisterwerke schrieb.", "answer": "Ludwig van Beethoven" },
+        { "id": "Y-1000-1", "points": 1000, "text": "Ich war Wissenschaftler, Theologe und Alchemist. Ich erfand ein Teleskop mit Spiegeln statt Linsen. Ich formulierte drei Bewegungsgesetze.", "answer": "Isaac Newton" }
+      ]
+    },
+    {
+      "title": "Werbeslogans",
+      "questions": [
+        { "id": "B-200-1", "points": 200, "text": "Quadratisch. Praktisch. Gut.", "answer": "Ritter Sport" },
+        { "id": "B-400-1", "points": 400, "text": "Just Do It", "answer": "Nike" },
+        { "id": "B-600-1", "points": 600, "text": "Weil ich es mir wert bin.", "answer": "L Oréal" },
+        { "id": "B-800-1", "points": 800, "text": "Nichts ist so schön wie das Original.", "answer": "Nutella" },
+        { "id": "B-1000-1", "points": 1000, "text": "Heute bleibt die Küche kalt.", "answer": "Maggi" }
+      ]
+    }
+  ]
+}

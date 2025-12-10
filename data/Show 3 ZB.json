@@ -1,0 +1,19 @@
+{
+  "settings": {
+    "media_base": "media/",
+    "allow_steal": true
+  },
+  "players": ["Spieler 1", "Spieler 2", "Spieler 3"],
+  "categories": [
+    {
+      "title": "GRAMMANA",
+      "questions": [
+        { "id": "S-200-1", "points": 200, "text": "NETAK", "answer": "Akten" },
+        { "id": "S-400-1", "points": 200, "text": "RLWAEKTTE", "answer": "Weltkarte" },
+        { "id": "S-600-1", "points": 200, "text": "BIG IMR TTBEI IEENN KREOJ", "answer": "Gib mir bitte einen Joker" },
+        { "id": "S-800-1", "points": 200, "text": "IKEN KHAOLLO ROV DRE HEE", "answer": "Kein Alkohol vor der Ehe" },
+        { "id": "S-1000-1", "points": 200, "text": "TAROLSWTA", "answer": "Wortsalat" }
+      ]
+    }
+  ]
+}

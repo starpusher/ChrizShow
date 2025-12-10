@@ -1,0 +1,59 @@
+{
+  "settings": {
+    "media_base": "media/",
+    "allow_steal": true
+  },
+  "players": ["Spieler 1", "Spieler 2", "Spieler 3"],
+  "categories": [
+    {
+      "title": "FF15",
+      "questions": [
+        { "id": "S-200-1", "points": 200, "text": "Auf welcher Lane wird der Champion Ashe normalerweise gespielt?", "answer": "Botlane, ADC" },
+        { "id": "S-400-1", "points": 400, "text": "Ich bin ein Ninja-Assassine, der mit Schatten kämpft und mit meiner Ult hinter Gegner teleportiert. Wer bin ich?", "answer": "Zed" },
+        { "id": "S-600-1", "points": 600, "text": "Ich bin eine Magierin, die mit ihrer Ult ihren riesigen Bären beschwören kann. Wer bin ich?", "answer": "Annie" },
+        { "id": "S-800-1", "points": 800, "text": "Ich bin eine Magierin aus Noxus, bekannt dafür, mich selbst zu kopieren und Gegner mit Illusionen zu verwirren. Wer bin ich?", "answer": "LeBlanc" },
+        { "id": "S-1000-1", "points": 1000, "text": "Welches klassische Item, das Champions Mana-Regeneration und Fähigkeitsstärke gab, wurde 2021 aus dem Spiel entfernt?", "answer": "Athene's Unholy Grail" }
+      ]
+    },
+    {
+      "title": "Maincharaktervibes",
+      "questions": [
+        { "id": "G-200-1", "points": 200, "text": "Marty McFly, Doc Brown, Biff Tannen", "answer": "Zurück in die Zukunft" },
+        { "id": "G-400-1", "points": 400, "text": "Neo, Morpheus, Trinity", "answer": "Matrix" },
+        { "id": "G-600-1", "points": 600, "text": "Jack Dawson, Rose DeWitt Bukater, Caledon Hockley", "answer": "Titanic" },
+        { "id": "G-800-1", "points": 800, "text": "Tyler Durden, Marla Singer, Der Erzähler", "answer": "Fight Club" },
+        { "id": "G-1000-1", "points": 1000, "text": "Alan Grant, Ellie Sattler, Ian Malcolm", "answer": "Jurassic Park" }
+      ]
+    },
+    {
+      "title": "Homo",
+      "questions": [
+        { "id": "F-200-1", "points": 200, "text": "Wie viele Zähne haben Kinder und wie viele haben Erwachsene?", "answer": "20 und 32" },
+        { "id": "F-400-1", "points": 400, "text": "Welche Körperteile wachsen ein Leben lang?", "answer": "Nase und Ohren" },
+        { "id": "F-600-1", "points": 600, "text": "Wie oft atmet ein Mensch in Ruhezustand pro Minute ungefähr?", "answer": "12-18 Mal" },
+        { "id": "F-800-1", "points": 800, "text": "Wie ist der Fachbegriff für das Schlüsselbein?", "answer": "Clavicula" },
+        { "id": "F-1000-1", "points": 1000, "text": "Wie heißt der längste Knochen im menschlichen Körper?", "answer": "Femur, also der Oberschenkelknochen" }
+      ]
+    },
+    {
+      "title": "Dideldum",
+      "questions": [
+        { "id": "Y-200-1", "points": 200, "text": "Numb, In the end, What I've Done", "answer": "Linkin Park" },
+        { "id": "Y-400-1", "points": 400, "text": "Viva la Vida, Paradise, Yellow", "answer": "Coldplay" },
+        { "id": "Y-600-1", "points": 600, "text": "Cheap Thrills, Unstoppable, Never Give Up", "answer": "Sia" },
+        { "id": "Y-800-1", "points": 800, "text": "Shot, Ich bin ein Berliner, Stay High", "answer": "Ufo361" },
+        { "id": "Y-1000-1", "points": 1000, "text": "Snow, Scar Tissue, Under the Bridge", "answer": "Red Hot Chili Peppers" }
+      ]
+    },
+    {
+      "title": "Würze des Lebens",
+      "questions": [
+        { "id": "B-200-1", "points": 200, "text": "Was ist der Hauptbestandteil von Pesto Genovese?", "answer": "Basilikum" },
+        { "id": "B-400-1", "points": 400, "text": "Welches Gewürz färbt Paella und Risotto gelb?", "answer": "Safran" },
+        { "id": "B-600-1", "points": 600, "text": "Aus welcher Pflanze wird Vanille gewonnen?", "answer": "Orchidee" },
+        { "id": "B-800-1", "points": 800, "text": "Welches Gewürz ist die getrocknete Wurzel einer tropischen Pflanze und verleiht Speisen eine zitronige Schärfe?", "answer": "Ingwer" },
+        { "id": "B-1000-1", "points": 1000, "text": "Welches Gewürz verleiht Cola ihre charakteristische Note?", "answer": "Zimt" }
+      ]
+    }
+  ]
+}

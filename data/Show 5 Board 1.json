@@ -1,0 +1,59 @@
+{
+  "settings": {
+    "media_base": "media/",
+    "allow_steal": true
+  },
+  "players": ["Spieler 1", "Spieler 2", "Spieler 3"],
+  "categories": [
+    {
+      "title": "Zurück in die Schule",
+      "questions": [
+        { "id": "S-200-1", "points": 100, "text": "Welches chemische Element hat das Symbol „Al“?", "answer": "Aluminium" },
+        { "id": "S-400-1", "points": 200, "text": "Wie lautet die erste binomische Formel", "answer": "(a+b)² = a² + 2ab + b²" },
+        { "id": "S-600-1", "points": 300, "text": "Nenne mir eins der beiden Elemente, welche bei Raumtemperatur flüssig sind", "answer": "Quecksilber/Brom" },
+        { "id": "S-800-1", "points": 400, "text": "Wie heißt die zweite Steigerungsform?", "answer": "Komparativ" },
+        { "id": "S-1000-1", "points": 500, "text": "Was versteht man unter der Fibonacci-Folge?", "answer": "Die Fibonacci-Folge ist eine Zahlenfolge, bei der jede Zahl die Summe der beiden vorherigen ist, beginnend mit 0 und 1." }
+      ]
+    },
+    {
+      "title": "tierisch gut",
+      "questions": [
+        { "id": "G-200-1", "points": 100, "text": "Welches Tier sagt man, hat „neun Leben“?", "answer": "Katze" },
+        { "id": "G-400-1", "points": 200, "text": "Wie nennt man das männliche Pferd?", "answer": "Hengst" },
+        { "id": "G-600-1", "points": 300, "text": "Wie sehen Fledermäuse im Dunkeln?", "answer": "Echoortung" },
+        { "id": "G-800-1", "points": 400, "text": "Wie heißt die Tiergruppe, zu der Frösche, Salamander und Molche gehören?", "answer": "Amphibien" },
+        { "id": "G-1000-1", "points": 500, "text": "Wie viele Herzen und Gehirne hat ein Octopus?", "answer": "3 Herzen & 9 Gehirne (1 Toleranz?)" }
+      ]
+    },
+    {
+      "title": "Logos",
+      "questions": [
+        { "id": "F-200-1", "points": 100, "text": "", "image": "mercedes.jpg", "answer": "Mercedes-Benz" },
+        { "id": "F-400-1", "points": 200, "text": "", "image": "tesla.jpg", "answer": "Tesla" },
+        { "id": "F-600-1", "points": 300, "text": "", "image": "wwf.jpg", "answer": "WWF" },
+        { "id": "F-800-1", "points": 400, "text": "", "image": "tui.jpg", "answer": "Tui" },
+        { "id": "F-1000-1", "points": 500, "text": "", "image": "commerzbank.jpg", "answer": "Commerzbank" }
+      ]
+    },
+    {
+      "title": "Kartenkunde",
+      "questions": [
+        { "id": "Y-200-1", "points": 100, "text": "Welcher Ozean liegt östlich der USA?", "answer": "Atlantischer Ozean" },
+        { "id": "Y-400-1", "points": 200, "text": "Wie viele Zeitzonen gibt es weltweit?", "answer": "24" },
+        { "id": "Y-600-1", "points": 300, "text": "Wie heißt die Gedachte Linie, die von Norden nach Süden über den Globus durch Greenwich bei London verläuft?", "answer": "Nullmeridian" },
+        { "id": "Y-800-1", "points": 400, "text": "Wie heißt der längste Fluss Europas?", "answer": "Wolga" },
+        { "id": "Y-1000-1", "points": 500, "text": "Welches Land hat die meisten Nachbarländer der Welt?", "answer": "China (14)" }
+      ]
+    },
+    {
+      "title": "Emoji mir mal einen Film/Song",
+      "questions": [
+        { "id": "B-200-1", "points": 100, "text": "🐒🌍", "answer": "Planet der Affen" },
+        { "id": "B-400-1", "points": 200, "text": "🍫🏭👦", "answer": "Charlie und die Schokoladenfabrik" },
+        { "id": "B-600-1", "points": 300, "text": "☔👠🎤", "answer": "Singing in the Rain" },
+        { "id": "B-800-1", "points": 400, "text": "🚗🔥⏰", "answer": "Zurück in die Zukunft" },
+        { "id": "B-1000-1", "points": 500, "text": "🌪️👠🐶🌈", "answer": "Der Zauberer von OZ" }
+      ]
+    }
+  ]
+}

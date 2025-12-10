@@ -1,0 +1,59 @@
+{
+  "settings": {
+    "media_base": "media/",
+    "allow_steal": true
+  },
+  "players": ["Spieler 1", "Spieler 2", "Spieler 3"],
+  "categories": [
+    {
+      "title": "Geschwurbel",
+      "questions": [
+        { "id": "S-200-1", "points": 100, "text": "Wer sind die beiden Originale?", "image": "jokoklaas.png","answer": "Joko & Klaas","answer_images": ["joko.png","klaas.png"]},
+        { "id": "S-400-1", "points": 200, "text": "Wer sind die beiden Originale?", "image": "therockvindiesel.png","answer": "Vin Diesel & The Rock","answer_images": ["vindiesel.jpg","therock.jpg"]},
+        { "id": "S-600-1", "points": 300, "text": "Wer sind die beiden Originale?", "image": "merkelladygaga.png","answer": "Merkel & Lady Gaga","answer_images": ["merkel.jpg","ladygaga.jpg"]},
+        { "id": "S-800-1", "points": 400, "text": "Wer sind die beiden Originale?", "image": "sheldonwillsmith.png","answer": "Sheldon & Will Smith","answer_images": ["sheldon.jpg","willsmith.jpg"]},
+        { "id": "S-1000-1", "points": 500, "text": "Wer sind die beiden Originale?", "image": "elonmuskdieterbohlen.png","answer": "Elon Musk & Dieter Bohlen","answer_images": ["elonmusk.jpg","dieterbohlen.jpg"]}
+      ]
+    },
+    {
+      "title": "Fasse dich kurz",
+      "questions": [
+        { "id": "G-200-1", "points": 100, "text": "MfG", "answer": "Mit freundlichen Grüßen" },
+        { "id": "G-400-1", "points": 200, "text": "asap", "answer": "as soon as possible" },
+        { "id": "G-600-1", "points": 300, "text": "FAQ", "answer": "Frequently Asked Questions" },
+        { "id": "G-800-1", "points": 400, "text": "PS (Brief)", "answer": "Postskriptum" },
+        { "id": "G-1000-1", "points": 500, "text": "NASA", "answer": "National Aeronautics and Space Administration" }
+      ]
+    },
+    {
+      "title": "Mampfi",
+      "questions": [
+        { "id": "F-200-1", "points": 100, "text": "Woraus wird Guacamole hauptsächlich gemacht?", "answer": "Avocado" },
+        { "id": "F-400-1", "points": 200, "text": "Welche Pasta-Sorte ist spiralförmig gedreht?", "answer": "Fusilli" },
+        { "id": "F-600-1", "points": 300, "text": "Welches Gewürz stammt von der getrockneten Blüte einer tropischen Pflanze und zählt zu den teuersten der Welt?", "answer": "Safran" },
+        { "id": "F-800-1", "points": 400, "text": "Welches Land ist der größte Kaffeeproduzent der Welt?", "answer": "Brasilien" },
+        { "id": "F-1000-1", "points": 500, "text": "Wie nennt man den Vorgang, bei dem Milch zu Joghurt wird?", "answer": "Fermentation" }
+      ]
+    },
+    {
+      "title": "Down Under",
+      "questions": [
+        { "id": "Y-200-1", "points": 100, "text": "Wo liegt Australien?", "image": "weltkarte.jpg", "answer": "unten rechts" },
+        { "id": "Y-400-1", "points": 200, "text": "Wie heißt das größte Korallenriffsystem der Erde?", "answer": "Great Barrier Reef" },
+        { "id": "Y-600-1", "points": 300, "text": "Was ist das?", "image": "uluru.jpg", "answer": "Ayers Rock bzw. Uluru" },
+        { "id": "Y-800-1", "points": 400, "text": "Wie heißt die Ureinwohnerbevölkerung Australiens?", "answer": "Aborigines" },
+        { "id": "Y-1000-1", "points": 500, "text": "Wie nennt man das trockene, dünn besiedelte Landesinnere Australiens?", "answer": "Outback" }
+      ]
+    },
+    {
+      "title": "Sprachen",
+      "questions": [
+        { "id": "B-200-1", "points": 100, "text": "In welchem Land sagt man Ciao zur Begrüßung?", "answer": "Italien" },
+        { "id": "B-400-1", "points": 200, "text": "Welche Sprache hat die meisten Muttersprachler weltweit?", "answer": "Chinesisch (Mandarin)" },
+        { "id": "B-600-1", "points": 300, "text": "Wie nennt man die Sprache, die in Brasilien gesprochen wird?", "answer": "Portugiesisch" },
+        { "id": "B-800-1", "points": 400, "text": "Aus welcher Sprache stammen die Wörter „Karaoke“ und „Emoji“?", "answer": "Japanisch" },
+        { "id": "B-1000-1", "points": 500, "text": "Wie viele offizielle Sprachen hat die Schweiz?", "answer": "Vier (Deutsch, Französisch, Italienisch, Rätoromanisch)" }
+      ]
+    }
+  ]
+}

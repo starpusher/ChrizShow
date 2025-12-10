@@ -1,0 +1,59 @@
+{
+  "settings": {
+    "media_base": "media/",
+    "allow_steal": true
+  },
+  "players": ["Spieler 1", "Spieler 2", "Spieler 3"],
+  "categories": [
+    {
+      "title": "Zurück in die Schule",
+      "questions": [
+        { "id": "S-200-1", "points": 100, "text": "Welche Aggregatzustände gibt es?", "answer": "fest, flüssig, gasförmig(, Plasma)" },
+        { "id": "S-400-1", "points": 200, "text": "Wie nennt man das Ergebnis einer Multiplikation?", "answer": "Produkt" },
+        { "id": "S-600-1", "points": 300, "text": "Welches chemische Element hat das Symbol „Fe“?", "answer": "Eisen" },
+        { "id": "S-800-1", "points": 400, "text": "Wie ist die Formel zur Berechnung der Kreisfläche?", "answer": "A = π · r²" },
+        { "id": "S-1000-1", "points": 500, "text": "In welchem Jahr begann die franzäsische Revolution?", "answer": "1789" }
+      ]
+    },
+    {
+      "title": "Merschen",
+      "questions": [
+        { "id": "G-200-1", "points": 100, "text": "Ein Mädchen verletzt sich an einem Küchengerät und fällt ins Koma.", "answer": "Dornröschen" },
+        { "id": "G-400-1", "points": 200, "text": "Eine arme Familie lässt ihre Kinder allein im Wald, um Geld zu sparen.", "answer": "Hänsel und Gretel" },
+        { "id": "G-600-1", "points": 300, "text": "Ein Mädchen hat aggressive Mitbewohner, die alle den gleichen Nachnamen haben.", "answer": "Schneewittchen und die sieben Zwerge" },
+        { "id": "G-800-1", "points": 400, "text": "Ein Junge bekommt ein Haustier, das besser reden kann als er selbst.", "answer": "Der gestiefelte Kater" },
+        { "id": "G-1000-1", "points": 500, "text": "Ein Typ klettert ohne Genehmigung auf fremdes Eigentum, klaut Gemüse und am Ende heiratet seine Tochter einen fremden Typen, weil sie sonst keinen kennt.", "answer": "Rapunzel" }
+      ]
+    },
+    {
+      "title": "Synchronisation bitte!",
+      "questions": [
+        { "id": "F-200-1", "points": 100, "text": "", "answer": "Jack Sparrow", "audio": "Jack Sparrow.mp3" },
+        { "id": "F-400-1", "points": 200, "text": "", "answer": "Joker", "audio": "Joker.mp3" },
+        { "id": "F-600-1", "points": 300, "text": "", "answer": "Tyrion Lannister", "audio": "Tyrion Lannister.mp3" },
+        { "id": "F-800-1", "points": 400, "text": "", "answer": "John Wick", "audio": "John Wick.mp3" },
+        { "id": "F-1000-1", "points": 500, "text": "", "answer": "Santa Maria", "audio": "Santa Maria.mp3" }
+      ]
+    },
+    {
+      "title": "Geografie",
+      "questions": [
+        { "id": "Y-200-1", "points": 100, "text": "Welcher Kontinent liegt südlich von Europa?", "answer": "Afrika" },
+        { "id": "Y-400-1", "points": 200, "text": "Wie heißt der längste Fluss der Welt?", "answer": "Nil oder Amazonas" },
+        { "id": "Y-600-1", "points": 300, "text": "Welcher Ozean liegt zwischen Afrika und Australien?", "answer": "Indischer Ozean" },
+        { "id": "Y-800-1", "points": 400, "text": "Wie hoch ist der Mount Everest?", "answer": "8848 Meter" },
+        { "id": "Y-1000-1", "points": 500, "text": "Welche Stadt liegt auf zwei Kontinenten?", "answer": "Istanbul" }
+      ]
+    },
+    {
+      "title": "Undercover",
+      "questions": [
+        { "id": "B-200-1", "points": 100, "text": "Marshall Bruce Mathers", "answer": "Eminem" },
+        { "id": "B-400-1", "points": 200, "text": "Clark Kent", "answer": "Superman" },
+        { "id": "B-600-1", "points": 300, "text": "Paul Hartmut Würdig", "answer": "Sido" },
+        { "id": "B-800-1", "points": 400, "text": "Calvin Cordozar Broadus Jr.", "answer": "Snoop Dogg" },
+        { "id": "B-1000-1", "points": 500, "text": "Richard Starkey", "answer": "Ringo Starr" }
+      ]
+    }
+  ]
+}

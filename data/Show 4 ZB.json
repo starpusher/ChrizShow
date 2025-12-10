@@ -1,0 +1,19 @@
+{
+  "settings": {
+    "media_base": "media/",
+    "allow_steal": true
+  },
+  "players": ["Spieler 1", "Spieler 2", "Spieler 3"],
+  "categories": [
+    {
+      "title": "GRAMMANA",
+      "questions": [
+        { "id": "S-200-1", "points": 200, "text": "OMOLRBRA", "answer": "Marlboro" },
+        { "id": "S-400-1", "points": 200, "text": "STPAAHWP", "answer": "WhatsApp" },
+        { "id": "S-600-1", "points": 200, "text": "IKEN KALOHOL STI AHCU IEEKN GSEOLNU", "answer": "Kein Alkohol ist auch keine Loesung" },
+        { "id": "S-800-1", "points": 200, "text": "DEI TSBEE WHIZOQSUH STI EID HHSSWOIRC", "answer": "Die beste Quizshow ist die Chrisshow" },
+        { "id": "S-1000-1", "points": 200, "text": "TTHSGIPAE", "answer": "Spaghetti" }
+      ]
+    }
+  ]
+}

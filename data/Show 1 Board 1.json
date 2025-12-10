@@ -1,0 +1,59 @@
+{
+  "settings": {
+    "media_base": "media/",
+    "allow_steal": true
+  },
+  "players": ["Spieler 1", "Spieler 2", "Spieler 3"],
+  "categories": [
+    {
+      "title": "Level Up",
+      "questions": [
+        { "id": "S-200-1", "points": 100, "text": "Wie heißen die beiden Seiten in Among Us?", "answer": "Crewmates und Impostor" },
+        { "id": "S-400-1", "points": 200, "text": "Wie heißt der grüne Dino, auf dem Mario reitet?", "answer": "Yoshi" },
+        { "id": "S-600-1", "points": 300, "text": "Was wird in Minecraft aus einem Dorfbewohner, der vom Blitz getroffen wird?", "answer": "Hexe (Witch)" },
+        { "id": "S-800-1", "points": 400, "text": "Welche CS-Map hat die Areale Banane und Fuchsbau?", "answer": "Inferno" },
+        { "id": "S-1000-1", "points": 500, "text": "Wie heißt in PUB-G die geheime Insel, die nur mit einem Boot oder frühem Fallschirmsprung erreichbar ist?", "answer": "Spawn Island" }
+      ]
+    },
+    {
+      "title": "Shake it, Baby!",
+      "questions": [
+        { "id": "G-200-1", "points": 100, "text": "Rum + Cola + Limette", "answer": "Cuba Libre" },
+        { "id": "G-400-1", "points": 200, "text": "Weißer Rum + Kokoslikör + Ananassaft + Schlagsahne + Kokosmilch + Zucker", "answer": "Pina Colada" },
+        { "id": "G-600-1", "points": 300, "text": "Weißer Rum + Triple Sec + Wodka + Tequila + Gin + Limettensaft + Zuckersirup + Cola", "answer": "Long Island Iced Tea" },
+        { "id": "G-800-1", "points": 400, "text": "Wodka + Peach Tree + Zitronensaft + Grenadine + Orangensaft + Ananassaft", "answer": "Sex on the beach" },
+        { "id": "G-1000-1", "points": 500, "text": "Cranberrysaft + Wodka + Cointreau + Limettensaft", "answer": "Cosmopolitan" }
+      ]
+    },
+    {
+      "title": "aller Anfang ist schwer",
+      "questions": [
+        { "id": "F-200-1", "points": 100, "text": "Zu welcher Serie gehört dieses Intro?", "audio": "Serien_1.mp3", "answer": "How I Met Your Mother" },
+        { "id": "F-400-1", "points": 200, "text": "Zu welcher Serie gehört dieses Intro?", "audio": "Serien_2.mp3", "answer": "Haus des Geldes" },
+        { "id": "F-600-1", "points": 300, "text": "Zu welcher Serie gehört dieses Intro?", "audio": "Serien_3.mp3", "answer": "Wednesday" },
+        { "id": "F-800-1", "points": 400, "text": "Zu welcher Serie gehört dieses Intro?", "audio": "Serien_4.mp3", "answer": "Stranger Things" },
+        { "id": "F-1000-1", "points": 500, "text": "Zu welcher Serie gehört dieses Intro?", "audio": "Serien_5.mp3", "answer": "Prison Break" }
+      ]
+    },
+    {
+      "title": "Deutschland",
+      "questions": [
+        { "id": "Y-200-1", "points": 100, "text": "Welches Wahrzeichen in Berlin war früher Symbol der Teilung und heute ein Zeichen der Einheit?", "answer": "Brandenburger Tor" },
+        { "id": "Y-400-1", "points": 200, "text": "Wie viele verschiedene Euro-Banknoten gibt es?", "answer": "7" },
+        { "id": "Y-600-1", "points": 300, "text": "Was ist die Hauptstadt von Rheinland-Pfalz?", "answer": "Mainz" },
+        { "id": "Y-800-1", "points": 400, "text": "Was ist das und wo steht es?", "image": "Deutschland_4.jpg", "answer": "Schloss Neuschwanstein in Bayern" },
+        { "id": "Y-1000-1", "points": 500, "text": "Wie heißt das älteste vollständig erhaltene Bauwerk Deutschlands, das noch aus der Römerzeit stammt?", "answer": "Porta Nigra (Trier)" }
+      ]
+    },
+    {
+      "title": "Wo/Wer bin ich?",
+      "questions": [
+        { "id": "B-200-1", "points": 100, "text": "Welches Land zeigt die Stecknadel?", "image": "Länder_1.jpg", "answer": "" },
+        { "id": "B-400-1", "points": 200, "text": "Welches Land zeigt die Stecknadel", "image": "Länder_2.jpg", "answer": "" },
+        { "id": "B-600-1", "points": 300, "text": "Welches Land zeigt die Stecknadel", "image": "Länder_3.jpg", "answer": "" },
+        { "id": "B-800-1", "points": 400, "text": "Welches Land zeigt die Stecknadel", "image": "Länder_4.jpg", "answer": "" },
+        { "id": "B-1000-1", "points": 500, "text": "Welches Land zeigt die Stecknadel", "image": "Länder_5.jpg", "answer": "" }
+      ]
+    }
+  ]
+}

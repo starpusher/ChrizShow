@@ -1,0 +1,59 @@
+{
+  "settings": {
+    "media_base": "media/",
+    "allow_steal": true
+  },
+  "players": ["Spieler 1", "Spieler 2", "Spieler 3"],
+  "categories": [
+    {
+      "title": "Zahlen bitte!",
+      "questions": [
+        { "id": "S-200-1", "points": 200, "text": "Wie viele Sekunden hat eine Stunde?", "answer": "3600" },
+        { "id": "S-400-1", "points": 400, "text": "Wie viele Nullen hat eine Billion?", "answer": "12" },
+        { "id": "S-600-1", "points": 600, "text": "Wie alt wurde Mozart?", "answer": "1954" },
+        { "id": "S-800-1", "points": 800, "text": "In welchem Jahr wurde die Bundesrepublik Deutschland gegründet?", "answer": "1949" },
+        { "id": "S-1000-1", "points": 1000, "text": "In welchem Jahr wurde das Internet für die Öffentlichkeit freigegeben?", "answer": "1991 (Toleranz: 1 Jahr)" }
+      ]
+    },
+    {
+      "title": "Filme/Seiren",
+      "questions": [
+        { "id": "G-200-1", "points": 200, "text": "", "image": "Matrix.jpg", "answer": "Matrix" },
+        { "id": "G-400-1", "points": 400, "text": "", "image": "suits.jpg", "answer": "Suits" },
+        { "id": "G-600-1", "points": 600, "text": "", "audio": "wolfofwallstreet.mp3", "answer": "The Wolf of Wallstreet" },
+        { "id": "G-800-1", "points": 800, "text": "", "image": "breakingbad.jpg", "answer": "Breaking Bad" },
+        { "id": "G-1000-1", "points": 1000, "text": "", "image": "tributevonpanem.jpg", "answer": "Tribute von Panem" }
+      ]
+    },
+    {
+      "title": "Lyrics",
+      "questions": [
+        { "id": "F-200-1", "points": 200, "text": "Its been a long day without you, my friend", "answer": "See You Again, Wiz Khalifa feat. Charlie Puth" },
+        { "id": "F-400-1", "points": 400, "text": "Unter zwounddreißig sechzehn acht  Herrscht Konjunktur die ganze Nacht", "answer": "Skandal im Sperrbezirk, Spider Murphy Gang" },
+        { "id": "F-600-1", "points": 600, "text": "Auf deinen Heiligenschein fall ich auch nicht mehr rein", "answer": "Alles nur geklaut, die Prinzen" },
+        { "id": "F-800-1", "points": 800, "text": "I wanna hold 'em like they do in Texas, please  Fold 'em, let 'em hit me, raise it, baby, stay with me (I love it)", "answer": "Poker Face, Lady Gaga" },
+        { "id": "F-1000-1", "points": 1000, "text": "But it flew away from her reach and the bullets catch in her teeth   Life goes on, it gets so heavy   The wheel breaks the butterfly, every tear a waterfall", "answer": "Paradies, Coldplay" }
+      ]
+    },
+    {
+      "title": "Im Meer",
+      "questions": [
+        { "id": "Y-200-1", "points": 200, "text": "In welchem Tier kann man Perlen finden?", "answer": "Muschel" },
+        { "id": "Y-400-1", "points": 400, "text": "Welches Tier kann Stromstöße zur Verteidigung abgeben?", "answer": "Zitteraal" },
+        { "id": "Y-600-1", "points": 600, "text": "Wie heißt die größte Haiart der Welt?", "answer": "Walhai" },
+        { "id": "Y-800-1", "points": 800, "text": "Wie tief ist der Marianengraben?", "answer": "10984 Meter (Toleranz 500 Meter)" },
+        { "id": "Y-1000-1", "points": 1000, "text": "Wie hoch ist der Salzgehalt, des toten Meeres?", "answer": "ca. 30% (Toleranz: gerundet)" }
+      ]
+    },
+    {
+      "title": "Merschen",
+      "questions": [
+        { "id": "B-200-1", "points": 200, "text": "Eine Frau verliert ihr Schuhwerk auf einer Party und keiner merkt es, außer dem Gastgeber", "answer": "Cinderella / Aschenputtel" },
+        { "id": "B-400-1", "points": 400, "text": "Eine Frau redet mit einem Spiegel über ihr Ego", "answer": "Schneewittchen" },
+        { "id": "B-600-1", "points": 600, "text": "Eine junge Frau verliebt sich in ein Tier mit Wutproblemen", "answer": "Die Schöne und das Biest" },
+        { "id": "B-800-1", "points": 800, "text": "Ein Mann bastelt sich einen Sohn, weil Tinder noch nicht erfunden war", "answer": "Pinocchio" },
+        { "id": "B-1000-1", "points": 1000, "text": "Jemand lebt konsequent im Verdrängungsmodus,um der Realität zu entfliehen und wird morgens von einem Reptil geweckt", "answer": "Peter Pan" }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,59 @@
+{
+  "settings": {
+    "media_base": "media/",
+    "allow_steal": true
+  },
+  "players": ["Spieler 1", "Spieler 2", "Spieler 3"],
+  "categories": [
+    {
+      "title": "Zoom mal ran",
+      "questions": [
+        { "id": "S-200-1", "points": 200, "text": "", "image": "Erdbeere.jpg", "answer": "Erdbeere" },
+        { "id": "S-400-1", "points": 400, "text": "", "image": "Bienenwabe.jpg", "answer": "Bienenwabe" },
+        { "id": "S-600-1", "points": 600, "text": "", "image": "Pizzakruste.jpg", "answer": "Pizzakruste" },
+        { "id": "S-800-1", "points": 800, "text": "", "image": "Lautsprecher.jpg", "answer": "Lautsprecher(-abdeckung)" },
+        { "id": "S-1000-1", "points": 1000, "text": "", "image": "Fingerabdruck.jpg", "answer": "Fingerabdruck" }
+      ]
+    },
+    {
+      "title": "Weltrekorde",
+      "questions": [
+        { "id": "G-200-1", "points": 200, "text": "Welches Tier ist das schnellste im Sturzflug?", "answer": "Wanderfalke" },
+        { "id": "G-400-1", "points": 400, "text": "Welches Tier hat den längsten Winterschlaf?", "answer": "Siebenschläfer (bis zu 11 Monate)" },
+        { "id": "G-600-1", "points": 600, "text": "Welche Stadt ist die am häufigsten besuchte der Welt?", "answer": "Bangkok" },
+        { "id": "G-800-1", "points": 800, "text": "Wer hält den Rekord für die meisten Instagram-Follower weltweit?", "answer": "Cristiano Ronaldo" },
+        { "id": "G-1000-1", "points": 1000, "text": "Welche Spinne besitzt den stärksten Giftbiss gemessen an der Wirkung auf Menschen?", "answer": "Trichternetzspinne" }
+      ]
+    },
+    {
+      "title": "Allgemeinwissen",
+      "questions": [
+        { "id": "F-200-1", "points": 200, "text": "Wie heißt die Hauptstadt der Schweiz?", "answer": "Bern" },
+        { "id": "F-400-1", "points": 400, "text": "Wie heißt die erste erfolgreiche Tierspezies, die bewusst von Menschen ins All geschickt wurde?", "answer": "Die Hündin Laika" },
+        { "id": "F-600-1", "points": 600, "text": "Wie lautet der längste Fluss Europas?", "answer": "Wolga" },
+        { "id": "F-800-1", "points": 800, "text": "Welches Metall leitet Strom am besten?", "answer": "Silber" },
+        { "id": "F-1000-1", "points": 1000, "text": "Welches europäische Land hat die älteste noch bestehende Monarchie?", "answer": "Dänemark" }
+      ]
+    },
+    {
+      "title": "Mathe",
+      "questions": [
+        { "id": "Y-200-1", "points": 200, "text": "Wie heißt die Lehre von Wahrscheinlichkeiten?", "answer": "Stochastik" },
+        { "id": "Y-400-1", "points": 400, "text": "Welche Primzahl ist die größte unter 100?", "answer": "97" },
+        { "id": "Y-600-1", "points": 600, "text": "Wie viele Sekunden hat ein Tag", "answer": "86 400" },
+        { "id": "Y-800-1", "points": 800, "text": "Wie nennt man eine Zahl mit unendlich vielen Nachkommastellen ohne Wiederholung?", "answer": "Irrationale Zahl" },
+        { "id": "Y-1000-1", "points": 1000, "text": "Eine ... ist eine gerade Linie, die in einem bestimmten Punkt senkrecht (im 90-Grad-Winkel) auf einer anderen Linie oder einem geometrischen Objekt steht", "answer": "Normale" }
+      ]
+    },
+    {
+      "title": "Lyrics",
+      "questions": [
+        { "id": "B-200-1", "points": 200, "text": "I hear her voice in the mornin' hour, she calls me   The radio reminds me of my home far away", "answer": "Take Me Home, Country Roads" },
+        { "id": "B-400-1", "points": 400, "text": "I'm sittin' here, I missed the power   I'd like to go out, takin' a shower   But there's a heavy cloud inside my head   I feel so tired, put myself into bed", "answer": "Lemon Tree" },
+        { "id": "B-600-1", "points": 600, "text": "My shadow's the only one that walks beside me   My shallow heart's the only thing that's beating   Sometimes, I wish someone out there will find me   'Til then, I walk alone", "answer": "Boulevard of Broken Dreams" },
+        { "id": "B-800-1", "points": 800, "text": "Komm wir fahren in den moosbedeckten   Hallen im Reichstag ein Bürostuhlwettrennen", "answer": "Hurra die Welt geht unter" },
+        { "id": "B-1000-1", "points": 1000, "text": "Und ich frage mich: Wann werd' ich, werd' ich berühmt sein   So wie Rio, mein König für die Ewigkeit?", "answer": "Lieder" }
+      ]
+    }
+  ]
+}
