@@ -1,7 +1,14 @@
 :root{
-  --bg:#0b0b12;--panel:#17172a;--accent:#9b6bff;--text:#f4f5f9;--muted:#9aa0b4;
-  --ok:#3fbf6c;--bad:#ff5c74;--glow:#b693ff;
+  --bg:#050612;
+  --panel:#151528;
+  --accent:#b58cff;
+  --text:#f7f7ff;
+  --muted:#a0a6c4;
+  --ok:#3dd68c;
+  --bad:#ff6b8b;
+  --glow:#d3acff;
 }
+
 *{box-sizing:border-box}
 body{
   margin:0;color:var(--text);font:16px/1.45 system-ui;
