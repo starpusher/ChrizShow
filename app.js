@@ -736,7 +736,7 @@ function setupRemoteListener() {
         let stateRemote = {};
         let dataRemote = null;
         try { stateRemote = JSON.parse(raw.stateJson || '{}'); } catch(e) { stateRemote = {}; }
-        try { dataRemote = raw.dataJson ? JSON.parse(raw.dataJson) : null; } catch(e) { dataRemote = null; }
+        try { /* dataJson removed */ dataRemote = null; } catch(e) { dataRemote = null; }
         payload = {
           state: stateRemote,
           data: dataRemote || data
@@ -941,7 +941,7 @@ function sendSync() {
       const roomRef = window.db.collection('rooms').doc(remoteRoomId);
       const docData = {
         stateJson: JSON.stringify(stateForWire),
-        dataJson: JSON.stringify(data),
+        boardUrl: localStorage.getItem("quiz_board_file"),
         updatedAt: Date.now()
       };
       roomRef.set(docData);
