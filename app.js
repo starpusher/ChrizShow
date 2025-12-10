@@ -954,11 +954,6 @@ function sendSync() {
     });
   }
 }
-   catch (e) {
-      console.warn('Remote-Sync fehlgeschlagen', e);
-    }
-  }
-}
 function sendScores(){ send('SCORES', { scores: state.scores }); }
 function sendTurn(){ send('TURN', { turn: state.turn }); }
 function fx(type){
