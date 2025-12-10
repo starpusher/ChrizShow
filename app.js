@@ -936,17 +936,24 @@ function sendSync() {
     data
   };
 
-  // lokal an andere Tabs (selber Browser)
+   // lokal an andere Tabs (selber Browser)
   send('SYNC_STATE', payload);
 
   // remote an Firestore, falls verfügbar
   if (role === 'host' && window.db) {
-    try {
-      const roomRef = window.db.collection('rooms').doc(remoteRoomId);
-      roomRef.set({
-        ...payload,
-        updatedAt: Date.now()
-      });
+    const roomRef = window.db.collection('rooms').doc(remoteRoomId);
+
+    // Alles in „reines JSON“ verwandeln, damit Firestore nichts Komisches sieht
+    const safePayload = JSON.parse(JSON.stringify(payload));
+
+    roomRef.set({
+      ...safePayload,
+      updatedAt: Date.now()
+    }).catch((e) => {
+      console.error('Remote-Sync fehlgeschlagen', e);
+    });
+  }
+}
     } catch (e) {
       console.warn('Remote-Sync fehlgeschlagen', e);
     }
