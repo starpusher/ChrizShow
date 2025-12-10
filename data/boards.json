@@ -13,5 +13,10 @@
     "id": "familie",
     "label": "Familienfeier",
     "file": "familie.json"
+  },
+  {
+    "id": "Teamedition 1 ZB",
+    "label": "Teamedition 1 ZB",
+    "file": "Teamedition 1 ZB.json"
   }
 ]
