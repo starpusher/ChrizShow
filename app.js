@@ -865,7 +865,7 @@ function saveState() {
   const payload = {
     players: state.players.map(p => ({ id: p.id, name: p.name, avatar: p.avatar || null, jokers: p.jokers })),
     scores: state.scores,
-    q: state.q,
+    q: {},
     used: Array.from(state.used),
     settings: state.settings,
     turn: state.turn,
@@ -920,7 +920,7 @@ function sendSync() {
   const stateForWire = {
     players: cleanPlayers,
     scores: state.scores,
-    q: state.q,
+    q: {},
     used: Array.from(state.used),
     settings: state.settings,
     turn: state.turn,
