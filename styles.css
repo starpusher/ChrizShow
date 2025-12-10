@@ -72,7 +72,7 @@ body.audience .brand .logo{ display:none }
 
 /* ===== Modal ===== */
 dialog::backdrop{background:rgba(0,0,0,.6)}
-.modal{min-width:60vw;max-width:960px;border-radius:16px;overflow:hidden}
+.modal{min-width:60vw;max-width:960px;border-radius:16px;overflow:hidden;background:var(--panel);color:var(--text);padding:1.5rem;}
 .qhead{display:flex;align-items:center;gap:.75rem}
 .qhead h3{margin-right:auto}
 .qpts{ opacity:.95; font-weight:700 }
@@ -179,3 +179,11 @@ body{
 .ansimg{ max-width:min(42%, 380px); max-height:36vh; border-radius:.6rem; border:1px solid #333; object-fit:cover; }
 
 [hidden]{display:none!important}
+
+/* ==== Quiz Modal dark theme tweaks ==== */
+.modal .answer,
+.answer {
+  background:#12121f;
+  color:var(--text);
+  border:1px solid rgba(255,255,255,0.1);
+}
