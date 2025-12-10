@@ -954,7 +954,7 @@ function sendSync() {
     });
   }
 }
-    } catch (e) {
+   catch (e) {
       console.warn('Remote-Sync fehlgeschlagen', e);
     }
   }
