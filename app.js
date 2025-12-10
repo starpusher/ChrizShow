@@ -110,15 +110,6 @@ if (els.answerImages && ((Array.isArray(imgs) && imgs.length >= 2) || (a1 && a2)
 if (!window.SFX_BASE.endsWith('/')) window.SFX_BASE += '/';
       Object.assign(state, { players: payload.state.players, scores: payload.state.scores, q: payload.state.q||{}, settings: payload.state.settings||{}, turn: payload.state.turn||0, current: payload.state.current || null });
       state.used = new Set(payload.state.used || []);
-      // FX-Events (correct/wrong) über State synchronisieren
-      if (role === 'screen') {
-        const fxState = payload.state.fx;
-        const prevSeq = window.__lastFxSeq || 0;
-        if (fxState && typeof fxState.seq === 'number' && fxState.seq > prevSeq) {
-          window.__lastFxSeq = fxState.seq;
-          if (fxState.type) fx(fxState.type);
-        }
-      }
       renderPlayersBar(true); renderBoard(); renderOverlay();
       applyCurrentForScreen();
       break;
@@ -187,7 +178,6 @@ const state = {
   used: new Set(),
   settings: {},
   history: [],
-  fx: null,
   current: null,                  // aktuell offene Frage (für Publikum)
   turn: 0                         // Index des aktuellen Spielers
 };
@@ -461,7 +451,7 @@ function renderOverlay(){
     });
     meta.append(nm, pts); card.append(img, meta, jokers); els.overlay.appendChild(card);
 
-    if (role==='host') card.onclick = () => { state.turn = idx; saveState(); renderOverlay(); sendTurn(); sendSync(); };
+    if (role==='host') card.onclick = () => { state.turn = idx; saveState(); renderOverlay(); sendTurn(); };
   });
 }
 
@@ -607,11 +597,6 @@ function onResult(result) {
   state.q[qid].attempts.push({ playerId: pid, result });
   pushHistory({ type:'ATTEMPT', qid, pid });
 
-  // FX-Info für Remote-Screen im State speichern
-  const fxType = (result === 'correct') ? 'correct' : 'wrong';
-  const prevSeq = (state.fx && state.fx.seq) || 0;
-  state.fx = { type: fxType, seq: prevSeq + 1 };
-
   if (result === 'correct') {
     addPoints(pid, q.points, {log:true});
     state.q[qid].winner = pid;
@@ -744,12 +729,31 @@ function setupRemoteListener() {
     const roomRef = window.db.collection('rooms').doc(remoteRoomId);
     roomRef.onSnapshot((doc) => {
       if (!doc.exists) return;
-      const payload = doc.data();
-      if (!payload) return;
+      const raw = doc.data();
+      if (!raw) return;
+
+      let payload;
+      if (raw.stateJson) {
+        let stateRemote = {};
+        let dataRemote = null;
+        try { stateRemote = JSON.parse(raw.stateJson || '{}'); } catch(e) { stateRemote = {}; }
+        try { dataRemote = raw.dataJson ? JSON.parse(raw.dataJson) : null; } catch(e) { dataRemote = null; }
+        payload = {
+          state: stateRemote,
+          data: dataRemote || data
+        };
+      } else {
+        // Fallback für ältere Dokumente
+        payload = raw;
+      }
+
       handleMsg({ type: 'SYNC_STATE', payload });
     });
   } catch (e) {
     console.warn('Remote-Listener konnte nicht gestartet werden', e);
+  }
+}
+ner konnte nicht gestartet werden', e);
   }
 }
 
@@ -872,8 +876,7 @@ function saveState() {
     used: Array.from(state.used),
     settings: state.settings,
     turn: state.turn,
-    current: state.current,
-    fx: state.fx
+    current: state.current
   };
   localStorage.setItem('quiz_state', JSON.stringify(payload));
 }
@@ -888,7 +891,6 @@ function loadState() {
     state.used = new Set(s.used || []);
     state.turn = s.turn || 0;
     state.current = s.current || null;
-    state.fx = s.fx || null;
   } catch {}
 }
 
@@ -922,36 +924,37 @@ function sendSync() {
     jokers: p.jokers || {}
   }));
 
+  const stateForWire = {
+    players: cleanPlayers,
+    scores: state.scores,
+    q: state.q,
+    used: Array.from(state.used),
+    settings: state.settings,
+    turn: state.turn,
+    current: state.current
+  };
+
   const payload = {
-    state: {
-      players: cleanPlayers,
-      scores: state.scores,
-      q: state.q,
-      used: Array.from(state.used),
-      settings: state.settings,
-      turn: state.turn,
-      current: state.current,
-      fx: state.fx
-    },
+    state: stateForWire,
     data
   };
 
-   // lokal an andere Tabs (selber Browser)
+  // lokal an andere Tabs (selber Browser)
   send('SYNC_STATE', payload);
 
   // remote an Firestore, falls verfügbar
   if (role === 'host' && window.db) {
-    const roomRef = window.db.collection('rooms').doc(remoteRoomId);
-
-    // Alles in „reines JSON“ verwandeln, damit Firestore nichts Komisches sieht
-    const safePayload = JSON.parse(JSON.stringify(payload));
-
-    roomRef.set({
-      ...safePayload,
-      updatedAt: Date.now()
-    }).catch((e) => {
-      console.error('Remote-Sync fehlgeschlagen', e);
-    });
+    try {
+      const roomRef = window.db.collection('rooms').doc(remoteRoomId);
+      const docData = {
+        stateJson: JSON.stringify(stateForWire),
+        dataJson: JSON.stringify(data),
+        updatedAt: Date.now()
+      };
+      roomRef.set(docData);
+    } catch (e) {
+      console.warn('Remote-Sync fehlgeschlagen', e);
+    }
   }
 }
 function sendScores(){ send('SCORES', { scores: state.scores }); }
