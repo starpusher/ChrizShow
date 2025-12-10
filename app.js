@@ -32,22 +32,24 @@ function handleMsg(msg) {
     case 'FX': { fx((payload&&payload.type)||'correct'); break; }
     case 'SHOW_Q': showForAudience(payload); break;
     case 'REVEAL_ANSWER':
-if (els.answerImages) {
-  els.answerImages.hidden = true;
-  if (els.ansImg1) els.ansImg1.src = '';
-  if (els.ansImg2) els.ansImg2.src = '';
-}
-// ... danach wie gehabt befüllen und anzeigen:
-const base = (data.settings && data.settings.media_base) || 'media/';
-const imgs = current.q.answer_images;
-const a1 = current.q.ans1, a2 = current.q.ans2;
-if (els.answerImages && ((Array.isArray(imgs) && imgs.length >= 2) || (a1 && a2))) {
-  const s1 = Array.isArray(imgs) ? imgs[0] : a1;
-  const s2 = Array.isArray(imgs) ? imgs[1] : a2;
-  els.ansImg1.src = base + s1;
-  els.ansImg2.src = base + s2;
-  els.answerImages.hidden = false;
-}
+      if (els.answerImages) {
+        els.answerImages.hidden = true;
+        if (els.ansImg1) els.ansImg1.src = '';
+        if (els.ansImg2) els.ansImg2.src = '';
+      }
+      // ... danach wie gehabt befüllen und anzeigen:
+      {
+        const base = (data.settings && data.settings.media_base) || 'media/';
+        const imgs = current.q.answer_images;
+        const a1 = current.q.ans1, a2 = current.q.ans2;
+        if (els.answerImages && ((Array.isArray(imgs) && imgs.length >= 2) || (a1 && a2))) {
+          const s1 = Array.isArray(imgs) ? imgs[0] : a1;
+          const s2 = Array.isArray(imgs) ? imgs[1] : a2;
+          els.ansImg1.src = base + s1;
+          els.ansImg2.src = base + s2;
+          els.answerImages.hidden = false;
+        }
+      }
       els.answer.hidden = false;
       (function(){ try{
         const base = (data.settings && data.settings.media_base) || '';
@@ -60,19 +62,16 @@ if (els.answerImages && ((Array.isArray(imgs) && imgs.length >= 2) || (a1 && a2)
       }catch(e){} })();
       break;
     case 'RESOLVE_Q':
-  state.q[payload.id] = { status: 'resolved', attempts: [] };
-  state.used.add(payload.id);
-  if (els.modal.open) els.modal.close();
+      state.q[payload.id] = { status: 'resolved', attempts: [] };
+      state.used.add(payload.id);
+      if (els.modal.open) els.modal.close();
 
-  // NEU: Antwortbilder zurücksetzen (Publikum)
-  if (els.answerImages) {
-    els.answerImages.hidden = true;
-    if (els.ansImg1) els.ansImg1.src = '';
-    if (els.ansImg2) els.ansImg2.src = '';
-  }
-
-  renderBoard(); renderOverlay();
-  break;
+      // NEU: Antwortbilder zurücksetzen (Publikum)
+      if (els.answerImages) {
+        els.answerImages.hidden = true;
+        if (els.ansImg1) els.ansImg1.src = '';
+        if (els.ansImg2) els.ansImg2.src = '';
+      }
 
       renderBoard(); renderOverlay();
       break;
@@ -107,7 +106,7 @@ if (els.answerImages && ((Array.isArray(imgs) && imgs.length >= 2) || (a1 && a2)
     case 'SYNC_STATE':
       data = payload.data;
       window.SFX_BASE = (payload.data && payload.data.settings && payload.data.settings.media_base) || window.SFX_BASE || 'media/';
-if (!window.SFX_BASE.endsWith('/')) window.SFX_BASE += '/';
+      if (!window.SFX_BASE.endsWith('/')) window.SFX_BASE += '/';
       Object.assign(state, { players: payload.state.players, scores: payload.state.scores, q: payload.state.q||{}, settings: payload.state.settings||{}, turn: payload.state.turn||0, current: payload.state.current || null });
       state.used = new Set(payload.state.used || []);
       renderPlayersBar(true); renderBoard(); renderOverlay();
@@ -328,21 +327,21 @@ function renderPlayersBar(readOnly=false) {
 
     const img = document.createElement('img'); img.className='avatar'; img.alt=''; img.src = p.avatar || ''; if (!p.avatar) img.style.opacity=.4;
     const file = document.createElement('input'); file.type='file'; file.accept='image/*'; file.className='file';
-file.onchange = e => {
-  const f = e.target.files?.[0];
-  if (!f) return;
-  const reader = new FileReader();
-  reader.onload = () => {
-    p.avatar = reader.result;
-    saveState();
-    renderOverlay();
-    sendSync();
-    img.src = p.avatar;
-    img.style.opacity = 1;
-    file.value = ''; // Reset danach, damit man denselben Avatar nochmal wählen kann
-  };
-  reader.readAsDataURL(f);
-};
+    file.onchange = e => {
+      const f = e.target.files?.[0];
+      if (!f) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        p.avatar = reader.result;
+        saveState();
+        renderOverlay();
+        sendSync();
+        img.src = p.avatar;
+        img.style.opacity = 1;
+        file.value = ''; // Reset danach, damit man denselben Avatar nochmal wählen kann
+      };
+      reader.readAsDataURL(f);
+    };
 
     const name = document.createElement('input'); name.type='text'; name.value=p.name; name.disabled=readOnly||role==='screen';
     name.addEventListener('change', ()=>{ p.name=name.value; saveState(); renderOverlay(); sendSync(); });
@@ -374,15 +373,15 @@ file.onchange = e => {
     rm.onclick = () => removePlayer(idx);
 
     img.style.cursor = (role==='host' && !readOnly) ? 'pointer' : 'default';
-img.onclick = () => {
-  if (role!=='host' || readOnly) return;
-  try {
-    file.value = '';                               // wichtig: reset, sonst kein change
-    file.dispatchEvent(new MouseEvent('click', { bubbles:true }));
-  } catch(e) {
-    file.click();                                  // Fallback
-  }
-};
+    img.onclick = () => {
+      if (role!=='host' || readOnly) return;
+      try {
+        file.value = '';                               // wichtig: reset, sonst kein change
+        file.dispatchEvent(new MouseEvent('click', { bubbles:true }));
+      } catch(e) {
+        file.click();                                  // Fallback
+      }
+    };
 
 
     wrap.append(img, name, score, jokers, rm, file);
@@ -466,17 +465,17 @@ function openQuestion(col, row) {
 
   // Inhalt
   els.qCat.textContent = cat.title;
-  els.qPts.innerHTML = `<span class=\"pos\">+${q.points}</span> <span class=\"neg\">-${Math.floor(q.points/2)}</span>`;
+  els.qPts.innerHTML = `<span class="pos">+${q.points}</span> <span class="neg">-${Math.floor(q.points/2)}</span>`;
   els.qText.textContent = q.text || '';
   els.answer.textContent = q.answer || '—';
   // Host sieht Antwort sofort:
   els.answer.hidden = role !== 'host';
   setMedia(q);
-if (els.answerImages) {
-  els.answerImages.hidden = true;
-  if (els.ansImg1) els.ansImg1.src = '';
-  if (els.ansImg2) els.ansImg2.src = '';
-}
+  if (els.answerImages) {
+    els.answerImages.hidden = true;
+    if (els.ansImg1) els.ansImg1.src = '';
+    if (els.ansImg2) els.ansImg2.src = '';
+  }
 
 
   const starterId = state.players[state.turn]?.id;
@@ -753,25 +752,22 @@ function setupRemoteListener() {
     console.warn('Remote-Listener konnte nicht gestartet werden', e);
   }
 }
-ner konnte nicht gestartet werden', e);
-  }
-}
 
 /* ======= Publikum ======= */
 function showForAudience(payload){
   const { id, q } = payload;
   current = { id, q };
   els.qCat.textContent = q.cat;
-  els.qPts.innerHTML = `<span class=\"pos\">+${q.points}</span> <span class=\"neg\">-${Math.floor(q.points/2)}</span>`;
+  els.qPts.innerHTML = `<span class="pos">+${q.points}</span> <span class="neg">-${Math.floor(q.points/2)}</span>`;
   els.qText.textContent = q.text || '';
   els.answer.textContent = q.answer || '—';
   els.answer.hidden = true;
   setMedia(q);
-if (els.answerImages) {
-  els.answerImages.hidden = true;
-  if (els.ansImg1) els.ansImg1.src = '';
-  if (els.ansImg2) els.ansImg2.src = '';
-}
+  if (els.answerImages) {
+    els.answerImages.hidden = true;
+    if (els.ansImg1) els.ansImg1.src = '';
+    if (els.ansImg2) els.ansImg2.src = '';
+  }
   if (els.timerBox) els.timerBox.hidden = true;
   if (!els.qAud.hidden) { els.qAud.muted = true; els.qAud.play().catch(()=>{}); }
   els.modal.showModal();
@@ -798,7 +794,6 @@ function stopTimer(){
   els.timerBox.hidden = true; send('TIMER', { seconds: 0 });
 }
 
-/* ======= Gemeinsames ======= */
 /* ======= Gemeinsames ======= */
 function playSfx(kind, opts) {
   try {
@@ -838,8 +833,6 @@ function playSfx(kind, opts) {
     }
   } catch (e) {}
 }
-
-
 
 function setMedia(q){
   const base = (data.settings && data.settings.media_base) || '';
