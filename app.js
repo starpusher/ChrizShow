@@ -110,6 +110,15 @@ if (els.answerImages && ((Array.isArray(imgs) && imgs.length >= 2) || (a1 && a2)
 if (!window.SFX_BASE.endsWith('/')) window.SFX_BASE += '/';
       Object.assign(state, { players: payload.state.players, scores: payload.state.scores, q: payload.state.q||{}, settings: payload.state.settings||{}, turn: payload.state.turn||0, current: payload.state.current || null });
       state.used = new Set(payload.state.used || []);
+      // FX-Events (correct/wrong) über State synchronisieren
+      if (role === 'screen') {
+        const fxState = payload.state.fx;
+        const prevSeq = window.__lastFxSeq || 0;
+        if (fxState && typeof fxState.seq === 'number' && fxState.seq > prevSeq) {
+          window.__lastFxSeq = fxState.seq;
+          if (fxState.type) fx(fxState.type);
+        }
+      }
       renderPlayersBar(true); renderBoard(); renderOverlay();
       applyCurrentForScreen();
       break;
@@ -178,6 +187,7 @@ const state = {
   used: new Set(),
   settings: {},
   history: [],
+  fx: null,
   current: null,                  // aktuell offene Frage (für Publikum)
   turn: 0                         // Index des aktuellen Spielers
 };
@@ -451,7 +461,7 @@ function renderOverlay(){
     });
     meta.append(nm, pts); card.append(img, meta, jokers); els.overlay.appendChild(card);
 
-    if (role==='host') card.onclick = () => { state.turn = idx; saveState(); renderOverlay(); sendTurn(); };
+    if (role==='host') card.onclick = () => { state.turn = idx; saveState(); renderOverlay(); sendTurn(); sendSync(); };
   });
 }
 
@@ -596,6 +606,11 @@ function onResult(result) {
 
   state.q[qid].attempts.push({ playerId: pid, result });
   pushHistory({ type:'ATTEMPT', qid, pid });
+
+  // FX-Info für Remote-Screen im State speichern
+  const fxType = (result === 'correct') ? 'correct' : 'wrong';
+  const prevSeq = (state.fx && state.fx.seq) || 0;
+  state.fx = { type: fxType, seq: prevSeq + 1 };
 
   if (result === 'correct') {
     addPoints(pid, q.points, {log:true});
@@ -857,7 +872,8 @@ function saveState() {
     used: Array.from(state.used),
     settings: state.settings,
     turn: state.turn,
-    current: state.current
+    current: state.current,
+    fx: state.fx
   };
   localStorage.setItem('quiz_state', JSON.stringify(payload));
 }
@@ -872,6 +888,7 @@ function loadState() {
     state.used = new Set(s.used || []);
     state.turn = s.turn || 0;
     state.current = s.current || null;
+    state.fx = s.fx || null;
   } catch {}
 }
 
@@ -913,7 +930,8 @@ function sendSync() {
       used: Array.from(state.used),
       settings: state.settings,
       turn: state.turn,
-      current: state.current
+      current: state.current,
+      fx: state.fx
     },
     data
   };
