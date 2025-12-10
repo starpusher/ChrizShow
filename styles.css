@@ -1,14 +1,7 @@
 :root{
-  --bg:#050612;
-  --panel:#151528;
-  --accent:#b58cff;
-  --text:#f7f7ff;
-  --muted:#a0a6c4;
-  --ok:#3dd68c;
-  --bad:#ff6b8b;
-  --glow:#d3acff;
+  --bg:#0b0b12;--panel:#17172a;--accent:#9b6bff;--text:#f4f5f9;--muted:#9aa0b4;
+  --ok:#3fbf6c;--bad:#ff5c74;--glow:#b693ff;
 }
-
 *{box-sizing:border-box}
 body{
   margin:0;color:var(--text);font:16px/1.45 system-ui;
@@ -79,7 +72,7 @@ body.audience .brand .logo{ display:none }
 
 /* ===== Modal ===== */
 dialog::backdrop{background:rgba(0,0,0,.6)}
-.modal{min-width:60vw;max-width:960px;border-radius:16px;overflow:hidden}
+.modal{min-width:60vw;max-width:960px;border-radius:16px;overflow:hidden;background:var(--panel);color:var(--text);padding:1.5rem;}
 .qhead{display:flex;align-items:center;gap:.75rem}
 .qhead h3{margin-right:auto}
 .qpts{ opacity:.95; font-weight:700 }
@@ -186,3 +179,11 @@ body{
 .ansimg{ max-width:min(42%, 380px); max-height:36vh; border-radius:.6rem; border:1px solid #333; object-fit:cover; }
 
 [hidden]{display:none!important}
+
+/* ==== Quiz Modal dark theme tweaks ==== */
+.modal .answer,
+.answer {
+  background:#12121f;
+  color:var(--text);
+  border:1px solid rgba(255,255,255,0.1);
+}
