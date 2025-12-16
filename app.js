@@ -86,7 +86,11 @@ function handleMsg(msg) {
     case 'AUDIO_META':
       if (!els.qAud.hidden){ try{ els.qAud.currentTime = payload.t||0; }catch(e){} } break;
     case 'AUDIO_PLAY':
-      if (!els.qAud.hidden) { try { els.qAud.pause(); els.qAud.currentTime = 0; } catch(e){} } break;
+      if (!els.qAud.hidden){
+        try{ els.qAud.muted = !window.__AUD_UNLOCKED; }catch(e){}
+        els.qAud.play().catch(()=>{});
+      }
+      break;
     case 'AUDIO_PAUSE':
       if (!els.qAud.hidden){ els.qAud.pause(); } break;
     case 'AUDIO_TIME':
