@@ -84,10 +84,9 @@ function handleMsg(msg) {
       if (payload.seconds<=0 && els.timerBox) els.timerBox.hidden=true;
       showTimer(payload.seconds); break;
     case 'AUDIO_META':
-      if (!els.qAud.hidden){ els.qAud.muted = false; els.qAud.currentTime = payload.t||0; } break;
+      if (!els.qAud.hidden){ els.qAud.muted = true; els.qAud.currentTime = payload.t||0; } break;
     case 'AUDIO_PLAY':
-      if (!els.qAud.hidden){ try{ els.qAud.muted = false; }catch(e){}
-        els.qAud.play().catch(()=>{}); } break;
+      if (!els.qAud.hidden){ els.qAud.muted = true; els.qAud.play().catch(()=>{}); } break;
     case 'AUDIO_PAUSE':
       if (!els.qAud.hidden){ els.qAud.pause(); } break;
     case 'AUDIO_TIME':
@@ -105,42 +104,27 @@ function handleMsg(msg) {
       }
       break;
     case 'SYNC_STATE':
-      applyRemoteSync(payload);
+      data = payload.data;
+      window.SFX_BASE = (payload.data && payload.data.settings && payload.data.settings.media_base) || window.SFX_BASE || 'media/';
+      if (!window.SFX_BASE.endsWith('/')) window.SFX_BASE += '/';
+      Object.assign(state, { players: payload.state.players, scores: payload.state.scores, q: payload.state.q||{}, settings: payload.state.settings||{}, turn: payload.state.turn||0, current: payload.state.current || null });
+      state.used = new Set(payload.state.used || []);
+      renderPlayersBar(true); renderBoard(); renderOverlay();
+      applyCurrentForScreen();
+      syncAudienceAudioFromState();
       break;
   }
 }
-
-async function applyRemoteSync(payload){
-  // Board zuerst sicherstellen
-  try{
-    const incomingUrl = payload && payload.boardUrl;
-    if (incomingUrl && (localStorage.getItem('quiz_board_file') !== incomingUrl || !data)){
-      localStorage.setItem('quiz_board_file', incomingUrl);
-      await loadContent(incomingUrl);
-    } else if (!data && payload && payload.data){
-      data = payload.data;
-    }
-  }catch(e){}
-
-  // State anwenden
-  try{
-    window.SFX_BASE = (data && data.settings && data.settings.media_base) || window.SFX_BASE || 'media/';
-    if (!window.SFX_BASE.endsWith('/')) window.SFX_BASE += '/';
-    Object.assign(state, {
-      players: payload.state.players,
-      scores: payload.state.scores,
-      q: payload.state.q || {},
-      settings: payload.state.settings || {},
-      turn: payload.state.turn || 0,
-      current: payload.state.current || null
-    });
-    state.used = new Set(payload.state.used || []);
-    renderPlayersBar(true); renderBoard(); renderOverlay();
-    applyCurrentForScreen();
-  }catch(e){}
-}
-
 if (role === 'screen') chan.postMessage({ type: 'SCREEN_READY' });
+// unlock sfx after first interaction on audience
+if (role==='screen'){
+  const __unlock = ()=>{ try{ playSfx('correct',{prime:true}); playSfx('wrong',{prime:true}); }catch(e){};
+    window.removeEventListener('pointerdown', __unlock);
+    window.removeEventListener('keydown', __unlock);
+  };
+  window.addEventListener('pointerdown', __unlock);
+  window.addEventListener('keydown', __unlock);
+}
 
 /* ======= DOM ======= */
 const els = {
@@ -194,8 +178,8 @@ const state = {
   used: new Set(),
   settings: {},
   history: [],
+  audio: { playing:false, t:0, ts:0 },
   current: null,                  // aktuell offene Frage (für Publikum)
-  audio: { playing: false, t: 0, ts: 0 },
   turn: 0                         // Index des aktuellen Spielers
 };
 let current = { col: -1, row: -1, q: null, id: null };
@@ -307,7 +291,6 @@ async function loadBoardFromUrl(url) {
   const prevPlayers = state.players.map(p => ({
     id: p.id,
     name: p.name,
-    avatar: p.avatar || null,
     jokers: p.jokers || { j1: true, j2: true, j3: true }
   }));
   const prevScores = { ...state.scores };
@@ -502,7 +485,7 @@ function openQuestion(col, row) {
 
   // aktuell offene Frage im globalen State merken (für Publikum)
   state.current = { id, answerRevealed: false };
-  state.audio = { playing: false, t: 0, ts: Date.now() };
+  state.audio = { playing:false, t:0, ts: Date.now() };
   saveState();
   sendSync();
 
@@ -542,20 +525,17 @@ function openQuestion(col, row) {
 
   els.playAud.onclick = () => {
     if (!els.qAud.hidden){
-      state.audio = { playing: true, t: els.qAud.currentTime || 0, ts: Date.now() };
+      state.audio = { playing:true, t: els.qAud.currentTime || 0, ts: Date.now() };
       saveState();
       sendSync();
-      send('AUDIO_META', { t: state.audio.t });
-      send('AUDIO_PLAY');
       els.qAud.play().catch(()=>{});
     }
   };
   els.pauseAud.onclick = () => {
     if (!els.qAud.hidden){
-      state.audio = { playing: false, t: els.qAud.currentTime || 0, ts: Date.now() };
+      state.audio = { playing:false, t: els.qAud.currentTime || 0, ts: Date.now() };
       saveState();
       sendSync();
-      send('AUDIO_PAUSE');
       els.qAud.pause();
     }
   };
@@ -577,12 +557,7 @@ function openQuestion(col, row) {
   if (els.qAud && !els.qAud.hidden) {
     const sendTime = () => send('AUDIO_TIME', { t: els.qAud.currentTime });
     const onPlay   = () => { send('AUDIO_PLAY'); send('AUDIO_META', { t: els.qAud.currentTime }); };
-    const onPause  = () => {
-      state.audio = { playing: false, t: els.qAud.currentTime || 0, ts: Date.now() };
-      saveState();
-      sendSync();
-      send('AUDIO_PAUSE');
-    };
+    const onPause  = () => send('AUDIO_PAUSE');
     els.qAud.addEventListener('timeupdate', sendTime);
     els.qAud.addEventListener('play', onPlay);
     els.qAud.addEventListener('pause', onPause);
@@ -667,6 +642,7 @@ function finishQuestion(winnerId) {
 
   // aktuelle Frage im State zurücksetzen
   state.current = null;
+  state.audio = { playing:false, t:0, ts: Date.now() };
 
   saveState(); renderBoard(); renderOverlay();
   els.modal.close();
@@ -687,6 +663,30 @@ function removePlayer(idx){
 }
 
 
+
+
+function syncAudienceAudioFromState(){
+  if (role !== 'screen') return;
+  try{
+    if (!els.qAud || els.qAud.hidden) return;
+    const a = state.audio || { playing:false, t:0, ts:0 };
+    // rechne die laufende Zeit aus Host-Startzeit hoch
+    let t = Number(a.t||0);
+    if (a.playing && a.ts) {
+      t = t + (Date.now() - Number(a.ts)) / 1000;
+    }
+    if (Number.isFinite(t)) {
+      // currentTime kann werfen, wenn metadata noch nicht geladen ist -> try/catch
+      try{ els.qAud.currentTime = t; }catch(e){}
+    }
+    els.qAud.muted = false;
+    if (a.playing) {
+      els.qAud.play().catch(()=>{});
+    } else {
+      els.qAud.pause();
+    }
+  }catch(e){}
+}
 
 function applyCurrentForScreen() {
   if (role !== 'screen') return;
@@ -742,19 +742,7 @@ function applyCurrentForScreen() {
 
   // Frage beim Publikum anzeigen
   showForAudience(found);
-
-  // Audio beim Publikum nur auf Host-Play (state.audio)
-  try{
-    if (!els.qAud.hidden && state.audio){
-      if (typeof state.audio.t === 'number') els.qAud.currentTime = state.audio.t;
-      if (state.audio.playing) {
-        els.qAud.muted = false;
-        els.qAud.play().catch(()=>{});
-      } else {
-        els.qAud.pause();
-      }
-    }
-  }catch(e){}
+  syncAudienceAudioFromState();
 
   // Falls Antwort bereits aufgedeckt wurde, auch beim Publikum anzeigen
   if (cur.answerRevealed) {
@@ -793,8 +781,7 @@ function setupRemoteListener() {
         try { /* dataJson removed */ dataRemote = null; } catch(e) { dataRemote = null; }
         payload = {
           state: stateRemote,
-          data: dataRemote || null,
-          boardUrl: raw.boardUrl || null
+          data: dataRemote || data
         };
       } else {
         // Fallback für ältere Dokumente
@@ -824,7 +811,7 @@ function showForAudience(payload){
     if (els.ansImg2) els.ansImg2.src = '';
   }
   if (els.timerBox) els.timerBox.hidden = true;
-  if (!els.qAud.hidden) { els.qAud.muted = false; els.qAud.play().catch(()=>{}); }
+  if (!els.qAud.hidden) { els.qAud.muted = true; els.qAud.play().catch(()=>{}); }
   els.modal.showModal();
 }
 
@@ -925,7 +912,6 @@ function saveState() {
     settings: state.settings,
     turn: state.turn,
     current: state.current,
-    audio: state.audio,
     audio: state.audio
   };
   localStorage.setItem('quiz_state', JSON.stringify(payload));
@@ -971,7 +957,6 @@ function sendSync() {
   const cleanPlayers = state.players.map(p => ({
     id: p.id,
     name: p.name,
-    avatar: p.avatar || null,
     jokers: p.jokers || {}
   }));
 
@@ -982,13 +967,13 @@ function sendSync() {
     used: Array.from(state.used),
     settings: state.settings,
     turn: state.turn,
-    current: state.current
+    current: state.current,
+    audio: state.audio
   };
 
   const payload = {
     state: stateForWire,
-    data,
-    boardUrl: localStorage.getItem("quiz_board_file")
+    data
   };
 
   // lokal an andere Tabs (selber Browser)
