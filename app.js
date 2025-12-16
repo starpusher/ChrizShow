@@ -104,16 +104,41 @@ function handleMsg(msg) {
       }
       break;
     case 'SYNC_STATE':
-      data = payload.data;
-      window.SFX_BASE = (payload.data && payload.data.settings && payload.data.settings.media_base) || window.SFX_BASE || 'media/';
-      if (!window.SFX_BASE.endsWith('/')) window.SFX_BASE += '/';
-      Object.assign(state, { players: payload.state.players, scores: payload.state.scores, q: payload.state.q||{}, settings: payload.state.settings||{}, turn: payload.state.turn||0, current: payload.state.current || null });
-      state.used = new Set(payload.state.used || []);
-      renderPlayersBar(true); renderBoard(); renderOverlay();
-      applyCurrentForScreen();
+      applyRemoteSync(payload);
       break;
   }
 }
+
+async function applyRemoteSync(payload){
+  // Board zuerst sicherstellen
+  try{
+    const incomingUrl = payload && payload.boardUrl;
+    if (incomingUrl && (localStorage.getItem('quiz_board_file') !== incomingUrl || !data)){
+      localStorage.setItem('quiz_board_file', incomingUrl);
+      await loadContent(incomingUrl);
+    } else if (!data && payload && payload.data){
+      data = payload.data;
+    }
+  }catch(e){}
+
+  // State anwenden
+  try{
+    window.SFX_BASE = (data && data.settings && data.settings.media_base) || window.SFX_BASE || 'media/';
+    if (!window.SFX_BASE.endsWith('/')) window.SFX_BASE += '/';
+    Object.assign(state, {
+      players: payload.state.players,
+      scores: payload.state.scores,
+      q: payload.state.q || {},
+      settings: payload.state.settings || {},
+      turn: payload.state.turn || 0,
+      current: payload.state.current || null
+    });
+    state.used = new Set(payload.state.used || []);
+    renderPlayersBar(true); renderBoard(); renderOverlay();
+    applyCurrentForScreen();
+  }catch(e){}
+}
+
 if (role === 'screen') chan.postMessage({ type: 'SCREEN_READY' });
 // unlock sfx after first interaction on audience
 if (role==='screen'){
@@ -739,7 +764,8 @@ function setupRemoteListener() {
         try { /* dataJson removed */ dataRemote = null; } catch(e) { dataRemote = null; }
         payload = {
           state: stateRemote,
-          data: dataRemote || data
+          data: dataRemote || null,
+          boardUrl: raw.boardUrl || null
         };
       } else {
         // Fallback für ältere Dokumente
@@ -929,7 +955,8 @@ function sendSync() {
 
   const payload = {
     state: stateForWire,
-    data
+    data,
+    boardUrl: localStorage.getItem("quiz_board_file")
   };
 
   // lokal an andere Tabs (selber Browser)
