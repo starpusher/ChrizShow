@@ -13,9 +13,7 @@ if (role === 'host') {
 }
 if (role === 'screen') document.body.classList.add('audience');
 
-let remoteRoomId = params.get('room') || 'default';
-
-
+const remoteRoomId = params.get('room') || 'default';
 
 const chan = new BroadcastChannel('quiz-show');
 function send(type, payload={}) { if (role === 'host') chan.postMessage({ type, payload }); }
@@ -106,16 +104,41 @@ function handleMsg(msg) {
       }
       break;
     case 'SYNC_STATE':
-      data = payload.data;
-      window.SFX_BASE = (payload.data && payload.data.settings && payload.data.settings.media_base) || window.SFX_BASE || 'media/';
-      if (!window.SFX_BASE.endsWith('/')) window.SFX_BASE += '/';
-      Object.assign(state, { players: payload.state.players, scores: payload.state.scores, q: payload.state.q||{}, settings: payload.state.settings||{}, turn: payload.state.turn||0, current: payload.state.current || null });
-      state.used = new Set(payload.state.used || []);
-      renderPlayersBar(true); renderBoard(); renderOverlay();
-      applyCurrentForScreen();
+      applyRemoteSync(payload);
       break;
   }
 }
+
+async function applyRemoteSync(payload){
+  // Board zuerst sicherstellen
+  try{
+    const incomingUrl = payload && payload.boardUrl;
+    if (incomingUrl && (localStorage.getItem('quiz_board_file') !== incomingUrl || !data)){
+      localStorage.setItem('quiz_board_file', incomingUrl);
+      await loadContent(incomingUrl);
+    } else if (!data && payload && payload.data){
+      data = payload.data;
+    }
+  }catch(e){}
+
+  // State anwenden
+  try{
+    window.SFX_BASE = (data && data.settings && data.settings.media_base) || window.SFX_BASE || 'media/';
+    if (!window.SFX_BASE.endsWith('/')) window.SFX_BASE += '/';
+    Object.assign(state, {
+      players: payload.state.players,
+      scores: payload.state.scores,
+      q: payload.state.q || {},
+      settings: payload.state.settings || {},
+      turn: payload.state.turn || 0,
+      current: payload.state.current || null
+    });
+    state.used = new Set(payload.state.used || []);
+    renderPlayersBar(true); renderBoard(); renderOverlay();
+    applyCurrentForScreen();
+  }catch(e){}
+}
+
 if (role === 'screen') chan.postMessage({ type: 'SCREEN_READY' });
 // unlock sfx after first interaction on audience
 if (role==='screen'){
@@ -291,6 +314,7 @@ async function loadBoardFromUrl(url) {
   const prevPlayers = state.players.map(p => ({
     id: p.id,
     name: p.name,
+    avatar: p.avatar || null,
     jokers: p.jokers || { j1: true, j2: true, j3: true }
   }));
   const prevScores = { ...state.scores };
@@ -451,14 +475,7 @@ function renderOverlay(){
     });
     meta.append(nm, pts); card.append(img, meta, jokers); els.overlay.appendChild(card);
 
-    if (role==='host') card.onclick = () => { state.turn = idx; saveState(); renderOverlay(); sendTurn();
-      // Auto-Refresh der Auswahl im offenen Fragen-Modal
-      if (els.modal && els.modal.open && current && current.id) {
-        const starterId = state.players[state.turn]?.id;
-        populatePlayerSelect(current.id, starterId);
-        updateAttemptInfo(current.id);
-      }
-    };
+    if (role==='host') card.onclick = () => { state.turn = idx; saveState(); renderOverlay(); sendTurn(); };
   });
 }
 
@@ -747,7 +764,8 @@ function setupRemoteListener() {
         try { /* dataJson removed */ dataRemote = null; } catch(e) { dataRemote = null; }
         payload = {
           state: stateRemote,
-          data: dataRemote || data
+          data: dataRemote || null,
+          boardUrl: raw.boardUrl || null
         };
       } else {
         // Fallback für ältere Dokumente
@@ -875,7 +893,7 @@ function saveState() {
     scores: state.scores,
     q: {},
     used: Array.from(state.used),
-    settings: __compactSettings(state.settings),
+    settings: state.settings,
     turn: state.turn,
     current: state.current
   };
@@ -916,21 +934,12 @@ function undo(){
 
 /* ======= Helper & Global ======= */
 function idToName(pid){ return state.players.find(p => p.id === pid)?.name || pid; }
-
-function __byteLen(str){ try { return new TextEncoder().encode(str).length; } catch(e){ return (str||'').length; } }
-function __compactSettings(s){
-  if (!s || typeof s !== 'object') return {};
-  const out = {};
-  if (typeof s.media_base === 'string') out.media_base = s.media_base;
-  if (typeof s.allow_steal !== 'undefined') out.allow_steal = s.allow_steal;
-  return out;
-}
-
 function sendSync() {
   // KEINE DOM-Elemente mitschicken (z. B. _scoreEl entfernen)
   const cleanPlayers = state.players.map(p => ({
     id: p.id,
     name: p.name,
+    avatar: p.avatar || null,
     jokers: p.jokers || {}
   }));
 
@@ -939,14 +948,15 @@ function sendSync() {
     scores: state.scores,
     q: {},
     used: Array.from(state.used),
-    settings: __compactSettings(state.settings),
+    settings: state.settings,
     turn: state.turn,
     current: state.current
   };
 
   const payload = {
     state: stateForWire,
-    data
+    data,
+    boardUrl: localStorage.getItem("quiz_board_file")
   };
 
   // lokal an andere Tabs (selber Browser)
@@ -956,32 +966,11 @@ function sendSync() {
   if (role === 'host' && window.db) {
     try {
       const roomRef = window.db.collection('rooms').doc(remoteRoomId);
-      const stateJsonStr = JSON.stringify(stateForWire);
       const docData = {
-        stateJson: stateJsonStr,
+        stateJson: JSON.stringify(stateForWire),
         boardUrl: localStorage.getItem("quiz_board_file"),
         updatedAt: Date.now()
       };
-
-      // Robust: niemals Firestore-1MB-Limit reißen
-      if (__byteLen(stateJsonStr) > 900000) {
-        const minimal = {
-          players: cleanPlayers,
-          scores: state.scores,
-          q: {},
-          used: Array.from(state.used),
-          settings: __compactSettings(state.settings),
-          turn: state.turn,
-          current: state.current
-        };
-        const minStr = JSON.stringify(minimal);
-        if (__byteLen(minStr) <= 900000) {
-          docData.stateJson = minStr;
-        } else {
-          docData.stateJson = JSON.stringify({ scores: state.scores, used: Array.from(state.used), turn: state.turn, current: state.current });
-        }
-      }
-
       roomRef.set(docData);
     } catch (e) {
       console.warn('Remote-Sync fehlgeschlagen', e);
@@ -1009,7 +998,7 @@ function attachGlobalHandlers() {
   }
 
   if (els.presentBtn && role === 'host') {
-    els.presentBtn.onclick = () => window.open(`${location.pathname}?view=screen&room=${encodeURIComponent(remoteRoomId)}`,'quiz-screen', 'width=1280,height=800');
+    els.presentBtn.onclick = () => window.open(`${location.pathname}?view=screen`, 'quiz-screen', 'width=1280,height=800');
   }
   if (els.addPlayerBtn && role==='host'){
     els.addPlayerBtn.onclick = () => {
