@@ -314,7 +314,6 @@ async function loadBoardFromUrl(url) {
   const prevPlayers = state.players.map(p => ({
     id: p.id,
     name: p.name,
-    avatar: p.avatar || null,
     jokers: p.jokers || { j1: true, j2: true, j3: true }
   }));
   const prevScores = { ...state.scores };
@@ -475,7 +474,18 @@ function renderOverlay(){
     });
     meta.append(nm, pts); card.append(img, meta, jokers); els.overlay.appendChild(card);
 
-    if (role==='host') card.onclick = () => { state.turn = idx; saveState(); renderOverlay(); sendTurn(); };
+    if (role==='host') card.onclick = () => {
+      state.turn = idx;
+      saveState();
+      renderOverlay();
+      sendTurn();
+      // Auto-Refresh der Auswahl im offenen Fragen-Modal
+      if (els.modal && els.modal.open && current && current.id) {
+        const starterId = state.players[state.turn]?.id;
+        populatePlayerSelect(current.id, starterId);
+        updateAttemptInfo(current.id);
+      }
+    };
   });
 }
 
@@ -893,7 +903,7 @@ function saveState() {
     scores: state.scores,
     q: {},
     used: Array.from(state.used),
-    settings: state.settings,
+    settings: __compactSettings(state.settings),
     turn: state.turn,
     current: state.current
   };
@@ -933,22 +943,25 @@ function undo(){
 }
 
 /* ======= Helper & Global ======= */
+function __compactSettings(s){
+  if (!s || typeof s !== 'object') return {};
+  const out = {};
+  if (typeof s.media_base === 'string') out.media_base = s.media_base;
+  if (typeof s.allow_steal !== 'undefined') out.allow_steal = s.allow_steal;
+  return out;
+}
+
 function idToName(pid){ return state.players.find(p => p.id === pid)?.name || pid; }
 function sendSync() {
   // KEINE DOM-Elemente mitschicken (z. B. _scoreEl entfernen)
-  const cleanPlayers = state.players.map(p => ({
-    id: p.id,
-    name: p.name,
-    avatar: p.avatar || null,
-    jokers: p.jokers || {}
-  }));
+  const cleanPlayers = state.players.map(p => ({ id: p.id, name: p.name, jokers: p.jokers || {} }));
 
   const stateForWire = {
     players: cleanPlayers,
     scores: state.scores,
     q: {},
     used: Array.from(state.used),
-    settings: state.settings,
+    settings: __compactSettings(state.settings),
     turn: state.turn,
     current: state.current
   };
@@ -966,6 +979,28 @@ function sendSync() {
   if (role === 'host' && window.db) {
     try {
       const roomRef = window.db.collection('rooms').doc(remoteRoomId);
+      const stateJsonStr = JSON.stringify(stateForWire);
+      // Notbremse: Firestore-Dokument < 1MB halten
+      if (stateJsonStr.length > 900000) {
+        // absolute Minimalvariante (ohne Settings/Spieler-Extras)
+        const minimal = {
+          players: cleanPlayers,
+          scores: state.scores,
+          q: {},
+          used: Array.from(state.used),
+          turn: state.turn,
+          current: state.current
+        };
+        const minStr = JSON.stringify(minimal);
+        if (minStr.length <= 900000) {
+          stateForWire.players = minimal.players;
+          stateForWire.scores = minimal.scores;
+          stateForWire.q = minimal.q;
+          stateForWire.used = minimal.used;
+          stateForWire.turn = minimal.turn;
+          stateForWire.current = minimal.current;
+        }
+      }
       const docData = {
         stateJson: JSON.stringify(stateForWire),
         boardUrl: localStorage.getItem("quiz_board_file"),
@@ -998,7 +1033,7 @@ function attachGlobalHandlers() {
   }
 
   if (els.presentBtn && role === 'host') {
-    els.presentBtn.onclick = () => window.open(`${location.pathname}?view=screen`, 'quiz-screen', 'width=1280,height=800');
+    els.presentBtn.onclick = () => window.open(`${location.pathname}?view=screen&room=${encodeURIComponent(remoteRoomId)}`, 'quiz-screen', 'width=1280,height=800');
   }
   if (els.addPlayerBtn && role==='host'){
     els.addPlayerBtn.onclick = () => {
