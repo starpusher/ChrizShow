@@ -84,13 +84,9 @@ function handleMsg(msg) {
       if (payload.seconds<=0 && els.timerBox) els.timerBox.hidden=true;
       showTimer(payload.seconds); break;
     case 'AUDIO_META':
-      if (!els.qAud.hidden){ try{ els.qAud.currentTime = payload.t||0; }catch(e){} } break;
+      if (!els.qAud.hidden){ els.qAud.muted = true; els.qAud.currentTime = payload.t||0; } break;
     case 'AUDIO_PLAY':
-      if (!els.qAud.hidden){
-        try{ els.qAud.muted = !window.__AUD_UNLOCKED; }catch(e){}
-        els.qAud.play().catch(()=>{});
-      }
-      break;
+      if (!els.qAud.hidden){ els.qAud.muted = true; els.qAud.play().catch(()=>{}); } break;
     case 'AUDIO_PAUSE':
       if (!els.qAud.hidden){ els.qAud.pause(); } break;
     case 'AUDIO_TIME':
@@ -146,7 +142,7 @@ async function applyRemoteSync(payload){
 if (role === 'screen') chan.postMessage({ type: 'SCREEN_READY' });
 // unlock sfx after first interaction on audience
 if (role==='screen'){
-  const __unlock = ()=>{ try{ window.__AUD_UNLOCKED = true; if (els && els.qAud){ try{ els.qAud.muted = false; }catch(e){} } playSfx('correct',{prime:true}); playSfx('wrong',{prime:true}); }catch(e){};
+  const __unlock = ()=>{ try{ playSfx('correct',{prime:true}); playSfx('wrong',{prime:true}); }catch(e){};
     window.removeEventListener('pointerdown', __unlock);
     window.removeEventListener('keydown', __unlock);
   };
@@ -207,6 +203,7 @@ const state = {
   settings: {},
   history: [],
   current: null,                  // aktuell offene Frage (für Publikum)
+  audio: { playing: false, t: 0, ts: 0 },
   turn: 0                         // Index des aktuellen Spielers
 };
 let current = { col: -1, row: -1, q: null, id: null };
@@ -318,6 +315,7 @@ async function loadBoardFromUrl(url) {
   const prevPlayers = state.players.map(p => ({
     id: p.id,
     name: p.name,
+    avatar: p.avatar || null,
     jokers: p.jokers || { j1: true, j2: true, j3: true }
   }));
   const prevScores = { ...state.scores };
@@ -478,18 +476,7 @@ function renderOverlay(){
     });
     meta.append(nm, pts); card.append(img, meta, jokers); els.overlay.appendChild(card);
 
-    if (role==='host') card.onclick = () => {
-      state.turn = idx;
-      saveState();
-      renderOverlay();
-      sendTurn();
-      sendSync();
-      if (els.modal && els.modal.open && current && current.id) {
-        const starterId = state.players[state.turn]?.id;
-        populatePlayerSelect(current.id, starterId);
-        updateAttemptInfo(current.id);
-      }
-    };
+    if (role==='host') card.onclick = () => { state.turn = idx; saveState(); renderOverlay(); sendTurn(); };
   });
 }
 
@@ -523,6 +510,7 @@ function openQuestion(col, row) {
 
   // aktuell offene Frage im globalen State merken (für Publikum)
   state.current = { id, answerRevealed: false };
+  state.audio = { playing: false, t: 0, ts: Date.now() };
   saveState();
   sendSync();
 
@@ -560,8 +548,25 @@ function openQuestion(col, row) {
   els.wrongBtn.onclick   = () => onResult('wrong');
   els.skipBtn.onclick    = () => finishQuestion(null);
 
-  els.playAud.onclick = () => { if (!els.qAud.hidden){ send('AUDIO_META', { t: els.qAud.currentTime }); send('AUDIO_PLAY'); els.qAud.play().catch(()=>{}); } };
-  els.pauseAud.onclick = () => { if (!els.qAud.hidden){ els.qAud.pause(); send('AUDIO_PAUSE'); } };
+  els.playAud.onclick = () => {
+    if (!els.qAud.hidden){
+      state.audio = { playing: true, t: els.qAud.currentTime || 0, ts: Date.now() };
+      saveState();
+      sendSync();
+      send('AUDIO_META', { t: state.audio.t });
+      send('AUDIO_PLAY');
+      els.qAud.play().catch(()=>{});
+    }
+  };
+  els.pauseAud.onclick = () => {
+    if (!els.qAud.hidden){
+      state.audio = { playing: false, t: els.qAud.currentTime || 0, ts: Date.now() };
+      saveState();
+      sendSync();
+      send('AUDIO_PAUSE');
+      els.qAud.pause();
+    }
+  };
 
   // Swap image button
   els.swapImageBtn.hidden = !(q.image && q.image_reveal);
@@ -579,8 +584,13 @@ function openQuestion(col, row) {
   // Audio sync events
   if (els.qAud && !els.qAud.hidden) {
     const sendTime = () => send('AUDIO_TIME', { t: els.qAud.currentTime });
-    const onPlay   = () => { send('AUDIO_META', { t: els.qAud.currentTime }); send('AUDIO_PLAY'); };
-    const onPause  = () => send('AUDIO_PAUSE');
+    const onPlay   = () => { send('AUDIO_PLAY'); send('AUDIO_META', { t: els.qAud.currentTime }); };
+    const onPause  = () => {
+      state.audio = { playing: false, t: els.qAud.currentTime || 0, ts: Date.now() };
+      saveState();
+      sendSync();
+      send('AUDIO_PAUSE');
+    };
     els.qAud.addEventListener('timeupdate', sendTime);
     els.qAud.addEventListener('play', onPlay);
     els.qAud.addEventListener('pause', onPause);
@@ -741,6 +751,19 @@ function applyCurrentForScreen() {
   // Frage beim Publikum anzeigen
   showForAudience(found);
 
+  // Audio beim Publikum nur auf Host-Play (state.audio)
+  try{
+    if (!els.qAud.hidden && state.audio){
+      if (typeof state.audio.t === 'number') els.qAud.currentTime = state.audio.t;
+      if (state.audio.playing) {
+        els.qAud.muted = !window.__AUD_UNLOCKED;
+        els.qAud.play().catch(()=>{});
+      } else {
+        els.qAud.pause();
+      }
+    }
+  }catch(e){}
+
   // Falls Antwort bereits aufgedeckt wurde, auch beim Publikum anzeigen
   if (cur.answerRevealed) {
     try {
@@ -809,7 +832,7 @@ function showForAudience(payload){
     if (els.ansImg2) els.ansImg2.src = '';
   }
   if (els.timerBox) els.timerBox.hidden = true;
-  if (!els.qAud.hidden) { try { els.qAud.pause(); els.qAud.currentTime = 0; } catch(e){} }
+  if (!els.qAud.hidden) { els.qAud.muted = true; els.qAud.play().catch(()=>{}); }
   els.modal.showModal();
 }
 
@@ -909,7 +932,9 @@ function saveState() {
     used: Array.from(state.used),
     settings: state.settings,
     turn: state.turn,
-    current: state.current
+    current: state.current,
+    audio: state.audio,
+    audio: state.audio
   };
   localStorage.setItem('quiz_state', JSON.stringify(payload));
 }
@@ -924,6 +949,7 @@ function loadState() {
     state.used = new Set(s.used || []);
     state.turn = s.turn || 0;
     state.current = s.current || null;
+    state.audio = s.audio || state.audio || { playing:false, t:0, ts:0 };
   } catch {}
 }
 
@@ -953,6 +979,7 @@ function sendSync() {
   const cleanPlayers = state.players.map(p => ({
     id: p.id,
     name: p.name,
+    avatar: p.avatar || null,
     jokers: p.jokers || {}
   }));
 
@@ -1011,7 +1038,7 @@ function attachGlobalHandlers() {
   }
 
   if (els.presentBtn && role === 'host') {
-    els.presentBtn.onclick = () => window.open(`${location.pathname}?view=screen&room=${encodeURIComponent(remoteRoomId)}`, 'quiz-screen', 'width=1280,height=800');
+    els.presentBtn.onclick = () => window.open(`${location.pathname}?view=screen`, 'quiz-screen', 'width=1280,height=800');
   }
   if (els.addPlayerBtn && role==='host'){
     els.addPlayerBtn.onclick = () => {
