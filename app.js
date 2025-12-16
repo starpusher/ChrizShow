@@ -84,9 +84,9 @@ function handleMsg(msg) {
       if (payload.seconds<=0 && els.timerBox) els.timerBox.hidden=true;
       showTimer(payload.seconds); break;
     case 'AUDIO_META':
-      if (!els.qAud.hidden){ els.qAud.muted = true; els.qAud.currentTime = payload.t||0; } break;
+      if (!els.qAud.hidden){ try{ els.qAud.currentTime = payload.t||0; }catch(e){} } break;
     case 'AUDIO_PLAY':
-      if (!els.qAud.hidden){ els.qAud.muted = true; els.qAud.play().catch(()=>{}); } break;
+      if (!els.qAud.hidden) { try { els.qAud.pause(); els.qAud.currentTime = 0; } catch(e){} } break;
     case 'AUDIO_PAUSE':
       if (!els.qAud.hidden){ els.qAud.pause(); } break;
     case 'AUDIO_TIME':
@@ -142,7 +142,7 @@ async function applyRemoteSync(payload){
 if (role === 'screen') chan.postMessage({ type: 'SCREEN_READY' });
 // unlock sfx after first interaction on audience
 if (role==='screen'){
-  const __unlock = ()=>{ try{ playSfx('correct',{prime:true}); playSfx('wrong',{prime:true}); }catch(e){};
+  const __unlock = ()=>{ try{ window.__AUD_UNLOCKED = true; if (els && els.qAud){ try{ els.qAud.muted = false; }catch(e){} } playSfx('correct',{prime:true}); playSfx('wrong',{prime:true}); }catch(e){};
     window.removeEventListener('pointerdown', __unlock);
     window.removeEventListener('keydown', __unlock);
   };
@@ -314,7 +314,6 @@ async function loadBoardFromUrl(url) {
   const prevPlayers = state.players.map(p => ({
     id: p.id,
     name: p.name,
-    avatar: p.avatar || null,
     jokers: p.jokers || { j1: true, j2: true, j3: true }
   }));
   const prevScores = { ...state.scores };
@@ -475,7 +474,18 @@ function renderOverlay(){
     });
     meta.append(nm, pts); card.append(img, meta, jokers); els.overlay.appendChild(card);
 
-    if (role==='host') card.onclick = () => { state.turn = idx; saveState(); renderOverlay(); sendTurn(); };
+    if (role==='host') card.onclick = () => {
+      state.turn = idx;
+      saveState();
+      renderOverlay();
+      sendTurn();
+      sendSync();
+      if (els.modal && els.modal.open && current && current.id) {
+        const starterId = state.players[state.turn]?.id;
+        populatePlayerSelect(current.id, starterId);
+        updateAttemptInfo(current.id);
+      }
+    };
   });
 }
 
@@ -546,7 +556,7 @@ function openQuestion(col, row) {
   els.wrongBtn.onclick   = () => onResult('wrong');
   els.skipBtn.onclick    = () => finishQuestion(null);
 
-  els.playAud.onclick = () => { if (!els.qAud.hidden){ els.qAud.play().catch(()=>{}); send('AUDIO_PLAY'); send('AUDIO_META', { t: els.qAud.currentTime }); } };
+  els.playAud.onclick = () => { if (!els.qAud.hidden){ send('AUDIO_META', { t: els.qAud.currentTime }); send('AUDIO_PLAY'); els.qAud.play().catch(()=>{}); } };
   els.pauseAud.onclick = () => { if (!els.qAud.hidden){ els.qAud.pause(); send('AUDIO_PAUSE'); } };
 
   // Swap image button
@@ -565,7 +575,7 @@ function openQuestion(col, row) {
   // Audio sync events
   if (els.qAud && !els.qAud.hidden) {
     const sendTime = () => send('AUDIO_TIME', { t: els.qAud.currentTime });
-    const onPlay   = () => { send('AUDIO_PLAY'); send('AUDIO_META', { t: els.qAud.currentTime }); };
+    const onPlay   = () => { send('AUDIO_META', { t: els.qAud.currentTime }); send('AUDIO_PLAY'); };
     const onPause  = () => send('AUDIO_PAUSE');
     els.qAud.addEventListener('timeupdate', sendTime);
     els.qAud.addEventListener('play', onPlay);
@@ -795,7 +805,7 @@ function showForAudience(payload){
     if (els.ansImg2) els.ansImg2.src = '';
   }
   if (els.timerBox) els.timerBox.hidden = true;
-  if (!els.qAud.hidden) { els.qAud.muted = true; els.qAud.play().catch(()=>{}); }
+  if (!els.qAud.hidden) { try { els.qAud.pause(); els.qAud.currentTime = 0; } catch(e){} }
   els.modal.showModal();
 }
 
@@ -939,7 +949,6 @@ function sendSync() {
   const cleanPlayers = state.players.map(p => ({
     id: p.id,
     name: p.name,
-    avatar: p.avatar || null,
     jokers: p.jokers || {}
   }));
 
@@ -998,7 +1007,7 @@ function attachGlobalHandlers() {
   }
 
   if (els.presentBtn && role === 'host') {
-    els.presentBtn.onclick = () => window.open(`${location.pathname}?view=screen`, 'quiz-screen', 'width=1280,height=800');
+    els.presentBtn.onclick = () => window.open(`${location.pathname}?view=screen&room=${encodeURIComponent(remoteRoomId)}`, 'quiz-screen', 'width=1280,height=800');
   }
   if (els.addPlayerBtn && role==='host'){
     els.addPlayerBtn.onclick = () => {
