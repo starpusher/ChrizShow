@@ -84,9 +84,10 @@ function handleMsg(msg) {
       if (payload.seconds<=0 && els.timerBox) els.timerBox.hidden=true;
       showTimer(payload.seconds); break;
     case 'AUDIO_META':
-      if (!els.qAud.hidden){ els.qAud.muted = true; els.qAud.currentTime = payload.t||0; } break;
+      if (!els.qAud.hidden){ els.qAud.muted = false; els.qAud.currentTime = payload.t||0; } break;
     case 'AUDIO_PLAY':
-      if (!els.qAud.hidden){ els.qAud.muted = true; els.qAud.play().catch(()=>{}); } break;
+      if (!els.qAud.hidden){ try{ els.qAud.muted = false; }catch(e){}
+        els.qAud.play().catch(()=>{}); } break;
     case 'AUDIO_PAUSE':
       if (!els.qAud.hidden){ els.qAud.pause(); } break;
     case 'AUDIO_TIME':
@@ -140,15 +141,6 @@ async function applyRemoteSync(payload){
 }
 
 if (role === 'screen') chan.postMessage({ type: 'SCREEN_READY' });
-// unlock sfx after first interaction on audience
-if (role==='screen'){
-  const __unlock = ()=>{ try{ playSfx('correct',{prime:true}); playSfx('wrong',{prime:true}); }catch(e){};
-    window.removeEventListener('pointerdown', __unlock);
-    window.removeEventListener('keydown', __unlock);
-  };
-  window.addEventListener('pointerdown', __unlock);
-  window.addEventListener('keydown', __unlock);
-}
 
 /* ======= DOM ======= */
 const els = {
@@ -756,7 +748,7 @@ function applyCurrentForScreen() {
     if (!els.qAud.hidden && state.audio){
       if (typeof state.audio.t === 'number') els.qAud.currentTime = state.audio.t;
       if (state.audio.playing) {
-        els.qAud.muted = !window.__AUD_UNLOCKED;
+        els.qAud.muted = false;
         els.qAud.play().catch(()=>{});
       } else {
         els.qAud.pause();
@@ -832,7 +824,7 @@ function showForAudience(payload){
     if (els.ansImg2) els.ansImg2.src = '';
   }
   if (els.timerBox) els.timerBox.hidden = true;
-  if (!els.qAud.hidden) { els.qAud.muted = true; els.qAud.play().catch(()=>{}); }
+  if (!els.qAud.hidden) { els.qAud.muted = false; els.qAud.play().catch(()=>{}); }
   els.modal.showModal();
 }
 
