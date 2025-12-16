@@ -15,14 +15,6 @@ if (role === 'screen') document.body.classList.add('audience');
 
 let remoteRoomId = params.get('room') || 'default';
 
-// Robust: eigener Raum pro Show (wenn kein ?room= gesetzt ist)
-if (role === 'host' && (!params.get('room') || remoteRoomId === 'default')) {
-  const rand = Math.random().toString(36).slice(2, 8);
-  remoteRoomId = 'room-' + Date.now().toString(36) + '-' + rand;
-  params.set('room', remoteRoomId);
-  const newUrl = location.pathname + '?' + params.toString();
-  history.replaceState(null, '', newUrl);
-}
 
 
 const chan = new BroadcastChannel('quiz-show');
@@ -459,7 +451,14 @@ function renderOverlay(){
     });
     meta.append(nm, pts); card.append(img, meta, jokers); els.overlay.appendChild(card);
 
-    if (role==='host') card.onclick = () => { state.turn = idx; saveState(); renderOverlay(); sendTurn(); };
+    if (role==='host') card.onclick = () => { state.turn = idx; saveState(); renderOverlay(); sendTurn();
+      // Auto-Refresh der Auswahl im offenen Fragen-Modal
+      if (els.modal && els.modal.open && current && current.id) {
+        const starterId = state.players[state.turn]?.id;
+        populatePlayerSelect(current.id, starterId);
+        updateAttemptInfo(current.id);
+      }
+    };
   });
 }
 
