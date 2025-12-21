@@ -28,7 +28,7 @@
     {
       "title": "Geographiedilemma",
       "questions": [
-        { "id": "F-200-1", "points": 200, "text": "Was ist hier falsch?", "answer": "Norden und Süden wurde vertauscht", "answer_images": ["Weltkarte.jpg"]},
+        { "id": "F-200-1", "points": 200, "text": "Was ist hier falsch?", "image": "Weltkarte.jpg", "answer": "Norden und Süden wurden vertauscht"},
         { "id": "F-400-1", "points": 400, "text": "Nenne einen der früheren Namen der Stadt Istanbul", "answer": "Byzantion (ca. 660 v. Chr.) oder Konstantinopel (330 n. Chr.)" },
         { "id": "F-600-1", "points": 600, "text": "Nenne vier der elf Länder durch die der Äquator verläuft", "answer": "in Südamerika Ecuador, Kolumbien, Brasilien; in Afrika Gabun, Republik Kongo, Demokratische Republik Kongo, Uganda, Kenia, Somalia, und São Tomé und Príncipe; und in Asien Indonesien" },
         { "id": "F-800-1", "points": 800, "text": "Welche Farben fehlen hier und wo?", "image": "Jamaica.jpg", "answer": "Kreuz: gelb, links und rechts: schwarz, oben und unten: grün", "answer_images": ["JamaicaF.jpg"]},
@@ -48,11 +48,11 @@
     {
       "title": "Was wurde gesucht",
       "questions": [
-        { "id": "B-200-1", "points": 200, "text": "", "answer": "Normale"},
-        { "id": "B-400-1", "points": 400, "text": "", "answer": "Puk" },
-        { "id": "B-600-1", "points": 600, "text": "", "answer": "Dreizack" },
-        { "id": "B-800-1", "points": 800, "text": "", "answer": "Mondlandung" },
-        { "id": "B-1000-1", "points": 1000, "text": "", "answer": "Dagobert Duck" }
+        { "id": "B-200-1", "points": 200, "text": "Diese Comicfigur schwimmt, im Gegensatz zu den anderen seiner Art, nicht auf Wasser, sondern im Geld.", "answer": "Dagobert Duck"},
+        { "id": "B-400-1", "points": 400, "text": "Im Jahr 1969 markierte das Ereignis einen technologischen Wendepunkt des 20. Jahrhunderts und war gleichzeitig Teil eines größeren geopolitischen Wettbewerbs.", "answer": "Mondlandung" },
+        { "id": "B-600-1", "points": 600, "text": "Das Objekt ist ein fester, meist scheibenförmiger Körper, der speziell für den Einsatz in einer bestimmten Mannschaftssportart entwickelt wurde. Aufgrund seiner Materialeigenschaften ist es für hohe Geschwindigkeiten und starke Belastungen ausgelegt.", "answer": "Puk" },
+        { "id": "B-800-1", "points": 800, "text": "In der Geometrie bezeichnet der Begriff eine spezielle Gerade, die in einem definierten Punkt zu einer anderen Linie oder Fläche in einem rechten Winkel steht.", "answer": "Normale" },
+        { "id": "B-1000-1", "points": 1000, "text": "Dieses Objekt ist nicht nur eine Waffe, sondern auch ein Werkzeug. Es ist in vielen Kulturen, Mythen und staatlichen Zusammenhängen ein Symbol für Macht, Kontrolle oder Souveränität. Man findet es unter anderem im Meer, als auch auf einer Flagge.", "answer": "Dreizack", "answer_images": ["Barbados.jpg"]}
       ]
     }
   ]
