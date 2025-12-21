@@ -18,7 +18,7 @@
     {
       "title": "ne Frage, nur für mein Verständnis jetzt",
       "questions": [
-        { "id": "G-200-1", "points": 100, "text": "Zeig mal", "image": "Honigbiene.jpg", "answer": "So geht das", "answer_images": ["BilderimKopf.jpg"]},
+        { "id": "G-200-1", "points": 100, "text": "Zeig mal", "image": "Bienenwabe.jpg", "answer": "So geht das", "answer_images": ["BilderimKopf.jpg"]},
         { "id": "G-400-1", "points": 200, "text": "Was gibt der Deckungsbeitrag an?", "answer": "Der Teil des Umsatzes, welcher zur Deckung der Fixkosten beiträgt. Bzw. die Differenz zwischen Umsatz (Erlösen) und den variablen Kosten eines Produktes oder Unternehmens" },
         { "id": "G-600-1", "points": 300, "text": "Was ist das Prinzip hinter dem Bullwhip-Effekt?", "answer": "Der Bullwhip-Effekt (oder Peitscheneffekt) beschreibt, wie geringe Nachfrageänderungen beim Endkunden sich entlang einer Lieferkette zu immer größeren Bestellschwankungen aufschaukeln, je weiter man sich zum Hersteller bewegt, was zu Ineffizienzen, höheren Kosten, überhöhten Lagerbeständen und Lieferengpässen führt." },
         { "id": "G-800-1", "points": 400, "text": "Wie wird die Liquidität 3. Grades berechnet?", "answer": "", "answer_images": ["Liquidität.jpg"]},
