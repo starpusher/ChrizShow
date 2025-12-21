@@ -32,34 +32,9 @@ function handleMsg(msg) {
     case 'FX': { fx((payload&&payload.type)||'correct'); break; }
     case 'SHOW_Q': showForAudience(payload); break;
     case 'REVEAL_ANSWER':
-      if (els.answerImages) {
-        els.answerImages.hidden = true;
-        if (els.ansImg1) els.ansImg1.src = '';
-        if (els.ansImg2) els.ansImg2.src = '';
-      }
-      // ... danach wie gehabt befüllen und anzeigen:
-      {
-        const base = (data.settings && data.settings.media_base) || 'media/';
-        const imgs = current.q.answer_images;
-        const a1 = current.q.ans1, a2 = current.q.ans2;
-        if (els.answerImages && ((Array.isArray(imgs) && imgs.length >= 2) || (a1 && a2))) {
-          const s1 = Array.isArray(imgs) ? imgs[0] : a1;
-          const s2 = Array.isArray(imgs) ? imgs[1] : a2;
-          els.ansImg1.src = base + s1;
-          els.ansImg2.src = base + s2;
-          els.answerImages.hidden = false;
-        }
-      }
+      resetAnswerImages();
+      showAnswerImagesForCurrent();
       els.answer.hidden = false;
-      (function(){ try{
-        const base = (data.settings && data.settings.media_base) || '';
-        const q = current?.q || {};
-        const imgs = q.answer_images; const a1 = q.ans1; const a2 = q.ans2;
-        if (els.answerImages && ( (Array.isArray(imgs)&&imgs.length>=2) || (a1&&a2) )){
-          const s1 = Array.isArray(imgs)? imgs[0] : a1; const s2 = Array.isArray(imgs)? imgs[1] : a2;
-          els.ansImg1.src = base + s1; els.ansImg2.src = base + s2; els.answerImages.hidden = false;
-        }
-      }catch(e){} })();
       break;
     case 'RESOLVE_Q':
       state.q[payload.id] = { status: 'resolved', attempts: [] };
@@ -67,11 +42,7 @@ function handleMsg(msg) {
       if (els.modal.open) els.modal.close();
 
       // NEU: Antwortbilder zurücksetzen (Publikum)
-      if (els.answerImages) {
-        els.answerImages.hidden = true;
-        if (els.ansImg1) els.ansImg1.src = '';
-        if (els.ansImg2) els.ansImg2.src = '';
-      }
+      resetAnswerImages();
 
       renderBoard(); renderOverlay();
       break;
@@ -93,7 +64,7 @@ function handleMsg(msg) {
       if (!els.qAud.hidden){ els.qAud.currentTime = payload.t||0; } break;
     case 'SWAP_IMAGE':
       if (current?.q) {
-        const base = (data.settings && data.settings.media_base) || '';
+        const base = (data.settings && data.settings.media_base) || 'media/';
         const q = current.q;
         if (payload.mode === 'reveal' && q.image_reveal) {
           els.qImg.src = base + q.image_reveal; els.qImg.hidden = false;
@@ -472,11 +443,7 @@ function openQuestion(col, row) {
   // Host sieht Antwort sofort:
   els.answer.hidden = role !== 'host';
   setMedia(q);
-  if (els.answerImages) {
-    els.answerImages.hidden = true;
-    if (els.ansImg1) els.ansImg1.src = '';
-    if (els.ansImg2) els.ansImg2.src = '';
-  }
+  resetAnswerImages();
 
 
   const starterId = state.players[state.turn]?.id;
@@ -505,19 +472,15 @@ function openQuestion(col, row) {
     saveState();
     sendSync();
     send('REVEAL_ANSWER');
-    const base = (data.settings && data.settings.media_base) || '';
+    const base = (data.settings && data.settings.media_base) || 'media/';
     // optional single reveal image
     if (current.q.answer_image) {
       els.qImg.src = base + current.q.answer_image; els.qImg.hidden = false;
       send('SWAP_IMAGE', { mode:'reveal' });
     }
-    // two originals for fusion category
-    const imgs = current.q.answer_images; const a1 = current.q.ans1; const a2 = current.q.ans2;
-    if (els.answerImages && ( (Array.isArray(imgs) && imgs.length>=2) || (a1 && a2) )){
-      const src1 = Array.isArray(imgs)? imgs[0] : a1; const src2 = Array.isArray(imgs)? imgs[1] : a2;
-      els.ansImg1.src = base + src1; els.ansImg2.src = base + src2; els.answerImages.hidden = false;
-    }
-  };
+    // answer images (0–2)
+    showAnswerImages(current.q, base);
+};
 
   els.correctBtn.onclick = () => onResult('correct');
   els.wrongBtn.onclick   = () => onResult('wrong');
@@ -543,7 +506,7 @@ function openQuestion(col, row) {
   // Swap image button
   els.swapImageBtn.hidden = !(q.image && q.image_reveal);
   els.swapImageBtn.onclick = () => {
-    const base = (data.settings && data.settings.media_base) || '';
+    const base = (data.settings && data.settings.media_base) || 'media/';
     if (els.qImg.dataset.alt === 'reveal') {
       els.qImg.src = base + q.image; els.qImg.dataset.alt = 'pixel';
       send('SWAP_IMAGE', { mode:'pixel' });
@@ -575,11 +538,7 @@ function onModalCloseOnce(){
   stopTimer();
 
   // NEU: Antwortbilder zuverlässig zurücksetzen
-  if (els.answerImages) {
-    els.answerImages.hidden = true;
-    if (els.ansImg1) els.ansImg1.src = '';
-    if (els.ansImg2) els.ansImg2.src = '';
-  }
+  resetAnswerImages();
 }
 
 
@@ -698,11 +657,7 @@ function applyCurrentForScreen() {
         els.modal.close();
       }
       if (els.timerBox) els.timerBox.hidden = true;
-      if (els.answerImages) {
-        els.answerImages.hidden = true;
-        if (els.ansImg1) els.ansImg1.src = '';
-        if (els.ansImg2) els.ansImg2.src = '';
-      }
+      resetAnswerImages();
     } catch (e) {}
     return;
   }
@@ -748,16 +703,7 @@ function applyCurrentForScreen() {
   if (cur.answerRevealed) {
     try {
       const base = (data.settings && data.settings.media_base) || 'media/';
-      const q = current.q || {};
-      const imgs = q.answer_images;
-      const a1 = q.ans1, a2 = q.ans2;
-      if (els.answerImages && ((Array.isArray(imgs) && imgs.length >= 2) || (a1 && a2))) {
-        const s1 = Array.isArray(imgs) ? imgs[0] : a1;
-        const s2 = Array.isArray(imgs) ? imgs[1] : a2;
-        els.ansImg1.src = base + s1;
-        els.ansImg2.src = base + s2;
-        els.answerImages.hidden = false;
-      }
+      showAnswerImages(current.q || {}, base);
     } catch (e) {}
     els.answer.hidden = false;
   }
@@ -805,11 +751,7 @@ function showForAudience(payload){
   els.answer.textContent = q.answer || '—';
   els.answer.hidden = true;
   setMedia(q);
-  if (els.answerImages) {
-    els.answerImages.hidden = true;
-    if (els.ansImg1) els.ansImg1.src = '';
-    if (els.ansImg2) els.ansImg2.src = '';
-  }
+  resetAnswerImages();
   if (els.timerBox) els.timerBox.hidden = true;
   if (!els.qAud.hidden) { els.qAud.muted = true; els.qAud.play().catch(()=>{}); }
   els.modal.showModal();
@@ -876,8 +818,58 @@ function playSfx(kind, opts) {
   } catch (e) {}
 }
 
+
+function resetAnswerImages(){
+  if (!els.answerImages) return;
+  els.answerImages.hidden = true;
+  els.answerImages.classList.remove('single');
+  if (els.ansImg1) { els.ansImg1.src = ''; els.ansImg1.hidden = true; }
+  if (els.ansImg2) { els.ansImg2.src = ''; els.ansImg2.hidden = true; }
+}
+
+function showAnswerImages(q, base='media/'){
+  resetAnswerImages();
+  if (!q || !els.answerImages) return;
+
+  let sources = [];
+  if (Array.isArray(q.answer_images)) {
+    sources = q.answer_images.filter(Boolean);
+  } else if (q.ans1 || q.ans2) {
+    sources = [q.ans1, q.ans2].filter(Boolean);
+  } else if (q.answer_image) {
+    sources = [q.answer_image];
+  }
+
+  sources = sources.slice(0, 2);
+  if (sources.length === 0) return;
+
+  if (els.ansImg1) {
+    els.ansImg1.src = base + sources[0];
+    els.ansImg1.hidden = false;
+  }
+  if (els.ansImg2) {
+    if (sources.length >= 2) {
+      els.ansImg2.src = base + sources[1];
+      els.ansImg2.hidden = false;
+    } else {
+      els.ansImg2.src = '';
+      els.ansImg2.hidden = true;
+    }
+  }
+
+  els.answerImages.classList.toggle('single', sources.length === 1);
+  els.answerImages.hidden = false;
+}
+
+function showAnswerImagesForCurrent(){
+  try {
+    const base = (data.settings && data.settings.media_base) || 'media/';
+    showAnswerImages((current && current.q) ? current.q : null, base);
+  } catch (e) {}
+}
+
 function setMedia(q){
-  const base = (data.settings && data.settings.media_base) || '';
+  const base = (data.settings && data.settings.media_base) || 'media/';
   els.qImg.hidden = els.qAud.hidden = els.qVid.hidden = true;
   if (q.image){ els.qImg.src = base + q.image; els.qImg.hidden = false; els.qImg.dataset.alt='pixel'; }
   if (q.audio){ els.qAud.src = base + q.audio; els.qAud.hidden = false; }

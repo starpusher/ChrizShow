@@ -182,3 +182,6 @@ body{
 .ansimg{ max-width:min(42%, 380px); max-height:36vh; border-radius:.6rem; border:1px solid #333; object-fit:cover; }
 
 [hidden]{display:none!important}
+
+/* Single answer image: allow it to be larger while staying centered */
+.answrap.single .ansimg{ max-width:min(70%, 680px); }
