@@ -19,40 +19,40 @@
       "title": "ne Frage, nur für mein Verständnis jetzt",
       "questions": [
         { "id": "G-200-1", "points": 100, "text": "Zeig mal", "image": "Honigbiene.jpg", "answer": "So geht das", "answer_images": ["BilderimKopf.jpg"]},
-        { "id": "G-400-1", "points": 200, "text": "", "answer": "" },
-        { "id": "G-600-1", "points": 300, "text": "", "answer": "" },
-        { "id": "G-800-1", "points": 400, "text": "", "answer": "" },
-        { "id": "G-1000-1", "points": 500, "text": "", "answer": "" }
+        { "id": "G-400-1", "points": 200, "text": "Was gibt der Deckungsbeitrag an?", "answer": "Der Teil des Umsatzes, welcher zur Deckung der Fixkosten beiträgt. Bzw. die Differenz zwischen Umsatz (Erlösen) und den variablen Kosten eines Produktes oder Unternehmens" },
+        { "id": "G-600-1", "points": 300, "text": "Was ist das Prinzip hinter dem Bullwhip-Effekt?", "answer": "Der Bullwhip-Effekt (oder Peitscheneffekt) beschreibt, wie geringe Nachfrageänderungen beim Endkunden sich entlang einer Lieferkette zu immer größeren Bestellschwankungen aufschaukeln, je weiter man sich zum Hersteller bewegt, was zu Ineffizienzen, höheren Kosten, überhöhten Lagerbeständen und Lieferengpässen führt." },
+        { "id": "G-800-1", "points": 400, "text": "Wie wird die Liquidität 3. Grades berechnet?", "answer": "", "answer_images": ["Liquidität.jpg"]},
+        { "id": "G-1000-1", "points": 500, "text": "Was ist das zentrale Problem der Vollkostenrechnung bei kurzfristigen Entscheidungen?", "answer": "Fixkostenzurechnung verfälscht Entscheidungen." }
       ]
     },
     {
       "title": "Tierisch gut",
       "questions": [
-        { "id": "F-200-1", "points": 100, "text": "", "audio": ".mp3", "answer": "" },
-        { "id": "F-400-1", "points": 200, "text": "", "audio": ".mp3", "answer": "" },
-        { "id": "F-600-1", "points": 300, "text": "", "audio": ".mp3", "answer": "" },
-        { "id": "F-800-1", "points": 400, "text": "", "audio": ".mp3", "answer": "" },
-        { "id": "F-1000-1", "points": 500, "text": "", "audio": ".mp3", "answer": "" }
+        { "id": "F-200-1", "points": 100, "text": "Welche Farbe hat die Haut von Eisbären?", "answer": "Schwarz" },
+        { "id": "F-400-1", "points": 200, "text": "Was tun Opossums in Gefahrensituationen?", "answer": "Sie stellen sich tot" },
+        { "id": "F-600-1", "points": 300, "text": "Welches Tier schläft mit nur einer Gehirnhälfte?", "answer": "Delfin" },
+        { "id": "F-800-1", "points": 400, "text": "Welches Tier hat blaues Blut?", "answer": "Oktopus - So kann es den Sauerstoff in den kalten, sauerstoffarmen Bedingungen unter Wasser besser transportieren." },
+        { "id": "F-1000-1", "points": 500, "text": "Mit welcher Geschwindigkeit bewegen sich Nilpferde im Galopp fort?", "answer": "30 km/h" }
       ]
     },
     {
       "title": "Physik",
       "questions": [
-        { "id": "Y-200-1", "points": 100, "text": "", "image": ".jpg", "answer": "" },
-        { "id": "Y-400-1", "points": 200, "text": "", "image": ".jpg", "answer": "" },
-        { "id": "Y-600-1", "points": 300, "text": "", "image": ".jpg", "answer": "" },
-        { "id": "Y-800-1", "points": 400, "text": "", "image": ".jpg", "answer": "" },
-        { "id": "Y-1000-1", "points": 500, "text": "", "image": ".jpg", "answer": "" }
+        { "id": "Y-200-1", "points": 100, "text": "Welche Einheit hat die elektrische Spannung?", "answer": "Volt (V)" },
+        { "id": "Y-400-1", "points": 200, "text": "Bei einem Gewitter sieht man das Licht des Blitzes, bevor man den Einschlag (Donner) hört, da sich das Licht mit ca. 300.000 km/s bewegt. Wie schnell ist der Schall des Donners?", "answer": "343 m/s" },
+        { "id": "Y-600-1", "points": 300, "text": "Das Ohmsche Gesetz beschreibt den Zusammenhang zwischen Spannung, Stromstärke und Widerstand. Wie lautet die gängige Formel in der es dargestellt wird?", "answer": "Spannung (U) = Widerstand (R) * Stromstärke (I)" },
+        { "id": "Y-800-1", "points": 400, "text": "Wie viel Grad Fahrenheit sind 0 Grad Celsius?", "answer": "32 Grad Fahrenheit" },
+        { "id": "Y-1000-1", "points": 500, "text": "Nenne ein Newtonsches Gesetz", "answer": "1. Trägheitsgesetz (Ohne Kraft keine Änderung der Bewegung) 2. Grundgesetz der Dynamik (Kraft = Masse × Beschleunigung) 3. Wechselwirkungsprinzip (Actio = Reactio)" }
       ]
     },
     {
       "title": "Im Straßenverkehr",
       "questions": [
-        { "id": "B-200-1", "points": 100, "text": "", "image": ".jpg", "answer": "" },
-        { "id": "B-400-1", "points": 200, "text": "", "image": ".jpg", "answer": "" },
-        { "id": "B-600-1", "points": 300, "text": "", "image": ".jpg", "answer": "" },
-        { "id": "B-800-1", "points": 400, "text": "", "image": ".jpg", "answer": "" },
-        { "id": "B-1000-1", "points": 500, "text": "", "image": ".jpg", "answer": "" }
+        { "id": "B-200-1", "points": 100, "text": "Was passiert mit dem Bremsweg, wenn sich die Geschwindigkeit verdoppelt?", "answer": "Der Bremsweg vervierfacht sich" },
+        { "id": "B-400-1", "points": 200, "text": "In welcher Reihenfolge darf gefahren werden?", "image": "Straßenverkehr.jpg", "answer": "Straßenbahn -> Wohnmobil -> weißes Auto -> Taxi", "answer_images": ["Straßenverkehr.jpg"]},
+        { "id": "B-600-1", "points": 300, "text": "Welchen Standardabstand haben Leitpfosten in Deutschland ?", "answer": "50 Meter" },
+        { "id": "B-800-1", "points": 400, "text": "Wie wird der Anhalteweg berechnet?", "answer": "Reaktionsweg (Geschwindigkeit / 10) * 3 + Bremsweg (Geschwindigkeit / 10) * (Geschwindigkeit / 10) (bei einer Gefahrenbremsung wird der Bremsweg halbiert)" },
+        { "id": "B-1000-1", "points": 500, "text": "Welchen Abstand haben diese Schilder vom Bahnübergang?", "image": "Bahnübergang.png", "answer": "80 - 160 - 240" }
       ]
     }
   ]
