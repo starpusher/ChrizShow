@@ -12,7 +12,7 @@
         { "id": "S-400-1", "points": 400, "text": "Wer glotzt denn da?", "image": "RobertCut.jpg", "answer": "Robert Downey Jr.", "answer_images": ["Robert.jpg"]},
         { "id": "S-600-1", "points": 600, "text": "Wer glotzt denn da?", "image": "JenniferCut.jpg", "answer": "Jennifer Aniston", "answer_images": ["Jennifer.jpg"]},
         { "id": "S-800-1", "points": 800, "text": "Wer glotzt denn da?", "image": "TomHollandCut.jpg", "answer": "Tom Holland", "answer_images": ["TomHolland.jpg"]},
-        { "id": "S-1000-1", "points": 1000, "text": "Wer glotzt denn da?", "image": "BradPittCut.jpg", "answer": "Brad Pitt", "answer_images": ["BradPitt.jpg"]},
+        { "id": "S-1000-1", "points": 1000, "text": "Wer glotzt denn da?", "image": "BradPittCut.jpg", "answer": "Brad Pitt", "answer_images": ["BradPitt.jpg"]}
       ]
     },
     {
@@ -32,7 +32,7 @@
         { "id": "F-400-1", "points": 400, "text": "Nenne einen der früheren Namen der Stadt Istanbul", "answer": "Byzantion (ca. 660 v. Chr.) oder Konstantinopel (330 n. Chr.)" },
         { "id": "F-600-1", "points": 600, "text": "Nenne vier der elf Länder durch die der Äquator verläuft", "answer": "in Südamerika Ecuador, Kolumbien, Brasilien; in Afrika Gabun, Republik Kongo, Demokratische Republik Kongo, Uganda, Kenia, Somalia, und São Tomé und Príncipe; und in Asien Indonesien" },
         { "id": "F-800-1", "points": 800, "text": "Welche Farben fehlen hier und wo?", "image": "Jamaica.jpg", "answer": "Kreuz: gelb, links und rechts: schwarz, oben und unten: grün", "answer_images": ["JamaicaF.jpg"]},
-        { "id": "F-1000-1", "points": 1000, "text": "Welches Land in Asien hat diesen Umriss?", "image": "Myanmar.jpg", "answer": "Myanmar", "answer_images": ["MyanmarF.jpg"]},
+        { "id": "F-1000-1", "points": 1000, "text": "Welches Land in Asien hat diesen Umriss?", "image": "Myanmar.jpg", "answer": "Myanmar", "answer_images": ["MyanmarF.jpg"]}
       ]
     },
     {
