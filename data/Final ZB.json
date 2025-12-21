@@ -6,53 +6,13 @@
   "players": ["Spieler 1", "Spieler 2", "Spieler 3"],
   "categories": [
     {
-      "title": "FF15",
+      "title": "GRAMMANA",
       "questions": [
-        { "id": "S-200-1", "points": 200, "text": "", "answer": "" },
-        { "id": "S-400-1", "points": 400, "text": "", "answer": "" },
-        { "id": "S-600-1", "points": 600, "text": "", "answer": "" },
-        { "id": "S-800-1", "points": 800, "text": "", "answer": "" },
-        { "id": "S-1000-1", "points": 1000, "text": "", "answer": "" }
-      ]
-    },
-    {
-      "title": "Maincharaktervibes",
-      "questions": [
-        { "id": "G-200-1", "points": 200, "text": "", "answer": "" },
-        { "id": "G-400-1", "points": 400, "text": "", "answer": "" },
-        { "id": "G-600-1", "points": 600, "text": "", "answer": "" },
-        { "id": "G-800-1", "points": 800, "text": "", "answer": "" },
-        { "id": "G-1000-1", "points": 1000, "text": "", "answer": "" }
-      ]
-    },
-    {
-      "title": "Homo",
-      "questions": [
-        { "id": "F-200-1", "points": 200, "text": "", "answer": "" },
-        { "id": "F-400-1", "points": 400, "text": "", "answer": "" },
-        { "id": "F-600-1", "points": 600, "text": "", "answer": "" },
-        { "id": "F-800-1", "points": 800, "text": "", "answer": "" },
-        { "id": "F-1000-1", "points": 1000, "text": "", "answer": "" }
-      ]
-    },
-    {
-      "title": "Dideldum",
-      "questions": [
-        { "id": "Y-200-1", "points": 200, "text": "", "answer": "" },
-        { "id": "Y-400-1", "points": 400, "text": "", "answer": "" },
-        { "id": "Y-600-1", "points": 600, "text": "", "answer": "" },
-        { "id": "Y-800-1", "points": 800, "text": "", "answer": "" },
-        { "id": "Y-1000-1", "points": 1000, "text": "", "answer": "" }
-      ]
-    },
-    {
-      "title": "Würze des Lebens",
-      "questions": [
-        { "id": "B-200-1", "points": 200, "text": "", "answer": ""},
-        { "id": "B-400-1", "points": 400, "text": "", "answer": "" },
-        { "id": "B-600-1", "points": 600, "text": "", "answer": "" },
-        { "id": "B-800-1", "points": 800, "text": "", "answer": "" },
-        { "id": "B-1000-1", "points": 1000, "text": "", "answer": "" }
+        { "id": "S-200-1", "points": 200, "text": "wsrtiebshcitfbarte", "answer": "Betriebswirtschaft" },
+        { "id": "S-400-1", "points": 200, "text": "sktnecrhnaak", "answer": "Aktenschrank" },
+        { "id": "S-600-1", "points": 200, "text": "sryro eid LWB-fngare nreaw rim uz rhwsce", "answer": "Sorry die BWL-Fragen waren mir zu schwer" },
+        { "id": "S-800-1", "points": 200, "text": "ich ßwei zettj sheclwe rtie aelubs tbul tah", "answer": "Ich weiß jetzt welches Tier blaues Blut hat" },
+        { "id": "S-1000-1", "points": 200, "text": "frodiugrikes", "answer": "Risikofreudig" }
       ]
     }
   ]
