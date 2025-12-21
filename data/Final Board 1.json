@@ -18,7 +18,7 @@
     {
       "title": "ne Frage, nur für mein Verständnis jetzt",
       "questions": [
-        { "id": "G-200-1", "points": 100, {"question": {"text": "Wer darf zuerst fahren?","image": "BilderimKopf.jpg"},"answer": {"text": "Die Straßenbahn.","image": "Bienenwabe.jpg"}}},
+        { "id": "G-200-1", "points": 100, "text": "Zeig mal", "image": "Honigbiene.jpg", "answer": "So geht das", "answer_images": ["BilderimKopf.jpg"]},
         { "id": "G-400-1", "points": 200, "text": "", "answer": "" },
         { "id": "G-600-1", "points": 300, "text": "", "answer": "" },
         { "id": "G-800-1", "points": 400, "text": "", "answer": "" },
