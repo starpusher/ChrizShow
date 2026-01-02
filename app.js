@@ -1281,7 +1281,7 @@ function showForAudience(payload){
   resetAnswerImages();
   try{ const vb = ensureAudienceVolumeUI(); if(vb){ vb.style.display = (q && q.audio) ? 'block' : 'none'; } }catch(e){}
   showAudioGateIfNeeded(q);
-  try{ ensureEstimateUIForHost(id, q); }catch(e){}
+  try{ ensureEstimateUIForScreen(id, q); }catch(e){}
   try{ showTimer((state.timer && state.timer.seconds) ? state.timer.seconds : 0); }catch(e){}
   // Timerbox nicht hart verstecken – wird über state.timer / TIMER Sync gesteuert
   // if (els.timerBox) els.timerBox.hidden = true;
