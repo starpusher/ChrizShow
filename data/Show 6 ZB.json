@@ -6,13 +6,13 @@
   "players": ["Spieler 1", "Spieler 2", "Spieler 3"],
   "categories": [
     {
-      "title": "GRAMMANA",
+      "title": "Schätz mal",
       "questions": [
-        { "id": "S-200-1", "points": 200, "text": "RÜTFÜSHCK", "answer": "Frühstück" },
-        { "id": "S-400-1", "points": 200, "text": "APNONLOE", "answer": "Napoleon" },
-        { "id": "S-600-1", "points": 200, "text": "HCI AMG GZEUE", "answer": "Ich mag Züge" },
-        { "id": "S-800-1", "points": 200, "text": "HCKAHCNEIN", "answer": "KANINCHEN" },
-        { "id": "S-1000-1", "points": 200, "text": "TAROLSWTA", "answer": "Wortsalat" }
+        {"category": "Schätzfrage", "points": 200, "question": "Wie viele Liter Bier werden pro Oktoberfest durchschnittlich ausgeschenkt?", "answer": "7.1 Millionen Liter", "type": "estimate"},
+        {"category": "Schätzfrage", "points": 200, "question": "Wie viele Liter Bier werden pro Oktoberfest durchschnittlich ausgeschenkt?", "answer": "7.1 Millionen Liter", "type": "estimate"},
+        {"category": "Schätzfrage", "points": 200, "question": "Wie viele Liter Bier werden pro Oktoberfest durchschnittlich ausgeschenkt?", "answer": "7.1 Millionen Liter", "type": "estimate"},
+        {"category": "Schätzfrage", "points": 200, "question": "Wie viele Liter Bier werden pro Oktoberfest durchschnittlich ausgeschenkt?", "answer": "7.1 Millionen Liter", "type": "estimate"},
+        {"category": "Schätzfrage", "points": 200, "question": "Wie viele Liter Bier werden pro Oktoberfest durchschnittlich ausgeschenkt?", "answer": "7.1 Millionen Liter", "type": "estimate"}
       ]
     }
   ]
