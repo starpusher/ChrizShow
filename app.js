@@ -1511,17 +1511,23 @@ let __estimateReveal = {};
 
 function ensureEstimateUIForScreen(qid, q){
   if (role !== 'screen') return;
-  // Wenn keine Schätzfrage: UI entfernen, falls vorhanden
+
+  // HART: wenn keine Schätzfrage → UI sicher entfernen
   if (!isEstimateQuestion(q)) {
     try{
-      const old = document.getElementById('estimateBox');
-      if (old) old.remove();
+      const eb = document.getElementById('estimateBox');
+      if (eb) eb.remove();
+      const hb = document.getElementById('estimateHostBox');
+      if (hb) hb.remove();
       if (__estimateUnsub) { __estimateUnsub(); __estimateUnsub = null; }
+      __estimateData = {}; __estimateReveal = {};
     }catch(e){}
     return;
   }
 
   let box = document.getElementById('estimateBox');
+  const isNewQ = !box || box.dataset.qid !== String(qid);
+
   if (!box){
     box = document.createElement('div');
     box.id = 'estimateBox';
@@ -1535,7 +1541,7 @@ function ensureEstimateUIForScreen(qid, q){
     box.style.textAlign = 'center';
 
     const t = document.createElement('div');
-    t.textContent = 'Schätzung eingeben';
+    t.textContent = 'Schätzung abgeben';
     t.style.fontWeight = '900';
     t.style.letterSpacing = '.04em';
     t.style.marginBottom = '8px';
@@ -1547,26 +1553,26 @@ function ensureEstimateUIForScreen(qid, q){
     row.style.alignItems = 'center';
     row.style.flexWrap = 'wrap';
 
-    const nameInp = document.createElement('input');
-    nameInp.id = 'estimateName';
-    nameInp.type = 'text';
-    nameInp.placeholder = 'Name';
-    nameInp.value = getClientName();
-    nameInp.style.width = '180px';
-    nameInp.style.padding = '10px 12px';
-    nameInp.style.borderRadius = '10px';
-    nameInp.style.border = '1px solid rgba(255,255,255,.18)';
-    nameInp.style.background = 'rgba(23,23,42,.8)';
-    nameInp.style.color = 'white';
-    nameInp.style.fontSize = '16px';
-    nameInp.autocomplete = 'off';
-    nameInp.addEventListener('input', ()=>{ localStorage.setItem('aud_client_name', nameInp.value || ''); });
+    const name = document.createElement('input');
+    name.id = 'estimateName';
+    name.type = 'text';
+    name.placeholder = 'Name';
+    name.style.width = '180px';
+    name.style.padding = '10px 12px';
+    name.style.borderRadius = '10px';
+    name.style.border = '1px solid rgba(255,255,255,.18)';
+    name.style.background = 'rgba(23,23,42,.8)';
+    name.style.color = 'white';
+    name.style.fontSize = '16px';
+    name.autocomplete = 'off';
+    name.value = localStorage.getItem('aud_client_name') || '';
+    name.addEventListener('input', ()=> localStorage.setItem('aud_client_name', name.value.trim()));
 
     const inp = document.createElement('input');
     inp.id = 'estimateInput';
     inp.type = 'number';
     inp.inputMode = 'numeric';
-    inp.placeholder = 'z.B. 42';
+    inp.placeholder = 'Schätzung';
     inp.style.width = '180px';
     inp.style.padding = '10px 12px';
     inp.style.borderRadius = '10px';
@@ -1595,15 +1601,16 @@ function ensureEstimateUIForScreen(qid, q){
 
     const submit = async () => {
       const v = Number(inp.value);
+      const nm = (name.value || '').trim();
       if (!Number.isFinite(v)) return;
-      if (!window.db) return;
+      if (!nm) { msg.textContent = 'Bitte Name eingeben'; return; }
+      if (!window.db) { msg.textContent = '⚠️ Keine Verbindung'; return; }
       const cid = getClientId();
-      const name = (document.getElementById('estimateName')?.value || '').trim();
       try{
         const roomRef = window.db.collection('rooms').doc(remoteRoomId);
         const docRef = roomRef.collection('estimates').doc(String(qid));
         const payload = {};
-        payload[cid] = { name: (name || 'Gast'), value: v, ts: Date.now() };
+        payload[cid] = { name: nm, value: v, ts: Date.now() };
         await docRef.set(payload, { merge: true });
         msg.textContent = '✅ Abgegeben';
       }catch(e){
@@ -1614,30 +1621,24 @@ function ensureEstimateUIForScreen(qid, q){
     btn.addEventListener('click', submit);
     inp.addEventListener('keydown', (e)=>{ if (e.key==='Enter') { e.preventDefault(); submit(); } });
 
-    row.append(nameInp, inp, btn);
+    row.append(name, inp, btn);
     box.append(t, row, msg);
 
     const modalForm = document.querySelector('#qModal .modal');
     if (modalForm) modalForm.appendChild(box);
+  }
 
-  // Bei neuer Schätzfrage Eingaben/Status zurücksetzen
-  try{
-    const boxEl = document.getElementById('estimateBox');
-    if (boxEl){
-      const prevQ = boxEl.dataset.qid;
-      if (String(prevQ) !== String(qid)){
-        boxEl.dataset.qid = String(qid);
-        const inp = document.getElementById('estimateInput');
-        const msg = document.getElementById('estimateMsg');
-        if (inp) inp.value = '';
-        if (msg) msg.textContent = '';
-      }
-    }
-    // Name-Feld aus LocalStorage befüllen
-    const nm = document.getElementById('estimateName');
-    if (nm && !nm.value) nm.value = getClientName();
-  }catch(e){}
-
+  // pro neue Schätzfrage Status resetten
+  box.dataset.qid = String(qid);
+  if (isNewQ){
+    try{
+      const msg = document.getElementById('estimateMsg');
+      if (msg) msg.textContent = '';
+      const inp = document.getElementById('estimateInput');
+      if (inp) inp.value = '';
+    }catch(e){}
+    // Reveal-Cache nur für diese Runde neu
+    __estimateReveal = {};
   }
 
   if (window.db){
@@ -1646,8 +1647,7 @@ function ensureEstimateUIForScreen(qid, q){
       const docRef = roomRef.collection('estimates').doc(String(qid));
       if (__estimateUnsub) __estimateUnsub();
       __estimateUnsub = docRef.onSnapshot((d)=>{
-        if (!d.exists) return;
-        __estimateData = d.data() || {};
+        __estimateData = d.exists ? (d.data() || {}) : {};
         try{
           const cid = getClientId();
           const msg = document.getElementById('estimateMsg');
@@ -1660,11 +1660,11 @@ function ensureEstimateUIForScreen(qid, q){
 
 function ensureEstimateUIForHost(qid, q){
   if (role !== 'host') return;
-  // Wenn keine Schätzfrage: UI entfernen, falls vorhanden
+  // HART: wenn keine Schätzfrage → Host-UI entfernen
   if (!isEstimateQuestion(q)) {
     try{
-      const old = document.getElementById('estimateHostBox');
-      if (old) old.remove();
+      const hb = document.getElementById('estimateHostBox');
+      if (hb) hb.remove();
       if (__estimateUnsub) { __estimateUnsub(); __estimateUnsub = null; }
       __estimateData = {}; __estimateReveal = {};
     }catch(e){}

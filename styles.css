@@ -130,7 +130,7 @@ body.audience dialog menu { display:none }
 body.audience #revealBtn { display:none }
 body.audience .qtext, body.audience .answer { text-align:center }
 /* Publikum: Fortschritt sichtbar, aber nicht klickbar */
-body.audience audio, body.audience video { pointer-events:none }
+body.audience video { pointer-events:none }
 
 /* Effekte */
 #fx{position:fixed;inset:0;pointer-events:none;opacity:0}
@@ -185,3 +185,122 @@ body{
 
 /* Single answer image: allow it to be larger while staying centered */
 .answrap.single .ansimg{ max-width:min(70%, 680px); }
+
+
+/* ======= FX Overlays (Joker + Audio Gate) ======= */
+
+/* Joker FX (nur sichtbar, wenn ausgelöst) */
+#jokerFx{
+  position:fixed;
+  inset:0;
+  display:none;
+  place-items:center;
+  pointer-events:none;
+  z-index:9999;
+}
+#jokerFx.show{ display:grid; }
+#jokerFx .jokerfx-box{
+  position:relative;
+  padding:18px 22px;
+  border-radius:18px;
+  background:rgba(23,23,42,.82);
+  border:1px solid rgba(255,255,255,.14);
+  box-shadow:0 10px 50px rgba(0,0,0,.55);
+  backdrop-filter: blur(10px);
+  text-align:center;
+  transform: translateY(8px) scale(.92);
+  opacity:0;
+  filter: drop-shadow(0 0 0 rgba(182,147,255,0));
+}
+#jokerFx.show .jokerfx-box{
+  animation: jokerPop 2.2s ease forwards;
+}
+#jokerFx .jokerfx-label{
+  font-weight:900;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+  margin-bottom:8px;
+}
+#jokerFx .jokerfx-icon{
+  font-size:54px;
+  line-height:1;
+  display:inline-block;
+  transform-origin:center;
+}
+#jokerFx.show .jokerfx-icon{
+  animation: jokerSpin .9s ease both;
+}
+#jokerFx .jokerfx-box::before,
+#jokerFx .jokerfx-box::after{
+  content:"";
+  position:absolute;
+  inset:-14px;
+  border-radius:22px;
+  background: radial-gradient(circle at 30% 30%, rgba(182,147,255,.35), transparent 45%),
+              radial-gradient(circle at 70% 60%, rgba(93,225,255,.28), transparent 48%);
+  opacity:0;
+  filter: blur(10px);
+}
+#jokerFx.show .jokerfx-box::before{
+  animation: jokerGlow 2.2s ease forwards;
+}
+#jokerFx.show .jokerfx-box::after{
+  animation: jokerGlow 2.2s ease .08s forwards;
+}
+@keyframes jokerPop{
+  0%{ opacity:0; transform:translateY(12px) scale(.9); }
+  18%{ opacity:1; transform:translateY(0) scale(1.02); }
+  60%{ opacity:1; transform:translateY(0) scale(1); }
+  100%{ opacity:0; transform:translateY(-10px) scale(.98); }
+}
+@keyframes jokerSpin{
+  0%{ transform:rotate(-10deg) scale(.92); }
+  35%{ transform:rotate(8deg) scale(1.05); }
+  70%{ transform:rotate(-4deg) scale(1.02); }
+  100%{ transform:rotate(0deg) scale(1); }
+}
+@keyframes jokerGlow{
+  0%{ opacity:0; }
+  25%{ opacity:1; }
+  70%{ opacity:1; }
+  100%{ opacity:0; }
+}
+
+/* Audio Gate (liegt im Modal, daher absolut) */
+#audioGate.audio-gate{
+  position:absolute;
+  inset:0;
+  display:grid;
+  place-items:center;
+  pointer-events:auto;
+  z-index:60;
+}
+#audioGate[hidden]{ display:none !important; }
+#audioGate .audio-gate-box{
+  background:rgba(23,23,42,.82);
+  border:1px solid rgba(255,255,255,.14);
+  box-shadow:0 10px 40px rgba(0,0,0,.55);
+  backdrop-filter: blur(8px);
+  padding:18px 22px;
+  border-radius:16px;
+  text-align:center;
+  max-width:min(520px, 92vw);
+  transform: translateY(8px) scale(.98);
+  opacity:.95;
+}
+#audioGate.show .audio-gate-box{
+  animation: audioGatePop .55s ease both;
+}
+#audioGate .audio-gate-title{
+  font-weight:900;
+  letter-spacing:.06em;
+  text-transform:uppercase;
+  margin-bottom:6px;
+}
+#audioGate .audio-gate-sub{ opacity:.92; }
+#audioGate .audio-gate-icon{ margin-top:10px; font-size:26px; }
+#audioGate .audio-gate-hint{ margin-top:6px; opacity:.7; font-size:12px; }
+@keyframes audioGatePop{
+  0%{ transform: translateY(14px) scale(.96); opacity:0; }
+  100%{ transform: translateY(0) scale(1); opacity:1; }
+}
