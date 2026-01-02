@@ -34,7 +34,11 @@ function handleMsg(msg) {
       if (payload) showJokerFx(payload);
       break;
     }
-    case 'FX': { fx((payload&&payload.type)||'correct'); break; }
+    case 'FX': {
+      const t = (payload && payload.ts) ? Number(payload.ts) : Date.now();
+      if (t > __lastFxTs) { __lastFxTs = t; fxLocal((payload&&payload.type)||'correct'); }
+      break;
+    }
     case 'SHOW_Q': showForAudience(payload); break;
     case 'REVEAL_ANSWER':
       resetAnswerImages();
@@ -102,6 +106,16 @@ function handleMsg(msg) {
           });
         } catch(e) {}
       }
+
+
+      // Publikum: FX (Richtig/Falsch) auch remote über Sync auslösen
+      try {
+        const fp = payload.state && payload.state.fxPulse;
+        if (fp && fp.ts && Number(fp.ts) > __lastFxTs) {
+          __lastFxTs = Number(fp.ts);
+          fxLocal(fp.type || 'correct');
+        }
+      } catch(e) {}
       renderPlayersBar(true); renderBoard(); renderOverlay();
       applyCurrentForScreen();
       syncAudienceAudioFromState();
@@ -190,7 +204,7 @@ function showJokerFx({ jokerKey, playerId }={}){
   const icon = root.querySelector('.jokerfx-icon');
 
   const meta = {
-    j1: { title: 'JOKER', icon: '⇄' },
+    j1: { title: 'SCHIEBE-JOKER', icon: '⇄' },
     j2: { title: 'RISIKO-JOKER', icon: '🎲' },
     j3: { title: 'TELEFON-JOKER', icon: '☎️' }
   };
@@ -208,6 +222,53 @@ function showJokerFx({ jokerKey, playerId }={}){
 
   // kleine Vibration nur, wenn unterstützt
   try { if (navigator.vibrate) navigator.vibrate(40); } catch(e) {}
+
+/* ======= Audio-Gate (Publikum) ======= */
+function ensureAudioGateEl(){
+  let root = document.getElementById('audioGate');
+  if (root) return root;
+  root = document.createElement('div');
+  root.id = 'audioGate';
+  root.style.position = 'fixed';
+  root.style.inset = '0';
+  root.style.display = 'none';
+  root.style.placeItems = 'center';
+  root.style.zIndex = '998';
+  root.style.pointerEvents = 'auto';
+  root.innerHTML = `
+    <div style="
+      background:rgba(23,23,42,.82);
+      border:1px solid rgba(255,255,255,.14);
+      box-shadow:0 10px 40px rgba(0,0,0,.55);
+      backdrop-filter: blur(8px);
+      padding:18px 22px;
+      border-radius:16px;
+      text-align:center;
+      max-width:min(520px, 92vw);
+    ">
+      <div style="font-weight:900;letter-spacing:.06em;text-transform:uppercase;margin-bottom:6px;">Sound aktivieren</div>
+      <div style="opacity:.9">Tippe/Klicke einmal, damit Audio &amp; Effekte im Browser abgespielt werden dürfen.</div>
+      <div style="margin-top:10px;font-size:26px;">🔊</div>
+    </div>
+  `;
+  root.addEventListener('click', () => {
+    window.__audUnlocked = true;
+    try{ if (els.qAud) els.qAud.muted = false; }catch(e){}
+    root.style.display = 'none';
+    try{ syncAudienceAudioFromState(); }catch(e){}
+    try{ playSfx('correct'); }catch(e){}
+  });
+  document.body.appendChild(root);
+  return root;
+}
+
+function showAudioGateIfNeeded(q){
+  if (role !== 'screen') return;
+  if (window.__audUnlocked) return;
+  if (!q || !q.audio) return;
+  const gate = ensureAudioGateEl();
+  gate.style.display = 'grid';
+}
 }
 
 /* ======= Daten & State ======= */
@@ -226,6 +287,7 @@ const state = {
 };
 let current = { col: -1, row: -1, q: null, id: null };
 let timerInt = null;
+let __lastFxTs = 0;
 
 /* ======= Init ======= */
 init();
@@ -333,6 +395,7 @@ async function loadBoardFromUrl(url) {
   const prevPlayers = state.players.map(p => ({
     id: p.id,
     name: p.name,
+    avatar: p.avatar || null,
     jokers: p.jokers || { j1: true, j2: true, j3: true }
   }));
   const prevScores = { ...state.scores };
@@ -405,7 +468,7 @@ function renderPlayersBar(readOnly=false) {
     ['j1','j2','j3'].forEach((key,i)=>{
       const el = document.createElement('div'); el.className = 'joker ' + key + (p.jokers?.[key]? '' : ' off');
       el.textContent = i===0?'⇄':(i===1?'🎲':'☎️');
-      el.title = i===0?'Zuschiebe-Joker':(i===1?'Risikojoker':'Telefonjoker');
+      el.title = i===0?'Schiebe-Joker':(i===1?'Risikojoker':'Telefonjoker');
       if (role==='host' && !readOnly){
         el.onclick = () => {
           const prev = !!p.jokers?.[key];
@@ -533,6 +596,7 @@ function openQuestion(col, row) {
   els.answer.hidden = role !== 'host';
   setMedia(q);
   resetAnswerImages();
+  showAudioGateIfNeeded(q);
 
 
   const starterId = state.players[state.turn]?.id;
@@ -869,6 +933,7 @@ function showForAudience(payload){
   els.answer.hidden = true;
   setMedia(q);
   resetAnswerImages();
+  showAudioGateIfNeeded(q);
   if (els.timerBox) els.timerBox.hidden = true;
   syncAudienceAudioFromState();
   els.modal.showModal();
@@ -897,6 +962,7 @@ function stopTimer(){
 
 /* ======= Gemeinsames ======= */
 function playSfx(kind, opts) {
+  if (role==='screen' && !window.__audUnlocked && !(opts && opts.prime)) return;
   try {
     // 1) Nimm gecachte Base, sonst aus data.settings, sonst 'media/'
     let base = (window.SFX_BASE || (data && data.settings && data.settings.media_base) || 'media/');
@@ -1021,7 +1087,8 @@ function saveState() {
     settings: state.settings,
     turn: state.turn,
     current: state.current,
-    audio: state.audio
+    audio: state.audio,
+    fxPulse: state.fxPulse || null
   };
   localStorage.setItem('quiz_state', JSON.stringify(payload));
 }
@@ -1078,7 +1145,8 @@ function sendSync() {
     settings: state.settings,
     turn: state.turn,
     current: state.current,
-    audio: state.audio
+    audio: state.audio,
+    fxPulse: state.fxPulse || null
   };
 
   const payload = {
@@ -1106,12 +1174,22 @@ function sendSync() {
 }
 function sendScores(){ send('SCORES', { scores: state.scores }); }
 function sendTurn(){ send('TURN', { turn: state.turn }); }
-function fx(type){
-  if(!els.fx)return;
-  if(role==='host'){ send('FX',{type}); }
-  els.fx.style.background= type==='correct'?'rgba(63,191,108,.25)':'rgba(255,92,116,.25)';
+function fxLocal(type){
+  if(!els.fx) return;
+  els.fx.style.background = type==='correct' ? 'rgba(63,191,108,.25)' : 'rgba(255,92,116,.25)';
   els.fx.classList.remove('show'); void els.fx.offsetWidth; els.fx.classList.add('show');
   playSfx(type);
+}
+
+function fx(type){
+  if(role==='host'){
+    state.fxPulse = { type, ts: Date.now() };
+    saveState();
+    sendSync();
+    // zusätzlich lokal an andere Tabs (gleicher Browser) schicken
+    send('FX', { type, ts: state.fxPulse.ts });
+  }
+  fxLocal(type);
 }
 
 function attachGlobalHandlers() {
