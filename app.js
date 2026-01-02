@@ -60,9 +60,9 @@ function handleMsg(msg) {
       if (payload.seconds<=0 && els.timerBox) els.timerBox.hidden=true;
       showTimer(payload.seconds); break;
     case 'AUDIO_META':
-      if (!els.qAud.hidden){ els.qAud.muted = true; els.qAud.currentTime = payload.t||0; } break;
+      if (!els.qAud.hidden){ els.qAud.muted = false; try{ els.qAud.currentTime = payload.t||0; }catch(e){} } break;
     case 'AUDIO_PLAY':
-      if (!els.qAud.hidden){ els.qAud.muted = true; els.qAud.play().catch(()=>{}); } break;
+      if (!els.qAud.hidden){ els.qAud.muted = false; els.qAud.play().catch(()=>{}); } break;
     case 'AUDIO_PAUSE':
       if (!els.qAud.hidden){ els.qAud.pause(); } break;
     case 'AUDIO_TIME':
@@ -80,11 +80,28 @@ function handleMsg(msg) {
       }
       break;
     case 'SYNC_STATE':
+      const __prevPlayers = Array.isArray(state.players) ? state.players.map(p=>({id:p.id, jokers:{...(p.jokers||{})}})) : [];
       data = payload.data;
       window.SFX_BASE = (payload.data && payload.data.settings && payload.data.settings.media_base) || window.SFX_BASE || 'media/';
       if (!window.SFX_BASE.endsWith('/')) window.SFX_BASE += '/';
       Object.assign(state, { players: payload.state.players, scores: payload.state.scores, q: payload.state.q||{}, settings: payload.state.settings||{}, turn: payload.state.turn||0, current: payload.state.current || null });
       state.used = new Set(payload.state.used || []);
+
+      // Publikum (remote): Joker-Animation auch ohne BroadcastChannel auslösen.
+      if (role === 'screen') {
+        try {
+          const prev = {};
+          (__prevPlayers || []).forEach(p => { prev[p.id] = p.jokers || {}; });
+          (state.players || []).forEach(p => {
+            const pj = prev[p.id] || {};
+            ['j1','j2','j3'].forEach(k => {
+              if (pj[k] === true && (p.jokers && p.jokers[k] === false)) {
+                showJokerFx({ jokerKey: k, playerId: p.id });
+              }
+            });
+          });
+        } catch(e) {}
+      }
       renderPlayersBar(true); renderBoard(); renderOverlay();
       applyCurrentForScreen();
       syncAudienceAudioFromState();
@@ -94,7 +111,12 @@ function handleMsg(msg) {
 if (role === 'screen') chan.postMessage({ type: 'SCREEN_READY' });
 // unlock sfx after first interaction on audience
 if (role==='screen'){
-  const __unlock = ()=>{ try{ playSfx('correct',{prime:true}); playSfx('wrong',{prime:true}); }catch(e){};
+  const __unlock = ()=>{
+    try{ playSfx('correct',{prime:true}); playSfx('wrong',{prime:true}); }catch(e){}
+    // Audio in der Publikums-Ansicht erst nach User-Interaktion freischalten (Browser-Autoplay-Regeln)
+    window.__audUnlocked = true;
+    try{ if (els.qAud) els.qAud.muted = false; }catch(e){}
+    try{ syncAudienceAudioFromState(); }catch(e){}
     window.removeEventListener('pointerdown', __unlock);
     window.removeEventListener('keydown', __unlock);
   };
@@ -705,6 +727,12 @@ function syncAudienceAudioFromState(){
       // currentTime kann werfen, wenn metadata noch nicht geladen ist -> try/catch
       try{ els.qAud.currentTime = t; }catch(e){}
     }
+    if (!window.__audUnlocked) {
+      // Ohne User-Interaktion dürfen Browser Audio oft nicht abspielen.
+      els.qAud.muted = true;
+      els.qAud.pause();
+      return;
+    }
     els.qAud.muted = false;
     if (a.playing) {
       els.qAud.play().catch(()=>{});
@@ -770,7 +798,7 @@ function applyCurrentForScreen() {
   if (cur.answerRevealed) {
     try {
       const base = (data.settings && data.settings.media_base) || 'media/';
-      showAnswerImages(current.q || {}, base);
+      showAnswerImages(found.q || {}, base);
     } catch (e) {}
     els.answer.hidden = false;
   }
@@ -842,7 +870,7 @@ function showForAudience(payload){
   setMedia(q);
   resetAnswerImages();
   if (els.timerBox) els.timerBox.hidden = true;
-  if (!els.qAud.hidden) { els.qAud.muted = true; els.qAud.play().catch(()=>{}); }
+  syncAudienceAudioFromState();
   els.modal.showModal();
 }
 
