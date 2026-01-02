@@ -825,7 +825,6 @@ function setupRemoteListener() {
 
       handleMsg({ type: 'SYNC_STATE', payload });
     });
-    });
   } catch (e) {
     console.warn('Remote-Listener konnte nicht gestartet werden', e);
   }
