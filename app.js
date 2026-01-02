@@ -29,6 +29,11 @@ function handleMsg(msg) {
     return;
   }
   switch (type) {
+    case 'JOKER_USED': {
+      // Publikum: kurze Joker-Animation
+      if (payload) showJokerFx(payload);
+      break;
+    }
     case 'FX': { fx((payload&&payload.type)||'correct'); break; }
     case 'SHOW_Q': showForAudience(payload); break;
     case 'REVEAL_ANSWER':
@@ -55,9 +60,9 @@ function handleMsg(msg) {
       if (payload.seconds<=0 && els.timerBox) els.timerBox.hidden=true;
       showTimer(payload.seconds); break;
     case 'AUDIO_META':
-      if (!els.qAud.hidden){ els.qAud.muted = false; els.qAud.currentTime = payload.t||0; } break;
+      if (!els.qAud.hidden){ els.qAud.muted = true; els.qAud.currentTime = payload.t||0; } break;
     case 'AUDIO_PLAY':
-      if (!els.qAud.hidden){ els.qAud.muted = false; els.qAud.play().catch(()=>{}); } break;
+      if (!els.qAud.hidden){ els.qAud.muted = true; els.qAud.play().catch(()=>{}); } break;
     case 'AUDIO_PAUSE':
       if (!els.qAud.hidden){ els.qAud.pause(); } break;
     case 'AUDIO_TIME':
@@ -75,38 +80,14 @@ function handleMsg(msg) {
       }
       break;
     case 'SYNC_STATE':
-      if (payload.data) data = payload.data;
+      data = payload.data;
       window.SFX_BASE = (payload.data && payload.data.settings && payload.data.settings.media_base) || window.SFX_BASE || 'media/';
       if (!window.SFX_BASE.endsWith('/')) window.SFX_BASE += '/';
-      Object.assign(state, { players: payload.state.players, scores: payload.state.scores, q: payload.state.q||{}, settings: payload.state.settings||{}, turn: payload.state.turn||0, current: payload.state.current || null, audio: payload.state.audio || state.audio, lastFx: payload.state.lastFx || null });
+      Object.assign(state, { players: payload.state.players, scores: payload.state.scores, q: payload.state.q||{}, settings: payload.state.settings||{}, turn: payload.state.turn||0, current: payload.state.current || null });
       state.used = new Set(payload.state.used || []);
       renderPlayersBar(true); renderBoard(); renderOverlay();
       applyCurrentForScreen();
       syncAudienceAudioFromState();
-
-      // Remote FX: play once when state.lastFx advances (for Firestore-only audience)
-      if (role==='screen' && state.lastFx && state.lastFx.ts && state.lastFx.ts > __lastFxSeenTs) {
-        __lastFxSeenTs = state.lastFx.ts;
-        fx(state.lastFx.type || 'correct');
-      }
-
-      // Joker animation on audience when a joker switches from on -> off
-      if (role==='screen' && Array.isArray(state.players)) {
-        const prev = __lastJokers || {};
-        const next = {};
-        for (const p of state.players) {
-          next[p.id] = { ...(p.jokers||{}) };
-          const pj = prev[p.id] || {};
-          const nj = next[p.id] || {};
-          ['j1','j2','j3'].forEach(k=>{
-            if (pj[k] !== undefined && pj[k] === true && nj[k] === false) {
-              triggerJokerFx(k, p.name);
-            }
-          });
-        }
-        __lastJokers = next;
-      }
-
       break;
   }
 }
@@ -163,6 +144,50 @@ const els = {
   ansImg2: document.getElementById('ansImg2')
 };
 
+/* ======= Joker-FX (Publikum) ======= */
+function ensureJokerFxEl(){
+  let root = document.getElementById('jokerFx');
+  if (root) return root;
+  root = document.createElement('div');
+  root.id = 'jokerFx';
+  root.innerHTML = `
+    <div class="jokerfx-box" aria-hidden="true">
+      <div class="jokerfx-label">JOKER</div>
+      <div class="jokerfx-icon">★</div>
+    </div>
+  `;
+  document.body.appendChild(root);
+  return root;
+}
+
+function showJokerFx({ jokerKey, playerId }={}){
+  if (role !== 'screen') return;
+  const root = ensureJokerFxEl();
+  const box = root.querySelector('.jokerfx-box');
+  const label = root.querySelector('.jokerfx-label');
+  const icon = root.querySelector('.jokerfx-icon');
+
+  const meta = {
+    j1: { title: 'JOKER', icon: '⇄' },
+    j2: { title: 'RISIKO-JOKER', icon: '🎲' },
+    j3: { title: 'TELEFON-JOKER', icon: '☎️' }
+  };
+  const m = meta[jokerKey] || { title:'JOKER', icon:'★' };
+
+  // optional: Spielername anzeigen, wenn vorhanden (ohne Layout zu verändern)
+  const pname = (state.players || []).find(p => p.id === playerId)?.name;
+  label.textContent = pname ? `${m.title} • ${pname}` : m.title;
+  icon.textContent = m.icon;
+
+  // retrigger animation
+  root.classList.remove('show');
+  void root.offsetWidth;
+  root.classList.add('show');
+
+  // kleine Vibration nur, wenn unterstützt
+  try { if (navigator.vibrate) navigator.vibrate(40); } catch(e) {}
+}
+
 /* ======= Daten & State ======= */
 let data = null;
 let boards = [];
@@ -175,15 +200,10 @@ const state = {
   history: [],
   audio: { playing:false, t:0, ts:0 },
   current: null,                  // aktuell offene Frage (für Publikum)
-  turn: 0,                        // Index des aktuellen Spielers
-  lastFx: null                   // {type, ts} for remote audience effects
+  turn: 0                         // Index des aktuellen Spielers
 };
 let current = { col: -1, row: -1, q: null, id: null };
 let timerInt = null;
-
-// Audience helpers (remote state-driven FX/Joker)
-let __lastFxSeenTs = 0;
-let __lastJokers = {};
 
 /* ======= Init ======= */
 init();
@@ -291,7 +311,6 @@ async function loadBoardFromUrl(url) {
   const prevPlayers = state.players.map(p => ({
     id: p.id,
     name: p.name,
-    avatar: p.avatar || null,
     jokers: p.jokers || { j1: true, j2: true, j3: true }
   }));
   const prevScores = { ...state.scores };
@@ -364,9 +383,18 @@ function renderPlayersBar(readOnly=false) {
     ['j1','j2','j3'].forEach((key,i)=>{
       const el = document.createElement('div'); el.className = 'joker ' + key + (p.jokers?.[key]? '' : ' off');
       el.textContent = i===0?'⇄':(i===1?'🎲':'☎️');
-      el.title = i===0?'Zuschiebe':(i===1?'Risikojoker':'Telefonjoker');
+      el.title = i===0?'Zuschiebe-Joker':(i===1?'Risikojoker':'Telefonjoker');
       if (role==='host' && !readOnly){
-        el.onclick = () => { p.jokers[key] = !p.jokers[key]; el.classList.toggle('off', !p.jokers[key]); saveState(); renderOverlay(); sendSync(); };
+        el.onclick = () => {
+          const prev = !!p.jokers?.[key];
+          p.jokers[key] = !prev;
+          el.classList.toggle('off', !p.jokers[key]);
+          saveState();
+          renderOverlay();
+          sendSync();
+          // Publikum: Animation nur beim "Verbrauchen" (an -> aus)
+          if (prev && !p.jokers[key]) send('JOKER_USED', { jokerKey: key, playerId: p.id });
+        };
       }
       jokers.appendChild(el);
     });
@@ -447,7 +475,16 @@ function renderOverlay(){
     ['j1','j2','j3'].forEach((key,i)=>{
       const el = document.createElement('div'); el.className = 'joker ' + key + (p.jokers?.[key]? '' : ' off');
       el.textContent = i===0?'⇄':(i===1?'🎲':'☎️');
-      if (role==='host'){ el.onclick = () => { p.jokers[key] = !p.jokers[key]; el.classList.toggle('off', !p.jokers[key]); saveState(); sendSync(); }; }
+      if (role==='host'){
+        el.onclick = () => {
+          const prev = !!p.jokers?.[key];
+          p.jokers[key] = !prev;
+          el.classList.toggle('off', !p.jokers[key]);
+          saveState();
+          sendSync();
+          if (prev && !p.jokers[key]) send('JOKER_USED', { jokerKey: key, playerId: p.id });
+        };
+      }
       jokers.appendChild(el);
     });
     meta.append(nm, pts); card.append(img, meta, jokers); els.overlay.appendChild(card);
@@ -733,7 +770,7 @@ function applyCurrentForScreen() {
   if (cur.answerRevealed) {
     try {
       const base = (data.settings && data.settings.media_base) || 'media/';
-      showAnswerImages(found.q || {}, base);
+      showAnswerImages(current.q || {}, base);
     } catch (e) {}
     els.answer.hidden = false;
   }
@@ -744,28 +781,10 @@ function setupRemoteListener() {
   if (!window.db) return;
   try {
     const roomRef = window.db.collection('rooms').doc(remoteRoomId);
-    roomRef.onSnapshot(async (doc) => {
+    roomRef.onSnapshot((doc) => {
       if (!doc.exists) return;
       const raw = doc.data();
       if (!raw) return;
-
-      // Publikum: Board-JSON anhand der vom Host gespeicherten boardUrl nachladen,
-      // damit das Board auch in einem anderen Gerät/Browser angezeigt wird.
-      if (raw.boardUrl && (!data || data.__url !== raw.boardUrl)) {
-        try {
-          const resBoard = await fetch(raw.boardUrl, { cache: 'no-store' });
-          if (resBoard.ok) {
-            data = await resBoard.json();
-            // Quelle merken (nur intern)
-            try { data.__url = raw.boardUrl; } catch(e) {}
-            state.settings = (data && data.settings) || {};
-            window.SFX_BASE = (state.settings && state.settings.media_base) || window.SFX_BASE || 'media/';
-            if (!window.SFX_BASE.endsWith('/')) window.SFX_BASE += '/';
-          }
-        } catch (e) {
-          console.warn('Board konnte nicht nachgeladen werden', e);
-        }
-      }
 
       let payload;
       if (raw.stateJson) {
@@ -801,7 +820,7 @@ function showForAudience(payload){
   setMedia(q);
   resetAnswerImages();
   if (els.timerBox) els.timerBox.hidden = true;
-  if (!els.qAud.hidden) { els.qAud.muted = false; els.qAud.play().catch(()=>{}); }
+  if (!els.qAud.hidden) { els.qAud.muted = true; els.qAud.play().catch(()=>{}); }
   els.modal.showModal();
 }
 
@@ -866,30 +885,6 @@ function playSfx(kind, opts) {
   } catch (e) {}
 }
 
-
-
-function triggerJokerFx(kind, playerName){
-  // only for audience screen
-  if (role !== 'screen') return;
-  const map = {
-    j1: { icon:'⇄', label:'Joker' },
-    j2: { icon:'🎲', label:'Risikojoker' },
-    j3: { icon:'☎️', label:'Telefonjoker' }
-  };
-  const cfg = map[kind] || { icon:'✨', label:'Joker' };
-
-  let el = document.getElementById('jokerFx');
-  if (!el){
-    el = document.createElement('div');
-    el.id = 'jokerFx';
-    el.innerHTML = '<div class="jokerfx-box"><div class="jokerfx-label"></div><div class="jokerfx-icon"></div><div class="jokerfx-player"></div></div>';
-    document.body.appendChild(el);
-  }
-  el.querySelector('.jokerfx-label').textContent = cfg.label;
-  el.querySelector('.jokerfx-icon').textContent = cfg.icon;
-  el.querySelector('.jokerfx-player').textContent = playerName ? playerName : '';
-  el.classList.remove('show'); void el.offsetWidth; el.classList.add('show');
-}
 
 function resetAnswerImages(){
   if (!els.answerImages) return;
@@ -976,8 +971,7 @@ function saveState() {
     settings: state.settings,
     turn: state.turn,
     current: state.current,
-    audio: state.audio,
-    lastFx: state.lastFx
+    audio: state.audio
   };
   localStorage.setItem('quiz_state', JSON.stringify(payload));
 }
@@ -993,7 +987,6 @@ function loadState() {
     state.turn = s.turn || 0;
     state.current = s.current || null;
     state.audio = s.audio || state.audio || { playing:false, t:0, ts:0 };
-    state.lastFx = s.lastFx || state.lastFx || null;
   } catch {}
 }
 
@@ -1023,7 +1016,6 @@ function sendSync() {
   const cleanPlayers = state.players.map(p => ({
     id: p.id,
     name: p.name,
-    avatar: p.avatar || null,
     jokers: p.jokers || {}
   }));
 
@@ -1035,8 +1027,7 @@ function sendSync() {
     settings: state.settings,
     turn: state.turn,
     current: state.current,
-    audio: state.audio,
-    lastFx: state.lastFx
+    audio: state.audio
   };
 
   const payload = {
@@ -1066,15 +1057,7 @@ function sendScores(){ send('SCORES', { scores: state.scores }); }
 function sendTurn(){ send('TURN', { turn: state.turn }); }
 function fx(type){
   if(!els.fx)return;
-
-  // Host: broadcast + also store in state for remote screens (Firestore)
-  if(role==='host'){
-    send('FX',{type});
-    state.lastFx = { type, ts: Date.now() };
-    try{ saveState(); }catch(e){}
-    try{ sendSync(); }catch(e){}
-  }
-
+  if(role==='host'){ send('FX',{type}); }
   els.fx.style.background= type==='correct'?'rgba(63,191,108,.25)':'rgba(255,92,116,.25)';
   els.fx.classList.remove('show'); void els.fx.offsetWidth; els.fx.classList.add('show');
   playSfx(type);
