@@ -187,6 +187,27 @@ const els = {
   ansImg2: document.getElementById('ansImg2')
 };
 
+
+// Audience Audio: bei großen MP3s dauert "metadata/canplay" länger.
+// Wir syncen deshalb nach dem Laden nochmal und starten ggf. neu.
+let __audBindDone = false;
+function bindAudienceAudioEventsOnce(){
+  if (__audBindDone) return;
+  __audBindDone = true;
+  if (!els.qAud) return;
+  const onMeta = () => { try{ syncAudienceAudioFromState(); }catch(e){} };
+  const onCanPlay = () => { 
+    try{
+      if (role==='screen' && window.__audUnlocked) {
+        const a = state.audio || {};
+        if (a.playing) els.qAud.play().catch(()=>{});
+      }
+    }catch(e){}
+  };
+  els.qAud.addEventListener('loadedmetadata', onMeta);
+  els.qAud.addEventListener('canplay', onCanPlay);
+}
+
 /* ======= Joker-FX (Publikum) ======= */
 function ensureJokerFxEl(){
   let root = document.getElementById('jokerFx');
@@ -231,47 +252,57 @@ function showJokerFx({ jokerKey, playerId }={}){
 }
 
 /* ======= Audio-Gate (Publikum) ======= */
+
 function ensureAudioGateEl(){
   let root = document.getElementById('audioGate');
   if (root) return root;
+
   root = document.createElement('div');
   root.id = 'audioGate';
-  root.style.position = 'fixed';
-  root.style.inset = '0';
-  root.style.display = 'none';
-  root.style.placeItems = 'center';
-  root.style.zIndex = '998';
-  root.style.pointerEvents = 'auto';
+  root.className = 'audio-gate';
   root.innerHTML = `
-    <div style="
-      background:rgba(23,23,42,.82);
-      border:1px solid rgba(255,255,255,.14);
-      box-shadow:0 10px 40px rgba(0,0,0,.55);
-      backdrop-filter: blur(8px);
-      padding:18px 22px;
-      border-radius:16px;
-      text-align:center;
-      max-width:min(520px, 92vw);
-    ">
-      <div style="font-weight:900;letter-spacing:.06em;text-transform:uppercase;margin-bottom:6px;">Sound aktivieren</div>
-      <div style="opacity:.9">Tippe/Klicke einmal, damit Audio &amp; Effekte im Browser abgespielt werden dürfen.</div>
-      <div style="margin-top:10px;font-size:26px;">🔊</div>
+    <div class="audio-gate-box">
+      <div class="audio-gate-title">Sound aktivieren</div>
+      <div class="audio-gate-sub">Tippe/Klicke einmal, damit Audio &amp; Effekte im Browser abgespielt werden dürfen.</div>
+      <div class="audio-gate-icon">🔊</div>
+      <div class="audio-gate-hint">(Danach bleibt der Sound an.)</div>
     </div>
   `;
+
   root.addEventListener('click', () => {
     window.__audUnlocked = true;
+
+    // Gate ausblenden
+    root.classList.remove('show');
+    root.setAttribute('hidden','');
+
+    // Audios entsperren
     try{ if (els.qAud) els.qAud.muted = false; }catch(e){}
-    root.style.display = 'none';
+
+    // direkt den aktuellen State anwenden
     try{ syncAudienceAudioFromState(); }catch(e){}
+
+    // Wenn der Host gerade "playing" hat, nochmal aktiv play() versuchen
     try{
-      if (current && current.q && current.q.audio && els.qAud && !els.qAud.hidden) {
+      const a = state.audio || {};
+      if (a.playing && els.qAud && !els.qAud.hidden) {
         els.qAud.muted = false;
         els.qAud.play().catch(()=>{});
       }
     }catch(e){}
+
+    // SFX-Test (kurz) – wenn es geblockt wäre, merkt man das sofort.
     try{ playSfx('correct'); }catch(e){}
   });
-  document.body.appendChild(root);
+
+  // In das Modal einhängen, damit es auch über einem offenen <dialog> sichtbar ist
+  const modalForm = document.querySelector('#qModal .modal');
+  if (modalForm) {
+    try{ modalForm.style.position = modalForm.style.position || 'relative'; }catch(e){}
+    modalForm.appendChild(root);
+  } else {
+    document.body.appendChild(root);
+  }
   return root;
 }
 
@@ -279,9 +310,16 @@ function showAudioGateIfNeeded(q){
   if (role !== 'screen') return;
   if (window.__audUnlocked) return;
   if (!q || !q.audio) return;
+
   const gate = ensureAudioGateEl();
-  gate.style.display = 'grid';
+  gate.removeAttribute('hidden');
+
+  // retrigger (pop) animation
+  gate.classList.remove('show');
+  void gate.offsetWidth;
+  gate.classList.add('show');
 }
+
 
 /* ======= Daten & State ======= */
 let data = null;
@@ -312,6 +350,9 @@ async function init() {
     // Screen lädt kein eigenes JSON, sondern wartet auf Sync vom Host
   }
   loadState();
+
+  // Audio hooks (Publikum) einmalig binden
+  try{ bindAudienceAudioEventsOnce(); }catch(e){}
 
   // Avatar-Cache aus lokalem State initialisieren + (Host) remote bereitstellen
   try{
@@ -1090,7 +1131,9 @@ function playSfx(kind, opts) {
       tag.src = src;
       if (opts && opts.prime) {
         tag.muted = true;
-        tag.play().then(() => { try { tag.pause(); tag.currentTime = 0; tag.muted = false; } catch(e){} });
+        try { tag.load(); } catch(e) {}
+        tag.muted = false;
+        return;
       } else {
         tag.muted = false;
         try { tag.currentTime = 0; } catch(e) {}
@@ -1103,7 +1146,9 @@ function playSfx(kind, opts) {
     const a = new Audio(src);
     if (opts && opts.prime) {
       a.muted = true;
-      a.play().then(() => { try { a.pause(); a.currentTime = 0; a.muted = false; } catch(e){} });
+      try { a.load(); } catch(e) {}
+      a.muted = false;
+      return;
     } else {
       a.muted = false;
       a.play().catch(() => {});
