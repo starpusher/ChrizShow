@@ -833,7 +833,7 @@ function openQuestion(col, row) {
   resetAnswerImages();
   try{ const vb = ensureAudienceVolumeUI(); if(vb){ vb.style.display = (q && q.audio) ? 'block' : 'none'; } }catch(e){}
   showAudioGateIfNeeded(q);
-  try{ ensureEstimateUIForScreen(id, q); }catch(e){}
+  try{ ensureEstimateUIForHost(id, q); }catch(e){}
   try{ showTimer((state.timer && state.timer.seconds) ? state.timer.seconds : 0); }catch(e){}
 
 
@@ -1281,7 +1281,7 @@ function showForAudience(payload){
   resetAnswerImages();
   try{ const vb = ensureAudienceVolumeUI(); if(vb){ vb.style.display = (q && q.audio) ? 'block' : 'none'; } }catch(e){}
   showAudioGateIfNeeded(q);
-  try{ ensureEstimateUIForScreen(id, q); }catch(e){}
+  try{ ensureEstimateUIForHost(id, q); }catch(e){}
   try{ showTimer((state.timer && state.timer.seconds) ? state.timer.seconds : 0); }catch(e){}
   // Timerbox nicht hart verstecken – wird über state.timer / TIMER Sync gesteuert
   // if (els.timerBox) els.timerBox.hidden = true;
@@ -1502,12 +1502,7 @@ function getClientId(){
   return id;
 }
 function getClientName(){
-  let n = localStorage.getItem('aud_client_name');
-  if (!n){
-    n = prompt('Name (für Schätzfragen):') || 'Gast';
-    localStorage.setItem('aud_client_name', n);
-  }
-  return n;
+  return localStorage.getItem('aud_client_name') || '';
 }
 
 let __estimateUnsub = null;
@@ -1516,7 +1511,15 @@ let __estimateReveal = {};
 
 function ensureEstimateUIForScreen(qid, q){
   if (role !== 'screen') return;
-  if (!isEstimateQuestion(q)) return;
+  // Wenn keine Schätzfrage: UI entfernen, falls vorhanden
+  if (!isEstimateQuestion(q)) {
+    try{
+      const old = document.getElementById('estimateBox');
+      if (old) old.remove();
+      if (__estimateUnsub) { __estimateUnsub(); __estimateUnsub = null; }
+    }catch(e){}
+    return;
+  }
 
   let box = document.getElementById('estimateBox');
   if (!box){
@@ -1543,6 +1546,21 @@ function ensureEstimateUIForScreen(qid, q){
     row.style.justifyContent = 'center';
     row.style.alignItems = 'center';
     row.style.flexWrap = 'wrap';
+
+    const nameInp = document.createElement('input');
+    nameInp.id = 'estimateName';
+    nameInp.type = 'text';
+    nameInp.placeholder = 'Name';
+    nameInp.value = getClientName();
+    nameInp.style.width = '180px';
+    nameInp.style.padding = '10px 12px';
+    nameInp.style.borderRadius = '10px';
+    nameInp.style.border = '1px solid rgba(255,255,255,.18)';
+    nameInp.style.background = 'rgba(23,23,42,.8)';
+    nameInp.style.color = 'white';
+    nameInp.style.fontSize = '16px';
+    nameInp.autocomplete = 'off';
+    nameInp.addEventListener('input', ()=>{ localStorage.setItem('aud_client_name', nameInp.value || ''); });
 
     const inp = document.createElement('input');
     inp.id = 'estimateInput';
@@ -1580,12 +1598,12 @@ function ensureEstimateUIForScreen(qid, q){
       if (!Number.isFinite(v)) return;
       if (!window.db) return;
       const cid = getClientId();
-      const name = getClientName();
+      const name = (document.getElementById('estimateName')?.value || '').trim();
       try{
         const roomRef = window.db.collection('rooms').doc(remoteRoomId);
         const docRef = roomRef.collection('estimates').doc(String(qid));
         const payload = {};
-        payload[cid] = { name, value: v, ts: Date.now() };
+        payload[cid] = { name: (name || 'Gast'), value: v, ts: Date.now() };
         await docRef.set(payload, { merge: true });
         msg.textContent = '✅ Abgegeben';
       }catch(e){
@@ -1596,11 +1614,30 @@ function ensureEstimateUIForScreen(qid, q){
     btn.addEventListener('click', submit);
     inp.addEventListener('keydown', (e)=>{ if (e.key==='Enter') { e.preventDefault(); submit(); } });
 
-    row.append(inp, btn);
+    row.append(nameInp, inp, btn);
     box.append(t, row, msg);
 
     const modalForm = document.querySelector('#qModal .modal');
     if (modalForm) modalForm.appendChild(box);
+
+  // Bei neuer Schätzfrage Eingaben/Status zurücksetzen
+  try{
+    const boxEl = document.getElementById('estimateBox');
+    if (boxEl){
+      const prevQ = boxEl.dataset.qid;
+      if (String(prevQ) !== String(qid)){
+        boxEl.dataset.qid = String(qid);
+        const inp = document.getElementById('estimateInput');
+        const msg = document.getElementById('estimateMsg');
+        if (inp) inp.value = '';
+        if (msg) msg.textContent = '';
+      }
+    }
+    // Name-Feld aus LocalStorage befüllen
+    const nm = document.getElementById('estimateName');
+    if (nm && !nm.value) nm.value = getClientName();
+  }catch(e){}
+
   }
 
   if (window.db){
@@ -1623,7 +1660,16 @@ function ensureEstimateUIForScreen(qid, q){
 
 function ensureEstimateUIForHost(qid, q){
   if (role !== 'host') return;
-  if (!isEstimateQuestion(q)) return;
+  // Wenn keine Schätzfrage: UI entfernen, falls vorhanden
+  if (!isEstimateQuestion(q)) {
+    try{
+      const old = document.getElementById('estimateHostBox');
+      if (old) old.remove();
+      if (__estimateUnsub) { __estimateUnsub(); __estimateUnsub = null; }
+      __estimateData = {}; __estimateReveal = {};
+    }catch(e){}
+    return;
+  }
   if (!window.db) return;
 
   let box = document.getElementById('estimateHostBox');
