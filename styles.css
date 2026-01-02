@@ -130,7 +130,7 @@ body.audience dialog menu { display:none }
 body.audience #revealBtn { display:none }
 body.audience .qtext, body.audience .answer { text-align:center }
 /* Publikum: Fortschritt sichtbar, aber nicht klickbar */
-body.audience audio, body.audience video { pointer-events:none }
+body.audience video { pointer-events:none }
 
 /* Effekte */
 #fx{position:fixed;inset:0;pointer-events:none;opacity:0}
