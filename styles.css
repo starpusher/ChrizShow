@@ -213,7 +213,7 @@ body{
   filter: drop-shadow(0 0 0 rgba(182,147,255,0));
 }
 #jokerFx.show .jokerfx-box{
-  animation: jokerPop 1.2s ease forwards;
+  animation: jokerPop 2.2s ease forwards;
 }
 #jokerFx .jokerfx-label{
   font-weight:900;
@@ -242,10 +242,10 @@ body{
   filter: blur(10px);
 }
 #jokerFx.show .jokerfx-box::before{
-  animation: jokerGlow 1.2s ease forwards;
+  animation: jokerGlow 2.2s ease forwards;
 }
 #jokerFx.show .jokerfx-box::after{
-  animation: jokerGlow 1.2s ease .08s forwards;
+  animation: jokerGlow 2.2s ease .08s forwards;
 }
 @keyframes jokerPop{
   0%{ opacity:0; transform:translateY(12px) scale(.9); }

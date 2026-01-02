@@ -92,7 +92,7 @@ function handleMsg(msg) {
       data = payload.data;
       window.SFX_BASE = (payload.data && payload.data.settings && payload.data.settings.media_base) || window.SFX_BASE || 'media/';
       if (!window.SFX_BASE.endsWith('/')) window.SFX_BASE += '/';
-      Object.assign(state, { players: payload.state.players, scores: payload.state.scores, q: payload.state.q||{}, settings: payload.state.settings||{}, turn: payload.state.turn||0, current: payload.state.current || null, audio: payload.state.audio || state.audio, fxPulse: payload.state.fxPulse || state.fxPulse });
+      Object.assign(state, { players: payload.state.players, scores: payload.state.scores, q: payload.state.q||{}, settings: payload.state.settings||{}, turn: payload.state.turn||0, current: payload.state.current || null, audio: payload.state.audio || state.audio, fxPulse: payload.state.fxPulse || state.fxPulse, timer: payload.state.timer || state.timer });
       state.used = new Set(payload.state.used || []);
 
       // Avatare aus separater Sync-Quelle anwenden
@@ -125,6 +125,7 @@ function handleMsg(msg) {
       } catch(e) {}
       renderPlayersBar(true); renderBoard(); renderOverlay();
       applyCurrentForScreen();
+      try{ showTimer((state.timer && state.timer.seconds) ? state.timer.seconds : 0); }catch(e){}
       syncAudienceAudioFromState();
       break;
   }
@@ -251,6 +252,80 @@ function showJokerFx({ jokerKey, playerId }={}){
   try { if (navigator.vibrate) navigator.vibrate(40); } catch(e) {}
 }
 
+
+/* ======= Publikum: Volume UI (Audio ohne Controls) ======= */
+function ensureAudienceVolumeUI(){
+  if (role !== 'screen') return;
+  if (!els.qAud) return;
+
+  // Native Controls aus (damit niemand starten/skippen/download/speed ändern kann)
+  try{
+    els.qAud.controls = false;
+    els.qAud.setAttribute('controlsList','nodownload noplaybackrate noremoteplayback');
+    els.qAud.setAttribute('disablepictureinpicture','');
+  }catch(e){}
+
+  let box = document.getElementById('audVolBox');
+  if (box) return box;
+
+  box = document.createElement('div');
+  box.id = 'audVolBox';
+  box.style.display = 'none';
+  box.style.margin = '10px auto 0';
+  box.style.maxWidth = '520px';
+  box.style.width = '92%';
+
+  const label = document.createElement('div');
+  label.textContent = 'Lautstärke';
+  label.style.opacity = '.9';
+  label.style.fontWeight = '700';
+  label.style.marginBottom = '6px';
+  label.style.textAlign = 'center';
+
+  const row = document.createElement('div');
+  row.style.display = 'flex';
+  row.style.alignItems = 'center';
+  row.style.gap = '10px';
+  row.style.justifyContent = 'center';
+
+  const icon = document.createElement('span');
+  icon.textContent = '🔊';
+  icon.style.fontSize = '18px';
+
+  const rng = document.createElement('input');
+  rng.type = 'range';
+  rng.min = '0';
+  rng.max = '1';
+  rng.step = '0.01';
+  rng.value = String(Number(localStorage.getItem('aud_volume') ?? '0.9'));
+  rng.style.width = '240px';
+
+  const pct = document.createElement('span');
+  pct.style.minWidth = '44px';
+  pct.style.textAlign = 'right';
+  pct.style.opacity = '.85';
+
+  const apply = () => {
+    const v = Math.max(0, Math.min(1, Number(rng.value)));
+    pct.textContent = Math.round(v*100) + '%';
+    try{ els.qAud.volume = v; }catch(e){}
+    localStorage.setItem('aud_volume', String(v));
+  };
+  rng.addEventListener('input', apply);
+  apply();
+
+  row.append(icon, rng, pct);
+  box.append(label, row);
+
+  const modalForm = document.querySelector('#qModal .modal');
+  if (modalForm) {
+    try{ modalForm.appendChild(box); }catch(e){}
+  } else {
+    document.body.appendChild(box);
+  }
+  return box;
+}
+
 /* ======= Audio-Gate (Publikum) ======= */
 
 function ensureAudioGateEl(){
@@ -352,6 +427,16 @@ async function init() {
     // Screen lädt kein eigenes JSON, sondern wartet auf Sync vom Host
   }
   loadState();
+
+  // Publikum: Kontextmenü auf Media sperren (Download-Menü etc.)
+  if (role==='screen'){
+    try{
+      document.addEventListener('contextmenu', (e)=>{
+        const t = e.target;
+        if (t && (t.tagName==='AUDIO' || t.tagName==='VIDEO')) e.preventDefault();
+      }, { capture:true });
+    }catch(e){}
+  }
 
   // Audio hooks (Publikum) einmalig binden
   try{ bindAudienceAudioEventsOnce(); }catch(e){}
@@ -729,7 +814,10 @@ function openQuestion(col, row) {
   els.answer.hidden = role !== 'host';
   setMedia(q);
   resetAnswerImages();
+  try{ const vb = ensureAudienceVolumeUI(); if(vb){ vb.style.display = (q && q.audio) ? 'block' : 'none'; } }catch(e){}
   showAudioGateIfNeeded(q);
+  try{ ensureEstimateUIForHost(id, q); }catch(e){}
+  try{ showTimer((state.timer && state.timer.seconds) ? state.timer.seconds : 0); }catch(e){}
 
 
   const starterId = state.players[state.turn]?.id;
@@ -884,6 +972,14 @@ function onModalCloseOnce(){
 
   // NEU: Antwortbilder zuverlässig zurücksetzen
   resetAnswerImages();
+  try{
+    const eb = document.getElementById('estimateBox');
+    if (eb) eb.remove();
+    const hb = document.getElementById('estimateHostBox');
+    if (hb) hb.remove();
+    if (__estimateUnsub) { __estimateUnsub(); __estimateUnsub = null; }
+    __estimateData = {}; __estimateReveal = {};
+  }catch(e){}
 }
 
 
@@ -1162,7 +1258,10 @@ function showForAudience(payload){
   els.answer.hidden = true;
   setMedia(q);
   resetAnswerImages();
+  try{ const vb = ensureAudienceVolumeUI(); if(vb){ vb.style.display = (q && q.audio) ? 'block' : 'none'; } }catch(e){}
   showAudioGateIfNeeded(q);
+  try{ ensureEstimateUIForHost(id, q); }catch(e){}
+  try{ showTimer((state.timer && state.timer.seconds) ? state.timer.seconds : 0); }catch(e){}
   if (els.timerBox) els.timerBox.hidden = true;
   syncAudienceAudioFromState();
   els.modal.showModal();
@@ -1175,8 +1274,10 @@ function startTimer(seconds){
   els.timerBox.hidden = false;
   els.timerBox.textContent = t;
   send('TIMER', { seconds: t });
+  if (role==='host'){ state.timer = { seconds: t, ts: Date.now() }; saveState(); sendSync(); }
   timerInt = setInterval(() => {
     t--; els.timerBox.textContent = t; send('TIMER', { seconds: t });
+    if (role==='host'){ state.timer = { seconds: t, ts: Date.now() }; saveState(); sendSync(); }
     if (t <= 0) stopTimer();
   }, 1000);
 }
@@ -1187,6 +1288,7 @@ function showTimer(t){
 function stopTimer(){
   if (timerInt){ clearInterval(timerInt); timerInt = null; }
   els.timerBox.hidden = true; send('TIMER', { seconds: 0 });
+  if (role==='host'){ state.timer = { seconds: 0, ts: Date.now() }; saveState(); sendSync(); }
 }
 
 /* ======= Gemeinsames ======= */
@@ -1321,7 +1423,8 @@ function saveState() {
     turn: state.turn,
     current: state.current,
     audio: state.audio,
-    fxPulse: state.fxPulse || null
+    fxPulse: state.fxPulse || null,
+    timer: state.timer || { seconds:0, ts:0 }
   };
   localStorage.setItem('quiz_state', JSON.stringify(payload));
 }
@@ -1337,6 +1440,7 @@ function loadState() {
     state.turn = s.turn || 0;
     state.current = s.current || null;
     state.audio = s.audio || state.audio || { playing:false, t:0, ts:0 };
+    state.timer = s.timer || state.timer || { seconds:0, ts:0 };
   } catch {}
 }
 
@@ -1359,6 +1463,290 @@ function undo(){
   }
 }
 
+
+/* ======= Schätzfrage (Estimate) =======
+JSON: in der Frage z.B.  "type":"estimate"  oder  "estimate":true
+Publikum kann eine Zahl eingeben, Host sieht alle Eingaben und kann sie nacheinander aufdecken.
+*/
+function isEstimateQuestion(q){
+  return !!(q && (q.type === 'estimate' || q.estimate === true || q.mode === 'estimate'));
+}
+function getClientId(){
+  let id = localStorage.getItem('aud_client_id');
+  if (!id){
+    id = 'c_' + Math.random().toString(36).slice(2,10) + Date.now().toString(36).slice(2,6);
+    localStorage.setItem('aud_client_id', id);
+  }
+  return id;
+}
+function getClientName(){
+  let n = localStorage.getItem('aud_client_name');
+  if (!n){
+    n = prompt('Name (für Schätzfragen):') || 'Gast';
+    localStorage.setItem('aud_client_name', n);
+  }
+  return n;
+}
+
+let __estimateUnsub = null;
+let __estimateData = {};
+let __estimateReveal = {};
+
+function ensureEstimateUIForScreen(qid, q){
+  if (role !== 'screen') return;
+  if (!isEstimateQuestion(q)) return;
+
+  let box = document.getElementById('estimateBox');
+  if (!box){
+    box = document.createElement('div');
+    box.id = 'estimateBox';
+    box.style.margin = '14px auto 0';
+    box.style.maxWidth = '560px';
+    box.style.width = '92%';
+    box.style.background = 'rgba(18,18,31,.75)';
+    box.style.border = '1px solid rgba(255,255,255,.12)';
+    box.style.borderRadius = '14px';
+    box.style.padding = '12px 14px';
+    box.style.textAlign = 'center';
+
+    const t = document.createElement('div');
+    t.textContent = 'Schätzung eingeben';
+    t.style.fontWeight = '900';
+    t.style.letterSpacing = '.04em';
+    t.style.marginBottom = '8px';
+
+    const row = document.createElement('div');
+    row.style.display = 'flex';
+    row.style.gap = '10px';
+    row.style.justifyContent = 'center';
+    row.style.alignItems = 'center';
+    row.style.flexWrap = 'wrap';
+
+    const inp = document.createElement('input');
+    inp.id = 'estimateInput';
+    inp.type = 'number';
+    inp.inputMode = 'numeric';
+    inp.placeholder = 'z.B. 42';
+    inp.style.width = '180px';
+    inp.style.padding = '10px 12px';
+    inp.style.borderRadius = '10px';
+    inp.style.border = '1px solid rgba(255,255,255,.18)';
+    inp.style.background = 'rgba(23,23,42,.8)';
+    inp.style.color = 'white';
+    inp.style.fontSize = '18px';
+    inp.autocomplete = 'off';
+
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.textContent = 'Abgeben';
+    btn.style.padding = '10px 14px';
+    btn.style.borderRadius = '10px';
+    btn.style.border = '1px solid rgba(255,255,255,.16)';
+    btn.style.background = 'rgba(155,107,255,.25)';
+    btn.style.color = 'white';
+    btn.style.fontWeight = '800';
+    btn.style.cursor = 'pointer';
+
+    const msg = document.createElement('div');
+    msg.id = 'estimateMsg';
+    msg.style.marginTop = '8px';
+    msg.style.opacity = '.9';
+    msg.style.fontSize = '13px';
+
+    const submit = async () => {
+      const v = Number(inp.value);
+      if (!Number.isFinite(v)) return;
+      if (!window.db) return;
+      const cid = getClientId();
+      const name = getClientName();
+      try{
+        const roomRef = window.db.collection('rooms').doc(remoteRoomId);
+        const docRef = roomRef.collection('estimates').doc(String(qid));
+        const payload = {};
+        payload[cid] = { name, value: v, ts: Date.now() };
+        await docRef.set(payload, { merge: true });
+        msg.textContent = '✅ Abgegeben';
+      }catch(e){
+        msg.textContent = '⚠️ Konnte nicht senden';
+      }
+    };
+
+    btn.addEventListener('click', submit);
+    inp.addEventListener('keydown', (e)=>{ if (e.key==='Enter') { e.preventDefault(); submit(); } });
+
+    row.append(inp, btn);
+    box.append(t, row, msg);
+
+    const modalForm = document.querySelector('#qModal .modal');
+    if (modalForm) modalForm.appendChild(box);
+  }
+
+  if (window.db){
+    try{
+      const roomRef = window.db.collection('rooms').doc(remoteRoomId);
+      const docRef = roomRef.collection('estimates').doc(String(qid));
+      if (__estimateUnsub) __estimateUnsub();
+      __estimateUnsub = docRef.onSnapshot((d)=>{
+        if (!d.exists) return;
+        __estimateData = d.data() || {};
+        try{
+          const cid = getClientId();
+          const msg = document.getElementById('estimateMsg');
+          if (msg && __estimateData[cid]) msg.textContent = '✅ Abgegeben';
+        }catch(e){}
+      });
+    }catch(e){}
+  }
+}
+
+function ensureEstimateUIForHost(qid, q){
+  if (role !== 'host') return;
+  if (!isEstimateQuestion(q)) return;
+  if (!window.db) return;
+
+  let box = document.getElementById('estimateHostBox');
+  if (!box){
+    box = document.createElement('div');
+    box.id = 'estimateHostBox';
+    box.style.marginTop = '10px';
+    box.style.paddingTop = '10px';
+    box.style.borderTop = '1px solid rgba(255,255,255,.12)';
+
+    const title = document.createElement('div');
+    title.textContent = 'Schätzungen';
+    title.style.fontWeight = '900';
+    title.style.letterSpacing = '.04em';
+    title.style.marginBottom = '8px';
+
+    const list = document.createElement('div');
+    list.id = 'estimateHostList';
+    list.style.display = 'grid';
+    list.style.gap = '8px';
+
+    const actions = document.createElement('div');
+    actions.style.display = 'flex';
+    actions.style.gap = '10px';
+    actions.style.flexWrap = 'wrap';
+    actions.style.marginTop = '8px';
+
+    const btnRevealAll = document.createElement('button');
+    btnRevealAll.type = 'button';
+    btnRevealAll.textContent = 'Alle aufdecken';
+    btnRevealAll.style.padding = '8px 10px';
+    btnRevealAll.style.borderRadius = '10px';
+    btnRevealAll.style.border = '1px solid rgba(255,255,255,.16)';
+    btnRevealAll.style.background = 'rgba(155,107,255,.18)';
+    btnRevealAll.style.color = 'white';
+    btnRevealAll.style.fontWeight = '800';
+    btnRevealAll.style.cursor = 'pointer';
+    btnRevealAll.onclick = ()=>{ Object.keys(__estimateData||{}).forEach(k=>__estimateReveal[k]=true); renderEstimateHostList(q); };
+
+    const btnClosest = document.createElement('button');
+    btnClosest.type = 'button';
+    btnClosest.textContent = 'Nächster dran markieren';
+    btnClosest.style.padding = '8px 10px';
+    btnClosest.style.borderRadius = '10px';
+    btnClosest.style.border = '1px solid rgba(255,255,255,.16)';
+    btnClosest.style.background = 'rgba(93,225,255,.14)';
+    btnClosest.style.color = 'white';
+    btnClosest.style.fontWeight = '800';
+    btnClosest.style.cursor = 'pointer';
+    btnClosest.onclick = ()=>{ markClosestEstimate(q); };
+
+    actions.append(btnRevealAll, btnClosest);
+    box.append(title, list, actions);
+
+    const wrap = document.querySelector('.attempts');
+    if (wrap) wrap.appendChild(box);
+  }
+
+  try{
+    const roomRef = window.db.collection('rooms').doc(remoteRoomId);
+    const docRef = roomRef.collection('estimates').doc(String(qid));
+    if (__estimateUnsub) __estimateUnsub();
+    __estimateUnsub = docRef.onSnapshot((d)=>{
+      __estimateData = d.exists ? (d.data() || {}) : {};
+      renderEstimateHostList(q);
+    });
+  }catch(e){}
+}
+
+function renderEstimateHostList(q){
+  const list = document.getElementById('estimateHostList');
+  if (!list) return;
+  list.innerHTML = '';
+
+  const entries = Object.entries(__estimateData||{})
+    .map(([cid,v])=>({ cid, ...(v||{}) }))
+    .filter(x=>x && typeof x.value !== 'undefined')
+    .sort((a,b)=>(a.ts||0)-(b.ts||0));
+
+  entries.forEach(ent=>{
+    const row = document.createElement('div');
+    row.style.display = 'flex';
+    row.style.justifyContent = 'space-between';
+    row.style.alignItems = 'center';
+    row.style.gap = '10px';
+    row.style.padding = '8px 10px';
+    row.style.borderRadius = '12px';
+    row.style.border = '1px solid rgba(255,255,255,.12)';
+    row.style.background = 'rgba(18,18,31,.55)';
+
+    const left = document.createElement('div');
+    left.style.fontWeight = '800';
+    left.textContent = ent.name || ent.cid;
+
+    const val = document.createElement('div');
+    val.style.fontVariantNumeric = 'tabular-nums';
+    const revealed = !!__estimateReveal[ent.cid];
+    val.textContent = revealed ? String(ent.value) : '•••';
+    val.style.opacity = revealed ? '1' : '.7';
+
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.textContent = revealed ? 'Verbergen' : 'Aufdecken';
+    btn.style.padding = '6px 10px';
+    btn.style.borderRadius = '10px';
+    btn.style.border = '1px solid rgba(255,255,255,.16)';
+    btn.style.background = 'rgba(155,107,255,.14)';
+    btn.style.color = 'white';
+    btn.style.fontWeight = '800';
+    btn.style.cursor = 'pointer';
+    btn.onclick = ()=>{ __estimateReveal[ent.cid] = !revealed; renderEstimateHostList(q); };
+
+    row.append(left, val, btn);
+    list.appendChild(row);
+  });
+
+  if (!entries.length){
+    const empty = document.createElement('div');
+    empty.style.opacity = '.75';
+    empty.textContent = 'Noch keine Eingaben…';
+    list.appendChild(empty);
+  }
+}
+
+function markClosestEstimate(q){
+  let ans = (q && q.answer) ? String(q.answer) : '';
+  const m = ans.match(/-?\d+(?:[\.,]\d+)?/);
+  if (!m) return;
+  const correct = Number(m[0].replace(',','.'));
+  if (!Number.isFinite(correct)) return;
+
+  let best = null;
+
+  Object.entries(__estimateData||{}).forEach(([cid,v])=>{
+    const val = Number(v && v.value);
+    if (!Number.isFinite(val)) return;
+    const diff = Math.abs(val - correct);
+    if (!best || diff < best.diff) best = { cid, diff };
+  });
+  if (!best) return;
+
+  __estimateReveal[best.cid] = true;
+  renderEstimateHostList(q);
+}
+
 /* ======= Helper & Global ======= */
 function idToName(pid){ return state.players.find(p => p.id === pid)?.name || pid; }
 function sendSync() {
@@ -1379,7 +1767,8 @@ function sendSync() {
     turn: state.turn,
     current: state.current,
     audio: state.audio,
-    fxPulse: state.fxPulse || null
+    fxPulse: state.fxPulse || null,
+    timer: state.timer || { seconds:0, ts:0 }
   };
 
   // lokal an andere Tabs (selber Browser)
@@ -1405,7 +1794,8 @@ function sendSync() {
         turn: state.turn,
         current: state.current,
         audio: state.audio,
-        fxPulse: state.fxPulse || null
+        fxPulse: state.fxPulse || null,
+        timer: state.timer || { seconds:0, ts:0 }
       };
 
       const docData = {
