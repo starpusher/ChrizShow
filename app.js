@@ -15,6 +15,10 @@ if (role === 'screen') document.body.classList.add('audience');
 
 const remoteRoomId = params.get('room') || 'default';
 
+// Avatare nicht im Firestore-State speichern (1MB-Limit). Stattdessen separate Avatar-Dokumente.
+let __avatarCache = {};            // playerId -> dataURL
+let __avatarUnsub = null;
+
 const chan = new BroadcastChannel('quiz-show');
 function send(type, payload={}) { if (role === 'host') chan.postMessage({ type, payload }); }
 chan.onmessage = ({ data }) => handleMsg(data);
@@ -90,6 +94,9 @@ function handleMsg(msg) {
       if (!window.SFX_BASE.endsWith('/')) window.SFX_BASE += '/';
       Object.assign(state, { players: payload.state.players, scores: payload.state.scores, q: payload.state.q||{}, settings: payload.state.settings||{}, turn: payload.state.turn||0, current: payload.state.current || null });
       state.used = new Set(payload.state.used || []);
+
+      // Avatare aus separater Sync-Quelle anwenden
+      __applyAvatarCache();
 
       // Publikum (remote): Joker-Animation auch ohne BroadcastChannel auslösen.
       if (role === 'screen') {
@@ -199,7 +206,6 @@ function ensureJokerFxEl(){
 function showJokerFx({ jokerKey, playerId }={}){
   if (role !== 'screen') return;
   const root = ensureJokerFxEl();
-  const box = root.querySelector('.jokerfx-box');
   const label = root.querySelector('.jokerfx-label');
   const icon = root.querySelector('.jokerfx-icon');
 
@@ -222,6 +228,7 @@ function showJokerFx({ jokerKey, playerId }={}){
 
   // kleine Vibration nur, wenn unterstützt
   try { if (navigator.vibrate) navigator.vibrate(40); } catch(e) {}
+}
 
 /* ======= Audio-Gate (Publikum) ======= */
 function ensureAudioGateEl(){
@@ -269,7 +276,6 @@ function showAudioGateIfNeeded(q){
   const gate = ensureAudioGateEl();
   gate.style.display = 'grid';
 }
-}
 
 /* ======= Daten & State ======= */
 let data = null;
@@ -300,6 +306,16 @@ async function init() {
     // Screen lädt kein eigenes JSON, sondern wartet auf Sync vom Host
   }
   loadState();
+
+  // Avatar-Cache aus lokalem State initialisieren + (Host) remote bereitstellen
+  try{
+    __avatarCache = __avatarCache || {};
+    (state.players||[]).forEach(p => { if (p.avatar) __avatarCache[p.id] = p.avatar; });
+    if (role === 'host' && window.db) {
+      (state.players||[]).forEach(p => { if (p.avatar) __saveAvatarRemote(p.id, p.avatar); });
+    }
+  }catch(e){}
+
   renderPlayersBar(role === 'screen');
   renderBoard();
   renderOverlay();
@@ -425,6 +441,92 @@ window.SFX_BASE = (data && data.settings && data.settings.media_base) || 'media/
 if (!window.SFX_BASE.endsWith('/')) window.SFX_BASE += '/';
 
 /* ======= Render ======= */
+
+function __applyAvatarCache(){
+  try{
+    (state.players||[]).forEach(p => {
+      if (__avatarCache && __avatarCache[p.id]) p.avatar = __avatarCache[p.id];
+    });
+  }catch(e){}
+}
+
+function __saveAvatarRemote(playerId, dataUrl){
+  if (role !== 'host' || !window.db) return;
+  try{
+    const roomRef = window.db.collection('rooms').doc(remoteRoomId);
+
+    // Avatare separat synchronisieren (damit stateJson unter 1MB bleibt)
+    if (!__avatarUnsub) {
+      __avatarUnsub = roomRef.collection('avatars').onSnapshot((snap) => {
+        try{
+          snap.docChanges().forEach(ch => {
+            const pid = ch.doc.id;
+            const d = ch.doc.data() || {};
+            if (typeof d.avatar === 'string' && d.avatar.startsWith('data:')) {
+              __avatarCache[pid] = d.avatar;
+            } else if (d.avatar === null) {
+              delete __avatarCache[pid];
+            }
+          });
+          __applyAvatarCache();
+          renderPlayersBar(true);
+          renderOverlay();
+        }catch(e){}
+      });
+    }
+    roomRef.collection('avatars').doc(playerId).set({
+      avatar: dataUrl || null,
+      updatedAt: Date.now()
+    }, { merge: true });
+  }catch(e){}
+}
+
+function __setPlayerAvatar(playerId, dataUrl){
+  const p = (state.players||[]).find(x => x.id === playerId);
+  if (p) p.avatar = dataUrl || null;
+  if (dataUrl) __avatarCache[playerId] = dataUrl;
+  else delete __avatarCache[playerId];
+  saveState();
+  renderOverlay();
+  if (els && els.playersBar) renderPlayersBar(role === 'screen');
+  sendSync();
+  __saveAvatarRemote(playerId, dataUrl);
+}
+
+// Bild-Datei -> kleines DataURL (verhindert Firestore 1MB-Limit & beschleunigt Sync)
+function __fileToSmallDataUrl(file, maxSize=96, quality=0.82){
+  return new Promise((resolve, reject) => {
+    try{
+      const reader = new FileReader();
+      reader.onerror = () => reject(new Error('read failed'));
+      reader.onload = () => {
+        const img = new Image();
+        img.onerror = () => reject(new Error('img load failed'));
+        img.onload = () => {
+          const w = img.naturalWidth || img.width || 1;
+          const h = img.naturalHeight || img.height || 1;
+          const scale = Math.min(1, maxSize / Math.max(w, h));
+          const cw = Math.max(1, Math.round(w * scale));
+          const ch = Math.max(1, Math.round(h * scale));
+          const canvas = document.createElement('canvas');
+          canvas.width = cw; canvas.height = ch;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, cw, ch);
+          // webp wenn verfügbar, sonst jpeg
+          let out = '';
+          try{ out = canvas.toDataURL('image/webp', quality); }catch(e){}
+          if (!out || out.startsWith('data:,') || out.length < 50){
+            try{ out = canvas.toDataURL('image/jpeg', quality); }catch(e){}
+          }
+          resolve(out);
+        };
+        img.src = reader.result;
+      };
+      reader.readAsDataURL(file);
+    }catch(e){ reject(e); }
+  });
+}
+
 function renderPlayersBar(readOnly=false) {
   els.playersBar.innerHTML = '';
   state.players.forEach((p, idx) => {
@@ -433,20 +535,19 @@ function renderPlayersBar(readOnly=false) {
 
     const img = document.createElement('img'); img.className='avatar'; img.alt=''; img.src = p.avatar || ''; if (!p.avatar) img.style.opacity=.4;
     const file = document.createElement('input'); file.type='file'; file.accept='image/*'; file.className='file';
-    file.onchange = e => {
+    file.onchange = async e => {
       const f = e.target.files?.[0];
       if (!f) return;
-      const reader = new FileReader();
-      reader.onload = () => {
-        p.avatar = reader.result;
-        saveState();
-        renderOverlay();
-        sendSync();
-        img.src = p.avatar;
+      try{
+        const small = await __fileToSmallDataUrl(f, 96, 0.82);
+        __setPlayerAvatar(p.id, small);
+        img.src = small;
         img.style.opacity = 1;
+      }catch(err){
+        console.warn('Avatar konnte nicht verarbeitet werden', err);
+      }finally{
         file.value = ''; // Reset danach, damit man denselben Avatar nochmal wählen kann
-      };
-      reader.readAsDataURL(f);
+      }
     };
 
     const name = document.createElement('input'); name.type='text'; name.value=p.name; name.disabled=readOnly||role==='screen';
@@ -1130,15 +1231,15 @@ function undo(){
 function idToName(pid){ return state.players.find(p => p.id === pid)?.name || pid; }
 function sendSync() {
   // KEINE DOM-Elemente mitschicken (z. B. _scoreEl entfernen)
-  const cleanPlayers = state.players.map(p => ({
+  const playersLocal = state.players.map(p => ({
     id: p.id,
     name: p.name,
     avatar: p.avatar || null,
     jokers: p.jokers || {}
   }));
 
-  const stateForWire = {
-    players: cleanPlayers,
+  const stateForWireLocal = {
+    players: playersLocal,
     scores: state.scores,
     q: {},
     used: Array.from(state.used),
@@ -1149,24 +1250,38 @@ function sendSync() {
     fxPulse: state.fxPulse || null
   };
 
-  const payload = {
-    state: stateForWire,
-    data
-  };
-
   // lokal an andere Tabs (selber Browser)
-  send('SYNC_STATE', payload);
+  send('SYNC_STATE', { state: stateForWireLocal, data });
 
-  // remote an Firestore, falls verfügbar
+  // remote an Firestore: OHNE Avatare (1MB-Limit)
   if (role === 'host' && window.db) {
     try {
       const roomRef = window.db.collection('rooms').doc(remoteRoomId);
+
+      const playersRemote = state.players.map(p => ({
+        id: p.id,
+        name: p.name,
+        jokers: p.jokers || {}
+      }));
+
+      const stateForWireRemote = {
+        players: playersRemote,
+        scores: state.scores,
+        q: {},
+        used: Array.from(state.used),
+        settings: state.settings,
+        turn: state.turn,
+        current: state.current,
+        audio: state.audio,
+        fxPulse: state.fxPulse || null
+      };
+
       const docData = {
-        stateJson: JSON.stringify(stateForWire),
+        stateJson: JSON.stringify(stateForWireRemote),
         boardUrl: localStorage.getItem("quiz_board_file"),
         updatedAt: Date.now()
       };
-      roomRef.set(docData);
+      roomRef.set(docData, { merge: true });
     } catch (e) {
       console.warn('Remote-Sync fehlgeschlagen', e);
     }
