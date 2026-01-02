@@ -263,6 +263,12 @@ function ensureAudioGateEl(){
     try{ if (els.qAud) els.qAud.muted = false; }catch(e){}
     root.style.display = 'none';
     try{ syncAudienceAudioFromState(); }catch(e){}
+    try{
+      if (current && current.q && current.q.audio && els.qAud && !els.qAud.hidden) {
+        els.qAud.muted = false;
+        els.qAud.play().catch(()=>{});
+      }
+    }catch(e){}
     try{ playSfx('correct'); }catch(e){}
   });
   document.body.appendChild(root);
@@ -454,31 +460,14 @@ function __saveAvatarRemote(playerId, dataUrl){
   if (role !== 'host' || !window.db) return;
   try{
     const roomRef = window.db.collection('rooms').doc(remoteRoomId);
-
-    // Avatare separat synchronisieren (damit stateJson unter 1MB bleibt)
-    if (!__avatarUnsub) {
-      __avatarUnsub = roomRef.collection('avatars').onSnapshot((snap) => {
-        try{
-          snap.docChanges().forEach(ch => {
-            const pid = ch.doc.id;
-            const d = ch.doc.data() || {};
-            if (typeof d.avatar === 'string' && d.avatar.startsWith('data:')) {
-              __avatarCache[pid] = d.avatar;
-            } else if (d.avatar === null) {
-              delete __avatarCache[pid];
-            }
-          });
-          __applyAvatarCache();
-          renderPlayersBar(true);
-          renderOverlay();
-        }catch(e){}
-      });
-    }
+    // Avatare separat speichern (nicht im stateJson -> 1MB Firestore Limit)
     roomRef.collection('avatars').doc(playerId).set({
       avatar: dataUrl || null,
       updatedAt: Date.now()
     }, { merge: true });
-  }catch(e){}
+  }catch(e){
+    console.warn('Avatar remote save failed', e);
+  }
 }
 
 function __setPlayerAvatar(playerId, dataUrl){
@@ -974,6 +963,26 @@ function setupRemoteListener() {
   if (!window.db) return;
   try {
     const roomRef = window.db.collection('rooms').doc(remoteRoomId);
+
+    // Avatare separat laden (sonst würde stateJson > 1MB werden)
+    if (!__avatarUnsub) {
+      __avatarUnsub = roomRef.collection('avatars').onSnapshot((snap) => {
+        try{
+          snap.docChanges().forEach(ch => {
+            const pid = ch.doc.id;
+            const d = ch.doc.data() || {};
+            if (typeof d.avatar === 'string' && d.avatar.startsWith('data:')) {
+              __avatarCache[pid] = d.avatar;
+            } else if (d.avatar === null) {
+              delete __avatarCache[pid];
+            }
+          });
+          __applyAvatarCache();
+          // nur wenn wir schon Spieler haben, sonst später beim SYNC_STATE
+          if (role === 'screen') { renderPlayersBar(true); renderOverlay(); }
+        }catch(e){}
+      });
+    }
     roomRef.onSnapshot(async (doc) => {
       if (!doc.exists) return;
       const raw = doc.data();
