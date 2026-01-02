@@ -92,7 +92,7 @@ function handleMsg(msg) {
       data = payload.data;
       window.SFX_BASE = (payload.data && payload.data.settings && payload.data.settings.media_base) || window.SFX_BASE || 'media/';
       if (!window.SFX_BASE.endsWith('/')) window.SFX_BASE += '/';
-      Object.assign(state, { players: payload.state.players, scores: payload.state.scores, q: payload.state.q||{}, settings: payload.state.settings||{}, turn: payload.state.turn||0, current: payload.state.current || null });
+      Object.assign(state, { players: payload.state.players, scores: payload.state.scores, q: payload.state.q||{}, settings: payload.state.settings||{}, turn: payload.state.turn||0, current: payload.state.current || null, audio: payload.state.audio || state.audio, fxPulse: payload.state.fxPulse || state.fxPulse });
       state.used = new Set(payload.state.used || []);
 
       // Avatare aus separater Sync-Quelle anwenden
@@ -336,6 +336,8 @@ const state = {
   turn: 0                         // Index des aktuellen Spielers
 };
 let current = { col: -1, row: -1, q: null, id: null };
+let __screenShownId = null; // Publikum: zuletzt gerenderte Frage, um Media-Reloads zu vermeiden
+
 let timerInt = null;
 let __lastFxTs = 0;
 
@@ -1055,9 +1057,13 @@ function applyCurrentForScreen() {
   }
   if (!found) return;
 
-  // Frage beim Publikum anzeigen
-  showForAudience(found);
-  syncAudienceAudioFromState();
+  // Frage beim Publikum anzeigen (aber nicht bei jedem Sync neu rendern, sonst lädt Audio ständig neu)
+  if (!els.modal.open || __screenShownId !== found.id) {
+    showForAudience(found);
+  } else {
+    // nur sicherstellen, dass Audio/Timer/Answer-Status aktualisiert wird
+    syncAudienceAudioFromState();
+  }
 
   // Falls Antwort bereits aufgedeckt wurde, auch beim Publikum anzeigen
   if (cur.answerRevealed) {
@@ -1147,6 +1153,8 @@ function setupRemoteListener() {
 function showForAudience(payload){
   const { id, q } = payload;
   current = { id, q };
+  __screenShownId = id;
+
   els.qCat.textContent = q.cat;
   els.qPts.innerHTML = `<span class="pos">+${q.points}</span> <span class="neg">-${Math.floor(q.points/2)}</span>`;
   els.qText.textContent = q.text || '';
