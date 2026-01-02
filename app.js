@@ -75,7 +75,7 @@ function handleMsg(msg) {
       }
       break;
     case 'SYNC_STATE':
-      data = payload.data;
+      if (payload.data) data = payload.data;
       window.SFX_BASE = (payload.data && payload.data.settings && payload.data.settings.media_base) || window.SFX_BASE || 'media/';
       if (!window.SFX_BASE.endsWith('/')) window.SFX_BASE += '/';
       Object.assign(state, { players: payload.state.players, scores: payload.state.scores, q: payload.state.q||{}, settings: payload.state.settings||{}, turn: payload.state.turn||0, current: payload.state.current || null });
@@ -714,10 +714,28 @@ function setupRemoteListener() {
   if (!window.db) return;
   try {
     const roomRef = window.db.collection('rooms').doc(remoteRoomId);
-    roomRef.onSnapshot((doc) => {
+    roomRef.onSnapshot(async (doc) => {
       if (!doc.exists) return;
       const raw = doc.data();
       if (!raw) return;
+
+      // Publikum: Board-JSON anhand der vom Host gespeicherten boardUrl nachladen,
+      // damit das Board auch in einem anderen Gerät/Browser angezeigt wird.
+      if (raw.boardUrl && (!data || data.__url !== raw.boardUrl)) {
+        try {
+          const resBoard = await fetch(raw.boardUrl, { cache: 'no-store' });
+          if (resBoard.ok) {
+            data = await resBoard.json();
+            // Quelle merken (nur intern)
+            try { data.__url = raw.boardUrl; } catch(e) {}
+            state.settings = (data && data.settings) || {};
+            window.SFX_BASE = (state.settings && state.settings.media_base) || window.SFX_BASE || 'media/';
+            if (!window.SFX_BASE.endsWith('/')) window.SFX_BASE += '/';
+          }
+        } catch (e) {
+          console.warn('Board konnte nicht nachgeladen werden', e);
+        }
+      }
 
       let payload;
       if (raw.stateJson) {
@@ -949,6 +967,7 @@ function sendSync() {
   const cleanPlayers = state.players.map(p => ({
     id: p.id,
     name: p.name,
+    avatar: p.avatar || null,
     jokers: p.jokers || {}
   }));
 
