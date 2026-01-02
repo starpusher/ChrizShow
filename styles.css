@@ -185,3 +185,43 @@ body{
 
 /* Single answer image: allow it to be larger while staying centered */
 .answrap.single .ansimg{ max-width:min(70%, 680px); }
+
+
+/* Joker FX (Publikum) */
+#jokerFx{
+  position:fixed; inset:0; display:grid; place-items:center;
+  pointer-events:none; z-index:1000; opacity:0;
+}
+#jokerFx.show{ animation:jokerPop 1.2s ease; }
+#jokerFx .jokerfx-box{
+  background:rgba(23,23,42,.92);
+  border:1px solid #2b2b47;
+  border-radius:20px;
+  padding:18px 22px;
+  text-align:center;
+  box-shadow:0 12px 42px rgba(0,0,0,.55);
+  backdrop-filter:blur(8px);
+}
+#jokerFx .jokerfx-label{
+  font-family:'Bebas Neue',system-ui;
+  letter-spacing:.06em;
+  font-size:28px;
+  margin-bottom:8px;
+  text-transform:uppercase;
+}
+#jokerFx .jokerfx-icon{
+  font-size:64px;
+  line-height:1;
+  filter: drop-shadow(0 10px 18px rgba(0,0,0,.45));
+}
+#jokerFx .jokerfx-player{
+  margin-top:10px;
+  color:var(--muted);
+  font-size:14px;
+}
+@keyframes jokerPop{
+  0%{ opacity:0; transform:scale(.9); }
+  12%{ opacity:1; transform:scale(1); }
+  70%{ opacity:1; transform:scale(1); }
+  100%{ opacity:0; transform:scale(1.04); }
+}
