@@ -781,7 +781,7 @@ function setupRemoteListener() {
   if (!window.db) return;
   try {
     const roomRef = window.db.collection('rooms').doc(remoteRoomId);
-    roomRef.onSnapshot((doc) => {
+    roomRef.onSnapshot(async (doc) => {
       if (!doc.exists) return;
       const raw = doc.data();
       if (!raw) return;
@@ -789,12 +789,34 @@ function setupRemoteListener() {
       let payload;
       if (raw.stateJson) {
         let stateRemote = {};
-        let dataRemote = null;
         try { stateRemote = JSON.parse(raw.stateJson || '{}'); } catch(e) { stateRemote = {}; }
-        try { /* dataJson removed */ dataRemote = null; } catch(e) { dataRemote = null; }
+
+        // Wenn der Screen kein Board-JSON hat, anhand boardUrl nachladen (wichtig bei neuem Tab/Device)
+        let dataRemote = data;
+        const boardUrl = raw.boardUrl;
+        const needBoard = !!boardUrl && (!dataRemote || dataRemote._loadedFromUrl !== boardUrl);
+        if (needBoard) {
+          try {
+            const res = await fetch(boardUrl, { cache: 'no-store' });
+            if (res.ok) {
+              dataRemote = await res.json();
+              // Marker, damit wir nicht bei jedem Snapshot neu fetchen
+              try { Object.defineProperty(dataRemote, '_loadedFromUrl', { value: boardUrl, enumerable: false }); }
+              catch(e) { dataRemote._loadedFromUrl = boardUrl; }
+              data = dataRemote;
+              // Base für SFX/Media setzen (falls nötig)
+              window.SFX_BASE = (data && data.settings && data.settings.media_base) || window.SFX_BASE || 'media/';
+              if (!window.SFX_BASE.endsWith('/')) window.SFX_BASE += '/';
+            }
+          } catch (e) {
+            console.warn('Board konnte nicht geladen werden:', boardUrl, e);
+          }
+        }
+
         payload = {
           state: stateRemote,
-          data: dataRemote || data
+          data: dataRemote,
+          boardUrl: boardUrl
         };
       } else {
         // Fallback für ältere Dokumente
@@ -802,6 +824,7 @@ function setupRemoteListener() {
       }
 
       handleMsg({ type: 'SYNC_STATE', payload });
+    });
     });
   } catch (e) {
     console.warn('Remote-Listener konnte nicht gestartet werden', e);
@@ -1016,6 +1039,7 @@ function sendSync() {
   const cleanPlayers = state.players.map(p => ({
     id: p.id,
     name: p.name,
+    avatar: p.avatar || null,
     jokers: p.jokers || {}
   }));
 
