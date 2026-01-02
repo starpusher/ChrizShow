@@ -1,0 +1,59 @@
+{
+  "settings": {
+    "media_base": "media/",
+    "allow_steal": true
+  },
+  "players": ["Spieler 1", "Spieler 2", "Spieler 3"],
+  "categories": [
+    {
+      "title": "1",
+      "questions": [
+        { "id": "S-200-1", "points": 100, "text": "", "answer": "" },
+        { "id": "S-400-1", "points": 200, "text": "", "answer": "" },
+        { "id": "S-600-1", "points": 300, "text": "", "answer": "" },
+        { "id": "S-800-1", "points": 400, "text": "", "answer": "" },
+        { "id": "S-1000-1", "points": 500, "text": "", "answer": "" }
+      ]
+    },
+    {
+      "title": "2",
+      "questions": [
+        { "id": "G-200-1", "points": 100, "text": "", "answer": "" },
+        { "id": "G-400-1", "points": 200, "text": "", "answer": "" },
+        { "id": "G-600-1", "points": 300, "text": "", "answer": "" },
+        { "id": "G-800-1", "points": 400, "text": "", "answer": "" },
+        { "id": "G-1000-1", "points": 500, "text": "", "answer": "" }
+      ]
+    },
+    {
+      "title": "3",
+      "questions": [
+        { "id": "F-200-1", "points": 100, "text": "", "audio": ".mp3", "answer": "" },
+        { "id": "F-400-1", "points": 200, "text": "", "audio": ".mp3", "answer": "" },
+        { "id": "F-600-1", "points": 300, "text": "", "audio": ".mp3", "answer": "" },
+        { "id": "F-800-1", "points": 400, "text": "", "audio": ".mp3", "answer": "" },
+        { "id": "F-1000-1", "points": 500, "text": "", "audio": ".mp3", "answer": "" }
+      ]
+    },
+    {
+      "title": "4",
+      "questions": [
+        { "id": "Y-200-1", "points": 100, "text": "", "image": ".jpg", "answer": "" },
+        { "id": "Y-400-1", "points": 200, "text": "", "image": ".jpg", "answer": "" },
+        { "id": "Y-600-1", "points": 300, "text": "", "image": ".jpg", "answer": "" },
+        { "id": "Y-800-1", "points": 400, "text": "", "image": ".jpg", "answer": "" },
+        { "id": "Y-1000-1", "points": 500, "text": "", "image": ".jpg", "answer": "" }
+      ]
+    },
+    {
+      "title": "5",
+      "questions": [
+        { "id": "B-200-1", "points": 100, "text": "", "image": ".jpg", "answer": "" },
+        { "id": "B-400-1", "points": 200, "text": "", "image": ".jpg", "answer": "" },
+        { "id": "B-600-1", "points": 300, "text": "", "image": ".jpg", "answer": "" },
+        { "id": "B-800-1", "points": 400, "text": "", "image": ".jpg", "answer": "" },
+        { "id": "B-1000-1", "points": 500, "text": "", "image": ".jpg", "answer": "" }
+      ]
+    }
+  ]
+}
