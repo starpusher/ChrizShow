@@ -396,6 +396,22 @@ function showAudioGateIfNeeded(q){
 }
 
 
+
+function normalizeQuestions(d){
+  try{
+    if (!d || !Array.isArray(d.categories)) return;
+    d.categories.forEach(cat=>{
+      if (!cat || !Array.isArray(cat.questions)) return;
+      cat.questions.forEach(q=>{
+        if (!q) return;
+        // Support legacy keys
+        if (q.text == null && q.question != null) q.text = q.question;
+        if (q.answer == null && q.solution != null) q.answer = q.solution;
+      });
+    });
+  }catch(e){}
+}
+
 /* ======= Daten & State ======= */
 let data = null;
 let boards = [];
@@ -470,6 +486,7 @@ async function loadContent(urlOrFileText) {
   } else {
     data = urlOrFileText;
   }
+  normalizeQuestions(data);
   state.settings = data.settings || {};
   state.players = (data.players || ['Spieler 1','Spieler 2']).map((name, i) => ({ id: `p${i+1}`, name, avatar: null, jokers:{j1:true,j2:true,j3:true} }));
   for (const p of state.players) if (!(p.id in state.scores)) state.scores[p.id] = 0;
@@ -808,15 +825,15 @@ function openQuestion(col, row) {
   // Inhalt
   els.qCat.textContent = cat.title;
   els.qPts.innerHTML = `<span class="pos">+${q.points}</span> <span class="neg">-${Math.floor(q.points/2)}</span>`;
-  els.qText.textContent = q.text || '';
-  els.answer.textContent = q.answer || '—';
+  els.qText.textContent = (q.text || q.question || '');
+  els.answer.textContent = (q.answer || q.solution || '—');
   // Host sieht Antwort sofort:
   els.answer.hidden = role !== 'host';
   setMedia(q);
   resetAnswerImages();
   try{ const vb = ensureAudienceVolumeUI(); if(vb){ vb.style.display = (q && q.audio) ? 'block' : 'none'; } }catch(e){}
   showAudioGateIfNeeded(q);
-  try{ ensureEstimateUIForHost(id, q); }catch(e){}
+  try{ ensureEstimateUIForScreen(id, q); }catch(e){}
   try{ showTimer((state.timer && state.timer.seconds) ? state.timer.seconds : 0); }catch(e){}
 
 
@@ -830,7 +847,7 @@ function openQuestion(col, row) {
   saveState();
   sendSync();
 
-  send('SHOW_Q', { id, q: { cat: cat.title, points: q.points, text: q.text, answer: q.answer, image: q.image, image_reveal: q.image_reveal, audio: q.audio, video: q.video, answer_images: q.answer_images, ans1: q.ans1, ans2: q.ans2 }});
+  send('SHOW_Q', { id, q: { cat: cat.title, points: q.points, text: (q.text || q.question), answer: (q.answer || q.solution), image: q.image, image_reveal: q.image_reveal, audio: q.audio, video: q.video, answer_images: q.answer_images, ans1: q.ans1, ans2: q.ans2, type: q.type, estimate: q.estimate }});
 
   populatePlayerSelect(id, starterId);
   updateAttemptInfo(id);
@@ -1114,7 +1131,8 @@ function applyCurrentForScreen() {
       if (els.modal && typeof els.modal.close === 'function' && els.modal.open) {
         els.modal.close();
       }
-      if (els.timerBox) els.timerBox.hidden = true;
+      // Timerbox nicht hart verstecken – wird über state.timer / TIMER Sync gesteuert
+  // if (els.timerBox) els.timerBox.hidden = true;
       resetAnswerImages();
     } catch (e) {}
     return;
@@ -1143,7 +1161,9 @@ function applyCurrentForScreen() {
             video: q.video,
             answer_images: q.answer_images,
             ans1: q.ans1,
-            ans2: q.ans2
+            ans2: q.ans2,
+            type: q.type,
+            estimate: q.estimate
           }
         };
         break;
@@ -1215,6 +1235,7 @@ function setupRemoteListener() {
             const res = await fetch(boardUrl, { cache: 'no-store' });
             if (res.ok) {
               dataRemote = await res.json();
+              try{ normalizeQuestions(dataRemote); }catch(e){}
               // Marker, damit wir nicht bei jedem Snapshot neu fetchen
               try { Object.defineProperty(dataRemote, '_loadedFromUrl', { value: boardUrl, enumerable: false }); }
               catch(e) { dataRemote._loadedFromUrl = boardUrl; }
@@ -1253,16 +1274,17 @@ function showForAudience(payload){
 
   els.qCat.textContent = q.cat;
   els.qPts.innerHTML = `<span class="pos">+${q.points}</span> <span class="neg">-${Math.floor(q.points/2)}</span>`;
-  els.qText.textContent = q.text || '';
-  els.answer.textContent = q.answer || '—';
+  els.qText.textContent = (q.text || q.question || '');
+  els.answer.textContent = (q.answer || q.solution || '—');
   els.answer.hidden = true;
   setMedia(q);
   resetAnswerImages();
   try{ const vb = ensureAudienceVolumeUI(); if(vb){ vb.style.display = (q && q.audio) ? 'block' : 'none'; } }catch(e){}
   showAudioGateIfNeeded(q);
-  try{ ensureEstimateUIForHost(id, q); }catch(e){}
+  try{ ensureEstimateUIForScreen(id, q); }catch(e){}
   try{ showTimer((state.timer && state.timer.seconds) ? state.timer.seconds : 0); }catch(e){}
-  if (els.timerBox) els.timerBox.hidden = true;
+  // Timerbox nicht hart verstecken – wird über state.timer / TIMER Sync gesteuert
+  // if (els.timerBox) els.timerBox.hidden = true;
   syncAudienceAudioFromState();
   els.modal.showModal();
 }
