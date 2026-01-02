@@ -800,16 +800,74 @@ function openQuestion(col, row) {
     }
   };
 
+  
   // Audio sync events
+  // Wichtig: Remote-Publikum bekommt KEIN BroadcastChannel. Daher müssen play/pause/time auch in state.audio landen.
   if (els.qAud && !els.qAud.hidden) {
-    const sendTime = () => send('AUDIO_TIME', { t: els.qAud.currentTime });
-    const onPlay   = () => { send('AUDIO_PLAY'); send('AUDIO_META', { t: els.qAud.currentTime }); };
-    const onPause  = () => send('AUDIO_PAUSE');
-    els.qAud.addEventListener('timeupdate', sendTime);
+    // alte Handler entfernen (falls Modal mehrfach geöffnet wurde)
+    try {
+      if (els.qAud.__onTime)  els.qAud.removeEventListener('timeupdate', els.qAud.__onTime);
+      if (els.qAud.__onPlay)  els.qAud.removeEventListener('play',      els.qAud.__onPlay);
+      if (els.qAud.__onPause) els.qAud.removeEventListener('pause',     els.qAud.__onPause);
+    } catch (e) {}
+
+    // Timeupdate throttlen (sonst zu viele Writes)
+    let __lastTimeSync = 0;
+
+    const onTime = () => {
+      const now = Date.now();
+      if (now - __lastTimeSync < 800) return;
+      __lastTimeSync = now;
+
+      // lokal (gleiches Browser-Fenster)
+      send('AUDIO_TIME', { t: els.qAud.currentTime });
+
+      // remote (Firestore): nur Zeit, playing bleibt wie es ist
+      if (role === 'host') {
+        state.audio = {
+          playing: !!(state.audio && state.audio.playing),
+          t: els.qAud.currentTime || 0,
+          ts: state.audio?.ts || Date.now()
+        };
+        saveState();
+        sendSync();
+      }
+    };
+
+    const onPlay = () => {
+      // lokal
+      send('AUDIO_META', { t: els.qAud.currentTime });
+      send('AUDIO_PLAY');
+
+      // remote
+      if (role === 'host') {
+        state.audio = { playing: true, t: els.qAud.currentTime || 0, ts: Date.now() };
+        saveState();
+        sendSync();
+      }
+    };
+
+    const onPause = () => {
+      // lokal
+      send('AUDIO_PAUSE');
+
+      // remote
+      if (role === 'host') {
+        state.audio = { playing: false, t: els.qAud.currentTime || 0, ts: Date.now() };
+        saveState();
+        sendSync();
+      }
+    };
+
+    // speichern, damit wir beim nächsten Öffnen sauber entfernen können
+    els.qAud.__onTime = onTime;
+    els.qAud.__onPlay = onPlay;
+    els.qAud.__onPause = onPause;
+
+    els.qAud.addEventListener('timeupdate', onTime);
     els.qAud.addEventListener('play', onPlay);
     els.qAud.addEventListener('pause', onPause);
   }
-
   // Timer
   els.timerBtn.onclick = () => startTimer(10);
 
