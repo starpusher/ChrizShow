@@ -827,7 +827,8 @@ function openQuestion(col, row) {
         state.audio = {
           playing: !!(state.audio && state.audio.playing),
           t: els.qAud.currentTime || 0,
-          ts: state.audio?.ts || Date.now()
+          // Wichtig: ts bei jedem Zeit-Sync aktualisieren, sonst extrapoliert der Screen doppelt.
+          ts: Date.now()
         };
         saveState();
         sendSync();
@@ -971,22 +972,33 @@ function syncAudienceAudioFromState(){
   try{
     if (!els.qAud || els.qAud.hidden) return;
     const a = state.audio || { playing:false, t:0, ts:0 };
-    // rechne die laufende Zeit aus Host-Startzeit hoch
-    let t = Number(a.t||0);
-    if (a.playing && a.ts) {
-      t = t + (Date.now() - Number(a.ts)) / 1000;
+
+    // Zielzeit berechnen: t ist immer die zuletzt bekannte Zeit des Hosts.
+    // Nur leicht extrapolieren, wenn ts aktuell ist (sonst entstehen riesige Sprünge).
+    let target = Number(a.t || 0);
+    const ts = Number(a.ts || 0);
+    if (a.playing && ts > 0) {
+      const dt = (Date.now() - ts) / 1000;
+      if (dt >= 0 && dt <= 4.0) target += dt; // max 4s extrapolieren
     }
-    if (Number.isFinite(t)) {
-      // currentTime kann werfen, wenn metadata noch nicht geladen ist -> try/catch
-      try{ els.qAud.currentTime = t; }catch(e){}
-    }
+
     if (!window.__audUnlocked) {
       // Ohne User-Interaktion dürfen Browser Audio oft nicht abspielen.
-      els.qAud.muted = true;
-      els.qAud.pause();
+      try{ els.qAud.muted = true; }catch(e){}
+      try{ els.qAud.pause(); }catch(e){}
       return;
     }
-    els.qAud.muted = false;
+
+    try{ els.qAud.muted = false; }catch(e){}
+
+    // Nicht bei jedem Sync hart seeken – nur wenn wir merklich daneben liegen.
+    try{
+      const cur = Number(els.qAud.currentTime || 0);
+      if (Number.isFinite(target) && Math.abs(cur - target) > 0.35) {
+        els.qAud.currentTime = target;
+      }
+    }catch(e){}
+
     if (a.playing) {
       els.qAud.play().catch(()=>{});
     } else {
