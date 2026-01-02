@@ -103,5 +103,20 @@
     "id": "Final ZB",
     "label": "Final ZB",
     "file": "Final ZB.json"
-  }
+  },
+  {
+    "id": "Show 6 Board 1",
+    "label": "Show 6 Board 1",
+    "file": "Show 6 Board 1.json"
+  },
+  {
+    "id": "Show 6 Board 2",
+    "label": "Show 6 Board 2",
+    "file": "Show 6 Board 2.json"
+  },
+  {
+    "id": "Show 6 ZB",
+    "label": "Show 6 ZB",
+    "file": "Show 6 ZB.json"
+   }
 ]
