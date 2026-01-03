@@ -980,7 +980,7 @@ function openQuestion(col, row) {
   els.timerBtn.onclick = () => startTimer(10);
 
   els.modal.addEventListener('close', onModalCloseOnce, { once: true });
-  if (role === 'host') els.modal.show(); else els.modal.showModal();
+  if (role === 'host') { els.modal.classList.add('nonmodal'); els.modal.show(); } else { els.modal.classList.remove('nonmodal'); els.modal.showModal(); }
 }
 
 function onModalCloseOnce(){
@@ -1733,25 +1733,49 @@ function ensureEstimateUIForScreen(qid, q){
 
 function ensureEstimateUIForHost(qid, q){
   if (role !== 'host') return;
-  // HART: wenn keine Schätzfrage → Host-UI entfernen
+
+  // Wenn keine Schätzfrage: Host-UI entfernen und Listener stoppen (Firestore unangetastet lassen)
   if (!isEstimateQuestion(q)) {
     try{
       const hb = document.getElementById('estimateHostBox');
       if (hb) hb.remove();
       if (__estimateUnsub) { __estimateUnsub(); __estimateUnsub = null; }
       __estimateData = {}; __estimateReveal = {};
-    try{
-      if (role==='host' && window.db){
-        const roomRef = window.db.collection('rooms').doc(remoteRoomId);
-        const docRef = roomRef.collection('estimates').doc(String(qid));
-        docRef.set({ __reveal:{}, __winner:null, __winnerTs: Date.now(), __revealTs: Date.now() }, { merge:true });
-      }
-    }catch(e){}
       __estimateHostDocRef = null; __estimateHostQid = null;
     }catch(e){}
     return;
   }
+
   if (!window.db) return;
+
+  const qidStr = String(qid);
+
+  // Bei neuer Schätzfrage: auf neue Doc-Ref wechseln und die Runde im Firestore leeren
+  if (__estimateHostQid !== qidStr) {
+    try{
+      if (__estimateUnsub) { __estimateUnsub(); __estimateUnsub = null; }
+    }catch(e){}
+    __estimateData = {};
+    __estimateReveal = {};
+    __estimateHostQid = qidStr;
+
+    try{
+      const roomRef = window.db.collection('rooms').doc(remoteRoomId);
+      const docRef = roomRef.collection('estimates').doc(qidStr);
+      __estimateHostDocRef = docRef;
+
+      // WICHTIG: alte Einträge vollständig entfernen (sonst bleiben Schätzungen aus früheren Fragen sichtbar)
+      docRef.set({
+        __resetTs: Date.now(),
+        __reveal: {},
+        __revealTs: Date.now(),
+        __winner: null,
+        __winnerTs: Date.now()
+      }, { merge: false });
+    }catch(e){
+      console.warn('Estimate reset failed', e);
+    }
+  }
 
   let box = document.getElementById('estimateHostBox');
   if (!box){
@@ -1764,6 +1788,7 @@ function ensureEstimateUIForHost(qid, q){
     const title = document.createElement('div');
     title.textContent = 'Schätzungen';
     title.style.fontWeight = '900';
+    title.style.opacity = '.95';
     title.style.letterSpacing = '.04em';
     title.style.marginBottom = '8px';
 
@@ -1781,43 +1806,40 @@ function ensureEstimateUIForHost(qid, q){
     const btnRevealAll = document.createElement('button');
     btnRevealAll.type = 'button';
     btnRevealAll.textContent = 'Alle aufdecken';
-    btnRevealAll.style.padding = '8px 10px';
-    btnRevealAll.style.borderRadius = '10px';
-    btnRevealAll.style.border = '1px solid rgba(255,255,255,.16)';
-    btnRevealAll.style.background = 'rgba(155,107,255,.18)';
-    btnRevealAll.style.color = 'white';
-    btnRevealAll.style.fontWeight = '800';
-    btnRevealAll.style.cursor = 'pointer';
-    btnRevealAll.onclick = ()=>{ Object.keys(__estimateData||{}).forEach(k=>__estimateReveal[k]=true); renderEstimateHostList(q); };
+    btnRevealAll.onclick = ()=>{ try{ Object.keys(__estimateData||{}).forEach(k=>{ if(!String(k).startsWith('__')) __estimateReveal[String(k)] = true; }); }catch(e){} try{ persistEstimateMeta(); }catch(e){} try{ renderEstimateHostList(q); }catch(e){} };
 
-    const btnClosest = document.createElement('button');
-    btnClosest.type = 'button';
-    btnClosest.textContent = 'Nächster dran markieren';
-    btnClosest.style.padding = '8px 10px';
-    btnClosest.style.borderRadius = '10px';
-    btnClosest.style.border = '1px solid rgba(255,255,255,.16)';
-    btnClosest.style.background = 'rgba(93,225,255,.14)';
-    btnClosest.style.color = 'white';
-    btnClosest.style.fontWeight = '800';
-    btnClosest.style.cursor = 'pointer';
-    btnClosest.onclick = ()=>{ markClosestEstimate(q); };
+    const btnWinner = document.createElement('button');
+    btnWinner.type = 'button';
+    btnWinner.textContent = 'Nächster dran markieren';
+    btnWinner.onclick = ()=>{ try{ markClosestEstimate(q); }catch(e){} };
 
-    actions.append(btnRevealAll, btnClosest);
+    actions.append(btnRevealAll, btnWinner);
+
     box.append(title, list, actions);
 
-    const wrap = document.querySelector('.attempts');
-    if (wrap) wrap.appendChild(box);
+    const modalForm = document.querySelector('#qModal .modal');
+    if (modalForm) modalForm.appendChild(box);
   }
 
+  // Live-Liste abonnieren
   try{
-    const roomRef = window.db.collection('rooms').doc(remoteRoomId);
-    const docRef = roomRef.collection('estimates').doc(String(qid));
-    if (__estimateUnsub) __estimateUnsub();
-    __estimateUnsub = docRef.onSnapshot((d)=>{
-      __estimateData = d.exists ? (d.data() || {}) : {};
+    if (!__estimateHostDocRef){
+      const roomRef = window.db.collection('rooms').doc(remoteRoomId);
+      __estimateHostDocRef = roomRef.collection('estimates').doc(qidStr);
+    }
+    if (__estimateUnsub) { /* already subscribed */ }
+    if (!__estimateUnsub){
+      __estimateUnsub = __estimateHostDocRef.onSnapshot((d)=>{
+        __estimateData = d.exists ? (d.data() || {}) : {};
+        renderEstimateHostList(q);
+      });
+    } else {
+      // Falls Listener schon läuft, trotzdem einmal rendern (z.B. nach UI-Neuaufbau)
       renderEstimateHostList(q);
-    });
-  }catch(e){}
+    }
+  }catch(e){
+    console.warn('Estimate host subscribe failed', e);
+  }
 }
 
 function renderEstimateHostList(q){

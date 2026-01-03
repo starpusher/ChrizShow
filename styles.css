@@ -293,3 +293,13 @@ body{
 
 /* Single answer image: allow it to be larger while staying centered */
 .answrap.single .ansimg{ max-width:min(70%, 680px); }
+
+
+/* Host: Dialog bleibt zentriert, obwohl er non-modal ist (damit Overlay klickbar bleibt) */
+dialog.nonmodal[open]{
+  position:fixed;
+  top:50%; left:50%;
+  transform:translate(-50%,-50%);
+  margin:0;
+  z-index:20;
+}
