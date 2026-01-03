@@ -211,61 +211,57 @@ function bindAudienceAudioEventsOnce(){
 
 /* ======= Joker-FX (Publikum) ======= */
 function ensureJokerFxEl(){
-  let root = document.getElementById("jokerFxRoot");
-  if (!root){
-    root = document.createElement("div");
-    root.id = "jokerFxRoot";
-    root.innerHTML = `
-      <div class="joker-fx" id="jokerFx">
-        <div class="joker-fx-inner">
-          <div class="joker-fx-title">JOKER</div>
-          <div class="joker-fx-icon" id="jokerFxIcon"></div>
-          <div class="joker-fx-sub" id="jokerFxSub"></div>
-        </div>
+  // The FX element must be able to render above an open <dialog>.
+  // <dialog> is in the browser "top layer" → normal z-index cannot exceed it.
+  // So: if a dialog is open, mount the FX *inside* the dialog; otherwise mount to <body>.
+  let fx = document.getElementById("jokerFx");
+  if (!fx){
+    fx = document.createElement("div");
+    fx.id = "jokerFx";
+    fx.innerHTML = `
+      <div class="jokerfx-box">
+        <div class="jokerfx-label">JOKER</div>
+        <div class="jokerfx-icon">★</div>
       </div>
     `;
   }
 
-  // IMPORTANT: If a <dialog> (question modal) is open, it lives in the browser's "top layer".
-  // Elements outside cannot appear above it (z-index won't help). So we mount the FX *inside* the dialog.
   const openDialog = document.querySelector("dialog[open]");
   const mountTarget = openDialog || document.body;
-  if (root.parentElement !== mountTarget){
-    try { root.remove(); } catch(e){}
-    mountTarget.appendChild(root);
+
+  if (fx.parentElement !== mountTarget){
+    try { fx.remove(); } catch(e){}
+    mountTarget.appendChild(fx);
   }
-  return root;
+  return fx;
 }
 
 function showJokerFx({ jokerKey, playerId }={}){
   if (role !== 'screen') return;
-  const root = ensureJokerFxEl();
-  const label = root.querySelector('.jokerfx-label');
-  const icon = root.querySelector('.jokerfx-icon');
+
+  const fx = ensureJokerFxEl();
+  const labelEl = fx.querySelector('.jokerfx-label');
+  const iconEl  = fx.querySelector('.jokerfx-icon');
 
   const meta = {
     j1: { title: 'SCHIEBE-JOKER', icon: '⇄' },
-    j2: { title: 'RISIKO-JOKER', icon: '🎲' },
+    j2: { title: 'RISIKO-JOKER',  icon: '🎲' },
     j3: { title: 'TELEFON-JOKER', icon: '☎️' }
   };
   const m = meta[jokerKey] || { title:'JOKER', icon:'★' };
 
-  // optional: Spielername anzeigen, wenn vorhanden (ohne Layout zu verändern)
   const pname = (state.players || []).find(p => p.id === playerId)?.name;
-  label.textContent = pname ? `${m.title} • ${pname}` : m.title;
-  icon.textContent = m.icon;
+  if (labelEl) labelEl.textContent = pname ? `${m.title} • ${pname}` : m.title;
+  if (iconEl)  iconEl.textContent  = m.icon;
 
-  // retrigger animation
-  root.classList.remove('show');
-  void root.offsetWidth;
-  root.classList.add('show');
+  // retrigger animation on #jokerFx (CSS listens on #jokerFx.show)
+  fx.classList.remove('show');
+  void fx.offsetWidth;
+  fx.classList.add('show');
 
-  // kleine Vibration nur, wenn unterstützt
-  try { if (navigator.vibrate) navigator.vibrate(40); } catch(e) {}
+  try { if (navigator.vibrate) navigator.vibrate(30); } catch(e){}
 }
 
-
-/* ======= Publikum: Volume UI (Audio ohne Controls) ======= */
 function ensureAudienceVolumeUI(){
   if (role !== 'screen') return;
   if (!els.qAud) return;
