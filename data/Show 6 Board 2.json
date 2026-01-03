@@ -6,37 +6,37 @@
   "players": ["Spieler 1", "Spieler 2", "Spieler 3"],
   "categories": [
     {
-      "title": "FF15",
+      "title": "Sport",
       "questions": [
-        { "id": "S-200-1", "points": 200, "text": "", "answer": "" },
-        { "id": "S-400-1", "points": 400, "text": "", "answer": "" },
-        { "id": "S-600-1", "points": 600, "text": "", "answer": "" },
-        { "id": "S-800-1", "points": 800, "text": "", "answer": "" },
+        { "id": "S-200-1", "points": 200, "text": "Wie viele Pins stehen zum Anfang eines Wurfes im Bowling auf der Bahn?", "answer": "10" },
+        { "id": "S-400-1", "points": 400, "text": "Wie viele Würfe benötigt man beim Darts mindestens für ein perfektes Leg (501)?", "answer": "9 Würfe - 180, 180, 141 -T20-T19-D12-" },
+        { "id": "S-600-1", "points": 600, "text": "Welche Sportart ist hier abgebildet?", "image": "Biathlon.jpg", "answer": "Biathlon" },
+        { "id": "S-800-1", "points": 800, "text": "Wie heißt dieser Spielzug/Manöver im Schach?", "image": "Rochade.jpg", "answer": "Rochade" },
         { "id": "S-1000-1", "points": 1000, "text": "", "answer": "" }
       ]
     },
     {
-      "title": "Maincharaktervibes",
+      "title": "Elektronik",
       "questions": [
-        { "id": "G-200-1", "points": 200, "text": "", "answer": "" },
-        { "id": "G-400-1", "points": 400, "text": "", "answer": "" },
-        { "id": "G-600-1", "points": 600, "text": "", "answer": "" },
-        { "id": "G-800-1", "points": 800, "text": "", "answer": "" },
-        { "id": "G-1000-1", "points": 1000, "text": "", "answer": "" }
+        { "id": "G-200-1", "points": 200, "text": "Wovon ist bei QWERTY die Rede?", "answer": "Englische Tastatur" },
+        { "id": "G-400-1", "points": 400, "text": "Wie heißt dieser Anschluss?", "image": "Klinke.jpg", "answer": "Klinke" },
+        { "id": "G-600-1", "points": 600, "text": "Was bedeutet die Abkürzung USB", "answer": "Universal Serial Bus" },
+        { "id": "G-800-1", "points": 800, "text": "Wie viele Zentimeter entsprechen einem Zoll (inch)?", "answer": "2,54 Zentimeter" },
+        { "id": "G-1000-1", "points": 1000, "text": "Welches Bauteil speichert elektrische Ladung und Energie", "answer": "Kondensator" }
       ]
     },
     {
-      "title": "Homo",
+      "title": "Symbole",
       "questions": [
-        { "id": "F-200-1", "points": 200, "text": "", "answer": "" },
-        { "id": "F-400-1", "points": 400, "text": "", "answer": "" },
-        { "id": "F-600-1", "points": 600, "text": "", "answer": "" },
-        { "id": "F-800-1", "points": 800, "text": "", "answer": "" },
+        { "id": "F-200-1", "points": 200, "text": "Was bedeuten diese Symbole?", "image": "Ampel.jpg", "answer": "Anhalten, Rechtsabbieger dürfen fahren" },
+        { "id": "F-400-1", "points": 400, "text": "Was ist das?", "image": "Warnblinker.jpg", "answer": "Warnblinker" },
+        { "id": "F-600-1", "points": 600, "text": "Welche Farben fehlen hier? Und wo?", "image": "HilfigerCut.jpg", "answer": "", "answer_images": ["Hilfiger.jpg"]} },
+        { "id": "F-800-1", "points": 800, "text": "Was fehlt hier?", "image": "MalibuCut.jpg", "answer": "Der Malibu Schriftzug", "answer_images": ["Malibu.jpg"]},
         { "id": "F-1000-1", "points": 1000, "text": "", "answer": "" }
       ]
     },
     {
-      "title": "Dideldum",
+      "title": "Fylmhe",
       "questions": [
         { "id": "Y-200-1", "points": 200, "text": "", "answer": "" },
         { "id": "Y-400-1", "points": 400, "text": "", "answer": "" },
@@ -46,7 +46,7 @@
       ]
     },
     {
-      "title": "Würze des Lebens",
+      "title": "Biologie",
       "questions": [
         { "id": "B-200-1", "points": 200, "text": "", "answer": ""},
         { "id": "B-400-1", "points": 400, "text": "", "answer": "" },
