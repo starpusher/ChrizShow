@@ -13,7 +13,9 @@ if (role === 'host') {
 }
 if (role === 'screen') document.body.classList.add('audience');
 
-const remoteRoomId = params.get('room') || 'default';
+const remoteRoomId = params.get('room') || localStorage.getItem('quiz_room') || 'default';
+// Persist room so popout screens stay in same Firestore room
+try{ if (role==='host') localStorage.setItem('quiz_room', remoteRoomId); }catch(e){}
 
 // Avatare nicht im Firestore-State speichern (1MB-Limit). Stattdessen separate Avatar-Dokumente.
 let __avatarCache = {};            // playerId -> dataURL
@@ -998,6 +1000,7 @@ function onModalCloseOnce(){
     __estimateData = {};
     __estimateReveal = {};
     __estimateWinnerCid = null;
+    try{ __renderEstimateAudienceList(qid); }catch(e){}
   }catch(e){}
 }
 
@@ -1610,6 +1613,7 @@ function ensureEstimateUIForScreen(qid, q){
       __estimateData = {};
     __estimateReveal = {};
     __estimateWinnerCid = null;
+    try{ __renderEstimateAudienceList(qid); }catch(e){}
     }catch(e){}
     return;
   }
@@ -1744,6 +1748,7 @@ function ensureEstimateUIForScreen(qid, q){
     __estimateData = {};
     __estimateReveal = {};
     __estimateWinnerCid = null;
+    try{ __renderEstimateAudienceList(qid); }catch(e){}
   }
 
   if (window.db){
@@ -1759,7 +1764,7 @@ function ensureEstimateUIForScreen(qid, q){
         try{
           const cid = getClientId();
           const msg = document.getElementById('estimateMsg');
-          if (msg && __estimateData[cid]) msg.textContent = '✅ Abgegeben';
+          if (msg) msg.textContent = __estimateData[cid] ? '✅ Abgegeben' : '';
         }catch(e){}
       });
     }catch(e){}
@@ -1777,6 +1782,7 @@ function ensureEstimateUIForHost(qid, q){
       __estimateData = {};
     __estimateReveal = {};
     __estimateWinnerCid = null;
+    try{ __renderEstimateAudienceList(qid); }catch(e){}
     }catch(e){}
     return;
   }
@@ -2031,7 +2037,10 @@ function attachGlobalHandlers() {
   }
 
   if (els.presentBtn && role === 'host') {
-    els.presentBtn.onclick = () => window.open(`${location.pathname}?view=screen`, 'quiz-screen', 'width=1280,height=800');
+    els.presentBtn.onclick = () => {
+      const room = encodeURIComponent(remoteRoomId || 'default');
+      window.open(`${location.pathname}?view=screen&room=${room}`, 'quiz-screen', 'width=1280,height=800');
+    };
   }
   if (els.addPlayerBtn && role==='host'){
     els.addPlayerBtn.onclick = () => {
