@@ -995,9 +995,10 @@ function onModalCloseOnce(){
     const hb = document.getElementById('estimateHostBox');
     if (hb) hb.remove();
     if (__estimateUnsub) { __estimateUnsub(); __estimateUnsub = null; }
-    __estimateData = {}; __estimateReveal = {};
+    __estimateData = {}; __estimateData = {};
+    __estimateReveal = {};
     __estimateWinnerCid = null;
-    try{ const list = document.getElementById('estimateAudienceList'); if (list) list.innerHTML=''; }catch(e){}
+    try{ __renderEstimateAudienceList(qid); }catch(e){}
   }catch(e){}
 }
 
@@ -1583,8 +1584,6 @@ function __renderEstimateAudienceList(qid){
 let __estimateUnsub = null;
 let __estimateData = {};
 let __estimateReveal = {};
-    __estimateWinnerCid = null;
-    try{ const list = document.getElementById('estimateAudienceList'); if (list) list.innerHTML=''; }catch(e){}
 let __estimateWinnerCid = null;
 
 function ensureEstimateUIForScreen(qid, q){
@@ -1598,9 +1597,10 @@ function ensureEstimateUIForScreen(qid, q){
       const hb = document.getElementById('estimateHostBox');
       if (hb) hb.remove();
       if (__estimateUnsub) { __estimateUnsub(); __estimateUnsub = null; }
-      __estimateData = {}; __estimateReveal = {};
+      __estimateData = {}; __estimateData = {};
+    __estimateReveal = {};
     __estimateWinnerCid = null;
-    try{ const list = document.getElementById('estimateAudienceList'); if (list) list.innerHTML=''; }catch(e){}
+    try{ __renderEstimateAudienceList(qid); }catch(e){}
     }catch(e){}
     return;
   }
@@ -1679,6 +1679,20 @@ function ensureEstimateUIForScreen(qid, q){
     msg.style.opacity = '.9';
     msg.style.fontSize = '13px';
 
+    // Liste der Schätzungen (Name + zensiert/aufgedeckt)
+    const listTitle = document.createElement('div');
+    listTitle.textContent = 'Schätzungen';
+    listTitle.style.marginTop = '10px';
+    listTitle.style.fontWeight = '900';
+    listTitle.style.letterSpacing = '.04em';
+    listTitle.style.opacity = '.95';
+
+    const list = document.createElement('div');
+    list.id = 'estimateAudienceList';
+    list.style.display = 'grid';
+    list.style.gap = '8px';
+    list.style.marginTop = '8px';
+
     const submit = async () => {
       const v = Number(inp.value);
       const nm = (name.value || '').trim();
@@ -1702,7 +1716,7 @@ function ensureEstimateUIForScreen(qid, q){
     inp.addEventListener('keydown', (e)=>{ if (e.key==='Enter') { e.preventDefault(); submit(); } });
 
     row.append(name, inp, btn);
-    box.append(t, row, msg);
+    box.append(t, row, msg, listTitle, list);
 
     const modalForm = document.querySelector('#qModal .modal');
     if (modalForm) modalForm.appendChild(box);
@@ -1718,9 +1732,10 @@ function ensureEstimateUIForScreen(qid, q){
       if (inp) inp.value = '';
     }catch(e){}
     // Reveal-Cache nur für diese Runde neu
+    __estimateData = {};
     __estimateReveal = {};
     __estimateWinnerCid = null;
-    try{ const list = document.getElementById('estimateAudienceList'); if (list) list.innerHTML=''; }catch(e){}
+    try{ __renderEstimateAudienceList(qid); }catch(e){}
   }
 
   if (window.db){
@@ -1738,6 +1753,7 @@ function ensureEstimateUIForScreen(qid, q){
           const msg = document.getElementById('estimateMsg');
           if (msg && __estimateData[cid]) msg.textContent = '✅ Abgegeben';
         }catch(e){}
+        try{ __renderEstimateAudienceList(qid); }catch(e){}
       });
     }catch(e){}
   }
@@ -1751,9 +1767,10 @@ function ensureEstimateUIForHost(qid, q){
       const hb = document.getElementById('estimateHostBox');
       if (hb) hb.remove();
       if (__estimateUnsub) { __estimateUnsub(); __estimateUnsub = null; }
-      __estimateData = {}; __estimateReveal = {};
+      __estimateData = {}; __estimateData = {};
+    __estimateReveal = {};
     __estimateWinnerCid = null;
-    try{ const list = document.getElementById('estimateAudienceList'); if (list) list.innerHTML=''; }catch(e){}
+    try{ __renderEstimateAudienceList(qid); }catch(e){}
     }catch(e){}
     return;
   }
