@@ -995,10 +995,9 @@ function onModalCloseOnce(){
     const hb = document.getElementById('estimateHostBox');
     if (hb) hb.remove();
     if (__estimateUnsub) { __estimateUnsub(); __estimateUnsub = null; }
-    __estimateData = {}; __estimateData = {};
+    __estimateData = {};
     __estimateReveal = {};
     __estimateWinnerCid = null;
-    try{ __renderEstimateAudienceList(qid); }catch(e){}
   }catch(e){}
 }
 
@@ -1509,6 +1508,17 @@ function getClientName(){
 }
 
 
+
+function __resetEstimateDocRemote(qid){
+  if (role !== 'host' || !window.db) return;
+  try{
+    const roomRef = window.db.collection('rooms').doc(remoteRoomId);
+    const docRef = roomRef.collection('estimates').doc(String(qid));
+    // WICHTIG: merge:false überschreibt das Dokument komplett -> alte Schätzungen werden gelöscht
+    docRef.set({ __reveal: {}, __winner: null, __round: Date.now() }, { merge: false });
+  }catch(e){}
+}
+
 function __saveEstimateMetaRemote(qid, meta){
   if (role !== 'host' || !window.db) return;
   try{
@@ -1597,10 +1607,9 @@ function ensureEstimateUIForScreen(qid, q){
       const hb = document.getElementById('estimateHostBox');
       if (hb) hb.remove();
       if (__estimateUnsub) { __estimateUnsub(); __estimateUnsub = null; }
-      __estimateData = {}; __estimateData = {};
+      __estimateData = {};
     __estimateReveal = {};
     __estimateWinnerCid = null;
-    try{ __renderEstimateAudienceList(qid); }catch(e){}
     }catch(e){}
     return;
   }
@@ -1735,7 +1744,6 @@ function ensureEstimateUIForScreen(qid, q){
     __estimateData = {};
     __estimateReveal = {};
     __estimateWinnerCid = null;
-    try{ __renderEstimateAudienceList(qid); }catch(e){}
   }
 
   if (window.db){
@@ -1753,7 +1761,6 @@ function ensureEstimateUIForScreen(qid, q){
           const msg = document.getElementById('estimateMsg');
           if (msg && __estimateData[cid]) msg.textContent = '✅ Abgegeben';
         }catch(e){}
-        try{ __renderEstimateAudienceList(qid); }catch(e){}
       });
     }catch(e){}
   }
@@ -1767,10 +1774,9 @@ function ensureEstimateUIForHost(qid, q){
       const hb = document.getElementById('estimateHostBox');
       if (hb) hb.remove();
       if (__estimateUnsub) { __estimateUnsub(); __estimateUnsub = null; }
-      __estimateData = {}; __estimateData = {};
+      __estimateData = {};
     __estimateReveal = {};
     __estimateWinnerCid = null;
-    try{ __renderEstimateAudienceList(qid); }catch(e){}
     }catch(e){}
     return;
   }
@@ -1835,6 +1841,7 @@ function ensureEstimateUIForHost(qid, q){
 
   box.dataset.qid = String(qid);
   if (isNewQ){
+    __resetEstimateDocRemote(qid);
     __estimateData = {}; __estimateReveal = {}; __estimateWinnerCid = null;
     try{ const l = document.getElementById('estimateHostList'); if (l) l.innerHTML = '<div style="opacity:.75">Noch keine Eingaben…</div>'; }catch(e){}
   }
