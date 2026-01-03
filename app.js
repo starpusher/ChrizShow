@@ -811,8 +811,26 @@ function renderOverlay(){
     });
     meta.append(nm, pts); card.append(img, meta, jokers); els.overlay.appendChild(card);
 
-    if (role==='host') card.onclick = () => { state.turn = idx; saveState(); renderOverlay(); sendTurn(); };
+    if (role==='host') card.onclick = () => { state.turn = idx; saveState(); renderOverlay(); sendTurn(); sendSync(); };
   });
+}
+
+
+// Host-only faux backdrop (damit Host den Overlay unten weiter klicken kann)
+// Wir nutzen im Host die nicht-modale <dialog>.show() und legen einen Backdrop dahinter.
+let __hostBackdropEl = null;
+function __showHostBackdrop(){
+  if (__hostBackdropEl) return;
+  const el = document.createElement('div');
+  el.id = 'hostBackdrop';
+  el.className = 'host-backdrop';
+  document.body.appendChild(el);
+  __hostBackdropEl = el;
+}
+function __hideHostBackdrop(){
+  if (!__hostBackdropEl) return;
+  __hostBackdropEl.remove();
+  __hostBackdropEl = null;
 }
 
 /* ======= Modal / Host-Flow ======= */
@@ -982,10 +1000,11 @@ function openQuestion(col, row) {
   els.timerBtn.onclick = () => startTimer(10);
 
   els.modal.addEventListener('close', onModalCloseOnce, { once: true });
-  els.modal.showModal();
+  if (role === 'host') { __showHostBackdrop(); els.modal.show(); } else { els.modal.showModal(); }
 }
 
 function onModalCloseOnce(){
+  try{ __hideHostBackdrop(); }catch(e){}
   markBusyTile(false);
   stopTimer();
 
@@ -1766,6 +1785,7 @@ function ensureEstimateUIForScreen(qid, q){
           const msg = document.getElementById('estimateMsg');
           if (msg) msg.textContent = __estimateData[cid] ? '✅ Abgegeben' : '';
         }catch(e){}
+        try{ __renderEstimateAudienceList(qid); }catch(e){}
       });
     }catch(e){}
   }
