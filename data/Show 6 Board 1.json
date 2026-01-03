@@ -49,7 +49,7 @@
       "title": "Wer glotzt da",
       "questions": [
         { "id": "B-200-1", "points": 100, "text": "Wer glotzt denn da?", "image": "JokoCut.jpg", "answer": "Joko Winterscheidt", "answer_images": ["Joko.jpg"]},
-        { "id": "B-400-1", "points": 200, "text": "Wer glotzt denn da?", "image": "RowanCut.jpg", "answer": "Rowan Atkinson", "answer_images": ["RowanCut.jpg"]},
+        { "id": "B-400-1", "points": 200, "text": "Wer glotzt denn da?", "image": "RowanCut.jpg", "answer": "Rowan Atkinson", "answer_images": ["Rowan.jpg"]},
         { "id": "B-600-1", "points": 300, "text": "Wer glotzt denn da?", "image": "RaabCut.jpg", "answer": "Stefan Raab", "answer_images": ["Raab.jpg"]},
         { "id": "B-800-1", "points": 400, "text": "Wer glotzt denn da?", "image": "EliasCut.jpg", "answer": "Elias M'Barek", "answer_images": ["Elias.jpg"]},
         { "id": "B-1000-1", "points": 500, "text": "Wer glotzt denn da?", "image": "LegolasCut.jpg", "answer": "Legolas", "answer_images": ["Legolas.jpg"]}
