@@ -980,7 +980,7 @@ function openQuestion(col, row) {
   els.timerBtn.onclick = () => startTimer(10);
 
   els.modal.addEventListener('close', onModalCloseOnce, { once: true });
-  els.modal.showModal();
+  if (role === 'host') els.modal.show(); else els.modal.showModal();
 }
 
 function onModalCloseOnce(){
@@ -1626,8 +1626,22 @@ function ensureEstimateUIForScreen(qid, q){
     btn.addEventListener('click', submit);
     inp.addEventListener('keydown', (e)=>{ if (e.key==='Enter') { e.preventDefault(); submit(); } });
 
+    const listTitle = document.createElement('div');
+    listTitle.textContent = 'Schätzungen';
+    listTitle.style.marginTop = '10px';
+    listTitle.style.fontWeight = '800';
+    listTitle.style.opacity = '.95';
+
+    const list = document.createElement('div');
+    list.id = 'estimateList';
+    list.style.marginTop = '6px';
+    list.style.textAlign = 'left';
+    list.style.maxHeight = '170px';
+    list.style.overflowY = 'auto';
+    list.style.paddingRight = '6px';
+
     row.append(name, inp, btn);
-    box.append(t, row, msg);
+    box.append(t, row, msg, listTitle, list);
 
     const modalForm = document.querySelector('#qModal .modal');
     if (modalForm) modalForm.appendChild(box);
@@ -1658,7 +1672,59 @@ function ensureEstimateUIForScreen(qid, q){
         try{
           const cid = getClientId();
           const msg = document.getElementById('estimateMsg');
-          if (msg && __estimateData[cid]) msg.textContent = '✅ Abgegeben';
+          if (msg) msg.textContent = __estimateData[cid] ? '✅ Abgegeben' : '';
+        }catch(e){}
+
+        // Liste rendern (Name + zensierte/aufgedeckte Antwort)
+        try{
+          const list = document.getElementById('estimateList');
+          if (!list) return;
+          list.innerHTML = '';
+          const reveal = (__estimateData && __estimateData.__reveal) ? (__estimateData.__reveal || {}) : {};
+          const winner = (__estimateData && __estimateData.__winner) ? String(__estimateData.__winner) : null;
+
+          const entries = Object.entries(__estimateData || {})
+            .filter(([k,v])=> k && !String(k).startsWith('__') && v && typeof v === 'object')
+            .sort((a,b)=> (a[1].ts||0) - (b[1].ts||0));
+
+          if (!entries.length){
+            const p = document.createElement('div');
+            p.textContent = 'Noch keine Schätzungen...';
+            p.style.opacity = '.8';
+            p.style.fontSize = '13px';
+            list.appendChild(p);
+            return;
+          }
+
+          entries.forEach(([cid,v])=>{
+            const row = document.createElement('div');
+            row.style.display = 'flex';
+            row.style.justifyContent = 'space-between';
+            row.style.alignItems = 'center';
+            row.style.padding = '6px 8px';
+            row.style.border = '1px solid rgba(255,255,255,.10)';
+            row.style.borderRadius = '10px';
+            row.style.background = 'rgba(10,10,18,.35)';
+            row.style.marginBottom = '6px';
+
+            if (winner && String(cid) === winner){
+              row.style.borderColor = 'rgba(155,107,255,.65)';
+              row.style.boxShadow = '0 0 0 2px rgba(155,107,255,.20) inset';
+            }
+
+            const left = document.createElement('div');
+            left.textContent = (v.name || 'Unbekannt');
+            left.style.fontWeight = '800';
+
+            const right = document.createElement('div');
+            const isRev = !!reveal[String(cid)];
+            right.textContent = isRev ? String(v.value) : '…';
+            right.style.opacity = isRev ? '1' : '.7';
+            right.style.fontWeight = '900';
+
+            row.append(left, right);
+            list.appendChild(row);
+          });
         }catch(e){}
       });
     }catch(e){}
@@ -1674,6 +1740,13 @@ function ensureEstimateUIForHost(qid, q){
       if (hb) hb.remove();
       if (__estimateUnsub) { __estimateUnsub(); __estimateUnsub = null; }
       __estimateData = {}; __estimateReveal = {};
+    try{
+      if (role==='host' && window.db){
+        const roomRef = window.db.collection('rooms').doc(remoteRoomId);
+        const docRef = roomRef.collection('estimates').doc(String(qid));
+        docRef.set({ __reveal:{}, __winner:null, __winnerTs: Date.now(), __revealTs: Date.now() }, { merge:true });
+      }
+    }catch(e){}
       __estimateHostDocRef = null; __estimateHostQid = null;
     }catch(e){}
     return;
@@ -1839,15 +1912,31 @@ function markClosestEstimate(q){
   if (!best) return;
 
   __estimateReveal[best.cid] = true;
+  try{ persistEstimateMeta(); }catch(e){}
   renderEstimateHostList(q);
+
+  // Gewinner auch im Publikum highlighten (via Firestore in estimates doc: __winner)
+  try{
+    if (role==='host' && __estimateHostDocRef) {
+      __estimateHostDocRef.set({ __winner: best.cid, __winnerTs: Date.now() }, { merge:true });
+    }
+  }catch(e){}
+}
 
 function deleteEstimateEntry(clientId){
   if (role !== 'host') return;
   try{
     if (!window.db || !__estimateHostDocRef) return;
-    // Feld im Dokument löschen
     const del = firebase.firestore.FieldValue.delete();
     __estimateHostDocRef.update({ [String(clientId)]: del });
+
+    // Falls der gelöschte gerade Winner war, Winner entfernen
+    try{
+      if (__estimateData && __estimateData.__winner === String(clientId)) {
+        __estimateHostDocRef.update({ __winner: del, __winnerTs: Date.now() });
+      }
+    }catch(e){}
+
     // Lokale Caches bereinigen (UI reagiert auch über onSnapshot)
     try{ delete __estimateData[String(clientId)]; }catch(e){}
     try{ delete __estimateReveal[String(clientId)]; }catch(e){}
@@ -1855,7 +1944,20 @@ function deleteEstimateEntry(clientId){
     console.warn('Estimate delete failed', e);
   }
 }
+
+
+function persistEstimateMeta(){
+  try{
+    if (role !== 'host') return;
+    if (!__estimateHostDocRef) return;
+    __estimateHostDocRef.set({
+      __reveal: __estimateReveal || {},
+      __revealTs: Date.now(),
+      __winner: (__estimateData && __estimateData.__winner) ? __estimateData.__winner : null
+    }, { merge:true });
+  }catch(e){}
 }
+
 
 /* ======= Helper & Global ======= */
 function idToName(pid){ return state.players.find(p => p.id === pid)?.name || pid; }
