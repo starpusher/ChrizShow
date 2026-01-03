@@ -30,7 +30,7 @@
       "questions": [
         { "id": "F-200-1", "points": 100, "text": "Was ist an der Flagge von Deutschland falsch?", "image": "DeutschlandCut.jpg", "answer": "Steht auf dem Kopf" },
         { "id": "F-400-1", "points": 200, "text": "Nenne einen weiteren Achttausender außer dem Mount Everest", "answer": "K2, Kangchendzönga, Lhotse, Makalu, Cho Oyu, Dhaulagiri I, Manaslu, Nanga Parbat, Annapurna I, Gasherbrum I, Broad Peak, Gasherbrum II, Shishapangma" },
-        { "id": "F-600-1", "points": 300, "text": "Wie heißt der mit 3.776 Metern höchste berg japans", "answer": "Fuji" },
+        { "id": "F-600-1", "points": 300, "text": "Wie heißt der mit 3.776 Metern höchste Berg Japans", "answer": "Fuji" },
         { "id": "F-800-1", "points": 400, "text": "Welches Land ist gesucht?", "image": "Serbien.jpg", "answer": "Serbien"},
         { "id": "F-1000-1", "points": 500, "text": "Was ist an der Flagge von Sri Lanka falsch?", "image": "SriLankaCut.jpg", "answer": "Bo-Blätter fehlen", "answer_images": ["SriLanka.jpg"]}
       ]
