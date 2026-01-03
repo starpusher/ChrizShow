@@ -12,7 +12,7 @@
         { "id": "S-400-1", "points": 400, "text": "Wie viele Würfe benötigt man beim Darts mindestens für ein perfektes Leg (501)?", "answer": "9 Würfe - 180, 180, 141 -T20-T19-D12-" },
         { "id": "S-600-1", "points": 600, "text": "Welche Sportart ist hier abgebildet?", "image": "Biathlon.jpg", "answer": "Biathlon" },
         { "id": "S-800-1", "points": 800, "text": "Wie heißt dieser Spielzug/Manöver im Schach?", "image": "Rochade.jpg", "answer": "Rochade" },
-        { "id": "S-1000-1", "points": 1000, "text": "", "answer": "" }
+        { "id": "S-1000-1", "points": 1000, "text": "Was versteht man unter einem 'Birdie'?", "answer": "Einlochen mit einem Schlag unter Par, also der Lochvorgabe im Golf" }
       ]
     },
     {
@@ -30,29 +30,29 @@
       "questions": [
         { "id": "F-200-1", "points": 200, "text": "Was bedeuten diese Symbole?", "image": "Ampel.jpg", "answer": "Anhalten, Rechtsabbieger dürfen fahren" },
         { "id": "F-400-1", "points": 400, "text": "Was ist das?", "image": "Warnblinker.jpg", "answer": "Warnblinker" },
-        { "id": "F-600-1", "points": 600, "text": "Welche Farben fehlen hier? Und wo?", "image": "HilfigerCut.jpg", "answer": "", "answer_images": ["Hilfiger.jpg"]} },
+        { "id": "F-600-1", "points": 600, "text": "Welche Farben fehlen hier? Und wo?", "image": "HilfigerCut.jpg", "answer": "", "answer_images": ["Hilfiger.jpg"]},
         { "id": "F-800-1", "points": 800, "text": "Was fehlt hier?", "image": "MalibuCut.jpg", "answer": "Der Malibu Schriftzug", "answer_images": ["Malibu.jpg"]},
-        { "id": "F-1000-1", "points": 1000, "text": "", "answer": "" }
+        { "id": "F-1000-1", "points": 1000, "text": "Was bedeutet dieses Symbol?", "image": "Schutzisolierung.jpg", "answer": "Schutzisolierung" }
       ]
     },
     {
       "title": "Fylmhe",
       "questions": [
-        { "id": "Y-200-1", "points": 200, "text": "", "answer": "" },
-        { "id": "Y-400-1", "points": 400, "text": "", "answer": "" },
-        { "id": "Y-600-1", "points": 600, "text": "", "answer": "" },
-        { "id": "Y-800-1", "points": 800, "text": "", "answer": "" },
-        { "id": "Y-1000-1", "points": 1000, "text": "", "answer": "" }
+        { "id": "Y-200-1", "points": 200, "text": "Eine Gruppe läuft sehr lange zu Fuß, um Schmuck loszuwerden", "answer": "Der Herr der Ringe" },
+        { "id": "Y-400-1", "points": 400, "text": "Ein Typ wird zum Boss, indem er sich selbst schlägt", "answer": "Fight Club" },
+        { "id": "Y-600-1", "points": 600, "text": "Menschen rennen vor einem Tier weg, obwohl sie es selbst gebaut haben", "answer": "Jurassic Park" },
+        { "id": "Y-800-1", "points": 800, "text": "Max schwitzt im Auto und ist darüber nicht glücklich", "answer": "Mad Max: Fury Road" },
+        { "id": "Y-1000-1", "points": 1000, "text": "Ein Typ spielt jede Nacht mit einem Beyblade", "answer": "Inception" }
       ]
     },
     {
       "title": "Biologie",
       "questions": [
-        { "id": "B-200-1", "points": 200, "text": "", "answer": ""},
-        { "id": "B-400-1", "points": 400, "text": "", "answer": "" },
-        { "id": "B-600-1", "points": 600, "text": "", "answer": "" },
-        { "id": "B-800-1", "points": 800, "text": "", "answer": "" },
-        { "id": "B-1000-1", "points": 1000, "text": "", "answer": "" }
+        { "id": "B-200-1", "points": 200, "text": "Wie nennt man den Vorgang, bei dem Pflanzen mithilfe von Licht Energie herstellen?", "answer": "Photosynthese"},
+        { "id": "B-400-1", "points": 400, "text": "Wie nennt man die Verbindungsstellen zwischen zwei Nervenzellen?", "answer": "Synapsen" },
+        { "id": "B-600-1", "points": 600, "text": "Welches Organell ist für die Energiegewinnung in der Zelle verantwortlich?", "answer": "Mitochondrien" },
+        { "id": "B-800-1", "points": 800, "text": "Welcher Bestandteil des Blutes ist für die Blutgerinnung verantwortlich?", "answer": "Blutplättchen (Thrombozyten)" },
+        { "id": "B-1000-1", "points": 1000, "text": "Nenne alle Basen, die in der DNA vorkommen", "answer": "Adenin, Cytosin, Guanin und Thymin" }
       ]
     }
   ]
