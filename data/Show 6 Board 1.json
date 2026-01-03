@@ -6,7 +6,7 @@
   "players": ["Spieler 1", "Spieler 2", "Spieler 3"],
   "categories": [
     {
-      "title": "1",
+      "title": "Filme und Serien",
       "questions": [
         { "id": "S-200-1", "points": 100, "text": "", "answer": "" },
         { "id": "S-400-1", "points": 200, "text": "", "answer": "" },
@@ -16,7 +16,7 @@
       ]
     },
     {
-      "title": "2",
+      "title": "Politik",
       "questions": [
         { "id": "G-200-1", "points": 100, "text": "", "answer": "" },
         { "id": "G-400-1", "points": 200, "text": "", "answer": "" },
@@ -26,7 +26,7 @@
       ]
     },
     {
-      "title": "3",
+      "title": "Kartendebakel",
       "questions": [
         { "id": "F-200-1", "points": 100, "text": "", "audio": ".mp3", "answer": "" },
         { "id": "F-400-1", "points": 200, "text": "", "audio": ".mp3", "answer": "" },
@@ -36,7 +36,7 @@
       ]
     },
     {
-      "title": "4",
+      "title": "Gesundheit",
       "questions": [
         { "id": "Y-200-1", "points": 100, "text": "", "image": ".jpg", "answer": "" },
         { "id": "Y-400-1", "points": 200, "text": "", "image": ".jpg", "answer": "" },
@@ -46,7 +46,7 @@
       ]
     },
     {
-      "title": "5",
+      "title": "Wer glotzt da",
       "questions": [
         { "id": "B-200-1", "points": 100, "text": "", "image": ".jpg", "answer": "" },
         { "id": "B-400-1", "points": 200, "text": "", "image": ".jpg", "answer": "" },
