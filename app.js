@@ -996,6 +996,8 @@ function onModalCloseOnce(){
     if (hb) hb.remove();
     if (__estimateUnsub) { __estimateUnsub(); __estimateUnsub = null; }
     __estimateData = {}; __estimateReveal = {};
+    __estimateWinnerCid = null;
+    try{ const list = document.getElementById('estimateAudienceList'); if (list) list.innerHTML=''; }catch(e){}
   }catch(e){}
 }
 
@@ -1505,9 +1507,85 @@ function getClientName(){
   return localStorage.getItem('aud_client_name') || '';
 }
 
+
+function __saveEstimateMetaRemote(qid, meta){
+  if (role !== 'host' || !window.db) return;
+  try{
+    const roomRef = window.db.collection('rooms').doc(remoteRoomId);
+    const docRef = roomRef.collection('estimates').doc(String(qid));
+    docRef.set(meta, { merge: true });
+  }catch(e){}
+}
+function __stripEstimateMeta(d){
+  const out = {};
+  Object.keys(d||{}).forEach(k=>{
+    if (k.startsWith('__')) return;
+    out[k] = d[k];
+  });
+  return out;
+}
+function __renderEstimateAudienceList(qid){
+  if (role !== 'screen') return;
+  const list = document.getElementById('estimateAudienceList');
+  if (!list) return;
+  list.innerHTML = '';
+
+  const entries = Object.entries(__estimateData||{})
+    .map(([cid,v])=>({ cid, ...(v||{}) }))
+    .filter(x=>x && typeof x.value !== 'undefined')
+    .sort((a,b)=>(a.ts||0)-(b.ts||0));
+
+  if (!entries.length){
+    const empty = document.createElement('div');
+    empty.style.opacity = '.75';
+    empty.style.fontSize = '13px';
+    empty.textContent = 'Noch keine Schätzungen…';
+    list.appendChild(empty);
+    return;
+  }
+
+  const winner = (__estimateWinnerCid || null);
+
+  entries.forEach(ent=>{
+    const row = document.createElement('div');
+    row.style.display = 'flex';
+    row.style.justifyContent = 'space-between';
+    row.style.alignItems = 'center';
+    row.style.gap = '10px';
+    row.style.padding = '8px 10px';
+    row.style.borderRadius = '12px';
+    row.style.border = '1px solid rgba(255,255,255,.12)';
+    row.style.background = 'rgba(18,18,31,.45)';
+    row.style.fontSize = '14px';
+
+    const left = document.createElement('div');
+    left.style.fontWeight = '800';
+    left.textContent = ent.name || ent.cid;
+
+    const val = document.createElement('div');
+    val.style.fontVariantNumeric = 'tabular-nums';
+    const revealed = !!__estimateReveal[ent.cid];
+    val.textContent = revealed ? String(ent.value) : '•••';
+    val.style.opacity = revealed ? '1' : '.7';
+
+    row.append(left, val);
+
+    if (winner && ent.cid === winner){
+      row.style.border = '1px solid rgba(93,225,255,.55)';
+      row.style.boxShadow = '0 0 0 2px rgba(93,225,255,.22), 0 0 18px rgba(93,225,255,.18)';
+      row.style.background = 'rgba(93,225,255,.10)';
+    }
+
+    list.appendChild(row);
+  });
+}
+
 let __estimateUnsub = null;
 let __estimateData = {};
 let __estimateReveal = {};
+    __estimateWinnerCid = null;
+    try{ const list = document.getElementById('estimateAudienceList'); if (list) list.innerHTML=''; }catch(e){}
+let __estimateWinnerCid = null;
 
 function ensureEstimateUIForScreen(qid, q){
   if (role !== 'screen') return;
@@ -1521,6 +1599,8 @@ function ensureEstimateUIForScreen(qid, q){
       if (hb) hb.remove();
       if (__estimateUnsub) { __estimateUnsub(); __estimateUnsub = null; }
       __estimateData = {}; __estimateReveal = {};
+    __estimateWinnerCid = null;
+    try{ const list = document.getElementById('estimateAudienceList'); if (list) list.innerHTML=''; }catch(e){}
     }catch(e){}
     return;
   }
@@ -1639,6 +1719,8 @@ function ensureEstimateUIForScreen(qid, q){
     }catch(e){}
     // Reveal-Cache nur für diese Runde neu
     __estimateReveal = {};
+    __estimateWinnerCid = null;
+    try{ const list = document.getElementById('estimateAudienceList'); if (list) list.innerHTML=''; }catch(e){}
   }
 
   if (window.db){
@@ -1647,7 +1729,10 @@ function ensureEstimateUIForScreen(qid, q){
       const docRef = roomRef.collection('estimates').doc(String(qid));
       if (__estimateUnsub) __estimateUnsub();
       __estimateUnsub = docRef.onSnapshot((d)=>{
-        __estimateData = d.exists ? (d.data() || {}) : {};
+        const raw = d.exists ? (d.data() || {}) : {};
+        __estimateReveal = raw.__reveal || __estimateReveal || {};
+        __estimateWinnerCid = raw.__winner || null;
+        __estimateData = __stripEstimateMeta(raw);
         try{
           const cid = getClientId();
           const msg = document.getElementById('estimateMsg');
@@ -1667,12 +1752,15 @@ function ensureEstimateUIForHost(qid, q){
       if (hb) hb.remove();
       if (__estimateUnsub) { __estimateUnsub(); __estimateUnsub = null; }
       __estimateData = {}; __estimateReveal = {};
+    __estimateWinnerCid = null;
+    try{ const list = document.getElementById('estimateAudienceList'); if (list) list.innerHTML=''; }catch(e){}
     }catch(e){}
     return;
   }
   if (!window.db) return;
 
   let box = document.getElementById('estimateHostBox');
+  const isNewQ = !box || box.dataset.qid !== String(qid);
   if (!box){
     box = document.createElement('div');
     box.id = 'estimateHostBox';
@@ -1707,7 +1795,7 @@ function ensureEstimateUIForHost(qid, q){
     btnRevealAll.style.color = 'white';
     btnRevealAll.style.fontWeight = '800';
     btnRevealAll.style.cursor = 'pointer';
-    btnRevealAll.onclick = ()=>{ Object.keys(__estimateData||{}).forEach(k=>__estimateReveal[k]=true); renderEstimateHostList(q); };
+    btnRevealAll.onclick = ()=>{ Object.keys(__estimateData||{}).forEach(k=>__estimateReveal[k]=true); __saveEstimateMetaRemote(qid, { __reveal: __estimateReveal, __winner: __estimateWinnerCid||null }); renderEstimateHostList(q, qid); };
 
     const btnClosest = document.createElement('button');
     btnClosest.type = 'button';
@@ -1719,7 +1807,7 @@ function ensureEstimateUIForHost(qid, q){
     btnClosest.style.color = 'white';
     btnClosest.style.fontWeight = '800';
     btnClosest.style.cursor = 'pointer';
-    btnClosest.onclick = ()=>{ markClosestEstimate(q); };
+    btnClosest.onclick = ()=>{ markClosestEstimate(q, qid); };
 
     actions.append(btnRevealAll, btnClosest);
     box.append(title, list, actions);
@@ -1728,18 +1816,27 @@ function ensureEstimateUIForHost(qid, q){
     if (wrap) wrap.appendChild(box);
   }
 
+  box.dataset.qid = String(qid);
+  if (isNewQ){
+    __estimateData = {}; __estimateReveal = {}; __estimateWinnerCid = null;
+    try{ const l = document.getElementById('estimateHostList'); if (l) l.innerHTML = '<div style="opacity:.75">Noch keine Eingaben…</div>'; }catch(e){}
+  }
+
   try{
     const roomRef = window.db.collection('rooms').doc(remoteRoomId);
     const docRef = roomRef.collection('estimates').doc(String(qid));
     if (__estimateUnsub) __estimateUnsub();
     __estimateUnsub = docRef.onSnapshot((d)=>{
-      __estimateData = d.exists ? (d.data() || {}) : {};
-      renderEstimateHostList(q);
+      const raw = d.exists ? (d.data() || {}) : {};
+      __estimateReveal = raw.__reveal || __estimateReveal || {};
+      __estimateWinnerCid = raw.__winner || null;
+      __estimateData = __stripEstimateMeta(raw);
+      renderEstimateHostList(q, qid);
     });
   }catch(e){}
 }
 
-function renderEstimateHostList(q){
+function renderEstimateHostList(q, qid){
   const list = document.getElementById('estimateHostList');
   if (!list) return;
   list.innerHTML = '';
@@ -1780,7 +1877,7 @@ function renderEstimateHostList(q){
     btn.style.color = 'white';
     btn.style.fontWeight = '800';
     btn.style.cursor = 'pointer';
-    btn.onclick = ()=>{ __estimateReveal[ent.cid] = !revealed; renderEstimateHostList(q); };
+    btn.onclick = ()=>{ __estimateReveal[ent.cid] = !revealed; __saveEstimateMetaRemote(qid, { __reveal: __estimateReveal, __winner: __estimateWinnerCid||null }); renderEstimateHostList(q, qid); };
 
     row.append(left, val, btn);
     list.appendChild(row);
@@ -1794,7 +1891,7 @@ function renderEstimateHostList(q){
   }
 }
 
-function markClosestEstimate(q){
+function markClosestEstimate(q, qid){
   let ans = (q && q.answer) ? String(q.answer) : '';
   const m = ans.match(/-?\d+(?:[\.,]\d+)?/);
   if (!m) return;
@@ -1812,7 +1909,9 @@ function markClosestEstimate(q){
   if (!best) return;
 
   __estimateReveal[best.cid] = true;
-  renderEstimateHostList(q);
+  __estimateWinnerCid = best.cid;
+  __saveEstimateMetaRemote(qid, { __reveal: __estimateReveal, __winner: __estimateWinnerCid });
+  renderEstimateHostList(q, qid);
 }
 
 /* ======= Helper & Global ======= */
