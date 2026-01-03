@@ -32,7 +32,7 @@
         { "id": "F-400-1", "points": 400, "text": "Was ist das?", "image": "Warnblinker.jpg", "answer": "Warnblinker" },
         { "id": "F-600-1", "points": 600, "text": "Welche Farben fehlen hier? Und wo?", "image": "HilfigerCut.jpg", "answer": "", "answer_images": ["Hilfiger.jpg"]},
         { "id": "F-800-1", "points": 800, "text": "Was fehlt hier?", "image": "MalibuCut.jpg", "answer": "Der Malibu Schriftzug", "answer_images": ["Malibu.jpg"]},
-        { "id": "F-1000-1", "points": 1000, "text": "Was bedeutet dieses Symbol?", "image": "Schutzisolierung.jpg", "answer": "Schutzisolierung" }
+        { "id": "F-1000-1", "points": 1000, "text": "Was bedeutet dieses Symbol auf elektrischen Geräten?", "image": "Schutzisolierung.jpg", "answer": "Schutzisolierung" }
       ]
     },
     {
