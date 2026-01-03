@@ -9,50 +9,50 @@
       "title": "Filme und Serien",
       "questions": [
         { "id": "S-200-1", "points": 100, "text": "Aus welchem Film stammt dieser Ausschnitt?", "audio": "KönigderLöwen.mp3", "answer": "König der Löwen" },
-        { "id": "S-400-1", "points": 200, "text": "Aus welchem Film stammt dieser Ausschnitt?", "audio": "Passengers.mp3", "answer": "Passengers" },
-        { "id": "S-600-1", "points": 300, "text": "Aus welchem Film stammt dieser Ausschnitt?", "audio": "KingsmanKirche.mp3", "answer": "Kingsman" },
-        { "id": "S-800-1", "points": 400, "text": "Aus welchem Film stammt dieser Screenshot?", "answer": "" },
-        { "id": "S-1000-1", "points": 500, "text": "Aus welchem Film stammt dieser Screenshot?", "answer": "" }
+        { "id": "S-400-1", "points": 200, "text": "Aus welchem Film stammt dieser Ausschnitt?", "audio": "KingsmanKirche.mp3", "answer": "Kingsman" },
+        { "id": "S-600-1", "points": 300, "text": "Aus welchem Film stammt dieser Ausschnitt?", "audio": "Passengers.mp3", "answer": "Passengers" },
+        { "id": "S-800-1", "points": 400, "text": "Aus welchem Film stammt dieser Screenshot?", "image": "WallE.jpg", "answer": "Wall-E" },
+        { "id": "S-1000-1", "points": 500, "text": "Aus welchem Film stammt dieser Screenshot?", "image": "IamLegend.jpg", "answer": "I am Legend" }
       ]
     },
     {
       "title": "Politik",
       "questions": [
-        { "id": "G-200-1", "points": 100, "text": "", "answer": "" },
-        { "id": "G-400-1", "points": 200, "text": "", "answer": "" },
-        { "id": "G-600-1", "points": 300, "text": "", "answer": "" },
-        { "id": "G-800-1", "points": 400, "text": "", "answer": "" },
-        { "id": "G-1000-1", "points": 500, "text": "", "answer": "" }
+        { "id": "G-200-1", "points": 100, "text": "Welche Staatsform hat Deutschland?", "answer": "Demokratie" },
+        { "id": "G-400-1", "points": 200, "text": "", "image": "Amthor.jpg", "answer": "Philipp Amthor" },
+        { "id": "G-600-1", "points": 300, "text": "Welche Partei gehört zu welcher Säule?", "image": "BundestagswahlCut.jpg", "answer": "", "answer_images": ["Bundestagswahl.jpg"]},
+        { "id": "G-800-1", "points": 400, "text": "Wie heißt das parlamentarische Verfahren, mit dem der Bundestag einen amtierenden Bundeskanzler abwählen kann?", "answer": "Konstruktives Misstrauensvotum" },
+        { "id": "G-1000-1", "points": 500, "text": "In welchem Jahr trat Großbritannien offiziell aus der EU aus (Brexit)?", "answer": "2020" }
       ]
     },
     {
       "title": "Kartendebakel",
       "questions": [
-        { "id": "F-200-1", "points": 100, "text": "", "audio": ".mp3", "answer": "" },
-        { "id": "F-400-1", "points": 200, "text": "", "audio": ".mp3", "answer": "" },
-        { "id": "F-600-1", "points": 300, "text": "", "audio": ".mp3", "answer": "" },
-        { "id": "F-800-1", "points": 400, "text": "", "audio": ".mp3", "answer": "" },
-        { "id": "F-1000-1", "points": 500, "text": "", "audio": ".mp3", "answer": "" }
+        { "id": "F-200-1", "points": 100, "text": "Was ist an der Flagge von Deutschland falsch?", "image": "DeutschlandCut.jpg", "answer": "Steht auf dem Kopf" },
+        { "id": "F-400-1", "points": 200, "text": "Nenne einen weiteren Achttausender außer dem Mount Everest", "answer": "K2, Kangchendzönga, Lhotse, Makalu, Cho Oyu, Dhaulagiri I, Manaslu, Nanga Parbat, Annapurna I, Gasherbrum I, Broad Peak, Gasherbrum II, Shishapangma" },
+        { "id": "F-600-1", "points": 300, "text": "Wie heißt der mit 3.776 Metern höchste berg japans", "answer": "Fuji" },
+        { "id": "F-800-1", "points": 400, "text": "Welches Land ist gesucht?", "image": "Serbien.jpg", "answer": "Serbien"},
+        { "id": "F-1000-1", "points": 500, "text": "Was ist an der Flagge von Sri Lanka falsch?", "image": "SriLankaCut.jpg", "answer": "Bo-Blätter fehlen", "answer_images": ["SriLanka.jpg"]}
       ]
     },
     {
       "title": "Gesundheit",
       "questions": [
-        { "id": "Y-200-1", "points": 100, "text": "", "image": ".jpg", "answer": "" },
-        { "id": "Y-400-1", "points": 200, "text": "", "image": ".jpg", "answer": "" },
-        { "id": "Y-600-1", "points": 300, "text": "", "image": ".jpg", "answer": "" },
-        { "id": "Y-800-1", "points": 400, "text": "", "image": ".jpg", "answer": "" },
-        { "id": "Y-1000-1", "points": 500, "text": "", "image": ".jpg", "answer": "" }
+        { "id": "Y-200-1", "points": 100, "text": "Wodurch erhält man Vitamin D?", "answer": "Sonnenlicht - UVB-Strahlung" },
+        { "id": "Y-400-1", "points": 200, "text": "Welches Organ produziert Insulin?", "answer": "Die Bauchspeicheldrüse" },
+        { "id": "Y-600-1", "points": 300, "text": "Welcher Mineralstoff ist entscheidend für die Stabilität von Knochen und Zähnen?", "answer": "Calcium" },
+        { "id": "Y-800-1", "points": 400, "text": "Was macht die Milz?", "answer": "Blutfilterung, Blutspeicher, Produziert und speichert weiße Blutkörperchen" },
+        { "id": "Y-1000-1", "points": 500, "text": "Wozu dient Vitamin A?", "answer": "Vitamin A ist notwendig für das Wachstum - Wachstumsregulation - beziehungsweise die Neubildung und Entwicklung von Zellen und unterschiedlichen Geweben - z.B. Haut und Schleimhäute. Das Vitamin spielt außerdem eine wichtige Rolle beim Sehvorgang - vor allem Hell-Dunkel-Sehen" }
       ]
     },
     {
       "title": "Wer glotzt da",
       "questions": [
-        { "id": "B-200-1", "points": 100, "text": "", "image": ".jpg", "answer": "" },
-        { "id": "B-400-1", "points": 200, "text": "", "image": ".jpg", "answer": "" },
-        { "id": "B-600-1", "points": 300, "text": "", "image": ".jpg", "answer": "" },
-        { "id": "B-800-1", "points": 400, "text": "", "image": ".jpg", "answer": "" },
-        { "id": "B-1000-1", "points": 500, "text": "", "image": ".jpg", "answer": "" }
+        { "id": "B-200-1", "points": 100, "text": "Wer glotzt denn da?", "image": "JokoCut.jpg", "answer": "Joko Winterscheidt", "answer_images": ["Joko.jpg"]},
+        { "id": "B-400-1", "points": 200, "text": "Wer glotzt denn da?", "image": "RowanCut.jpg", "answer": "Rowan Atkinson", "answer_images": ["RowanCut.jpg"]},
+        { "id": "B-600-1", "points": 300, "text": "Wer glotzt denn da?", "image": "RaabCut.jpg", "answer": "Stefan Raab", "answer_images": ["Raab.jpg"]},
+        { "id": "B-800-1", "points": 400, "text": "Wer glotzt denn da?", "image": "EliasCut.jpg", "answer": "Elias M'Barek", "answer_images": ["Elias.jpg"]},
+        { "id": "B-1000-1", "points": 500, "text": "Wer glotzt denn da?", "image": "LegolasCut.jpg", "answer": "Legolas", "answer_images": ["Legolas.jpg"]}
       ]
     }
   ]
