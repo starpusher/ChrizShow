@@ -8,11 +8,11 @@
     {
       "title": "Filme und Serien",
       "questions": [
-        { "id": "S-200-1", "points": 100, "text": "", "answer": "" },
-        { "id": "S-400-1", "points": 200, "text": "", "answer": "" },
-        { "id": "S-600-1", "points": 300, "text": "", "answer": "" },
-        { "id": "S-800-1", "points": 400, "text": "", "answer": "" },
-        { "id": "S-1000-1", "points": 500, "text": "", "answer": "" }
+        { "id": "S-200-1", "points": 100, "text": "Aus welchem Film stammt dieser Ausschnitt?", "audio": "KönigderLöwen.mp3", "answer": "König der Löwen" },
+        { "id": "S-400-1", "points": 200, "text": "Aus welchem Film stammt dieser Ausschnitt?", "audio": "Passengers.mp3", "answer": "Passengers" },
+        { "id": "S-600-1", "points": 300, "text": "Aus welchem Film stammt dieser Ausschnitt?", "audio": "KingsmanKirche.mp3", "answer": "Kingsman" },
+        { "id": "S-800-1", "points": 400, "text": "Aus welchem Film stammt dieser Screenshot?", "answer": "" },
+        { "id": "S-1000-1", "points": 500, "text": "Aus welchem Film stammt dieser Screenshot?", "answer": "" }
       ]
     },
     {
