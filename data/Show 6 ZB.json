@@ -8,11 +8,11 @@
     {
       "title": "Schätz mal",
       "questions": [
-        {"category": "Schätzfrage", "points": 200, "question": "Wie viele Liter Bier werden pro Oktoberfest durchschnittlich ausgeschenkt?", "answer": "7.1 Millionen Liter", "type": "estimate"},
-        {"category": "Schätzfrage", "points": 200, "question": "Wie viele Liter Bier werden pro Oktoberfest durchschnittlich ausgeschenkt?", "answer": "7.1 Millionen Liter", "type": "estimate"},
-        {"category": "Schätzfrage", "points": 200, "question": "Wie viele Liter Bier werden pro Oktoberfest durchschnittlich ausgeschenkt?", "answer": "7.1 Millionen Liter", "type": "estimate"},
-        {"category": "Schätzfrage", "points": 200, "question": "Wie viele Liter Bier werden pro Oktoberfest durchschnittlich ausgeschenkt?", "answer": "7.1 Millionen Liter", "type": "estimate"},
-        {"category": "Schätzfrage", "points": 200, "question": "Wie viele Liter Bier werden pro Oktoberfest durchschnittlich ausgeschenkt?", "answer": "7.1 Millionen Liter", "type": "estimate"}
+        {"category": "Schätzfrage", "points": 200, "question": "Wie viele Länder verwenden aktuell den Euro als offizielle Währung?", "answer": "20", "type": "estimate"},
+        {"category": "Schätzfrage", "points": 200, "question": "Wie viele Atemzüge macht ein Mensch pro Tag ungefähr?", "answer": "20000", "type": "estimate"},
+        {"category": "Schätzfrage", "points": 200, "question": "Wie viele Inseln gehören offiziell zu Schweden?", "answer": "267570", "type": "estimate"},
+        {"category": "Schätzfrage", "points": 200, "question": "Wie viele Kilometer Straßen gibt es insgesamt in Deutschland?", "answer": "830000", "type": "estimate"},
+        {"category": "Schätzfrage", "points": 200, "question": "Wie viele Kilometer misst die Chinesische Mauer?", "answer": "21196", "type": "estimate"}
       ]
     }
   ]
