@@ -13,9 +13,7 @@ if (role === 'host') {
 }
 if (role === 'screen') document.body.classList.add('audience');
 
-const remoteRoomId = params.get('room') || localStorage.getItem('quiz_room') || 'default';
-// Persist room so popout screens stay in same Firestore room
-try{ if (role==='host') localStorage.setItem('quiz_room', remoteRoomId); }catch(e){}
+const remoteRoomId = params.get('room') || 'default';
 
 // Avatare nicht im Firestore-State speichern (1MB-Limit). Stattdessen separate Avatar-Dokumente.
 let __avatarCache = {};            // playerId -> dataURL
@@ -811,26 +809,8 @@ function renderOverlay(){
     });
     meta.append(nm, pts); card.append(img, meta, jokers); els.overlay.appendChild(card);
 
-    if (role==='host') card.onclick = () => { state.turn = idx; saveState(); renderOverlay(); sendTurn(); sendSync(); };
+    if (role==='host') card.onclick = () => { state.turn = idx; saveState(); renderOverlay(); sendTurn(); };
   });
-}
-
-
-// Host-only faux backdrop (damit Host den Overlay unten weiter klicken kann)
-// Wir nutzen im Host die nicht-modale <dialog>.show() und legen einen Backdrop dahinter.
-let __hostBackdropEl = null;
-function __showHostBackdrop(){
-  if (__hostBackdropEl) return;
-  const el = document.createElement('div');
-  el.id = 'hostBackdrop';
-  el.className = 'host-backdrop';
-  document.body.appendChild(el);
-  __hostBackdropEl = el;
-}
-function __hideHostBackdrop(){
-  if (!__hostBackdropEl) return;
-  __hostBackdropEl.remove();
-  __hostBackdropEl = null;
 }
 
 /* ======= Modal / Host-Flow ======= */
@@ -1000,11 +980,10 @@ function openQuestion(col, row) {
   els.timerBtn.onclick = () => startTimer(10);
 
   els.modal.addEventListener('close', onModalCloseOnce, { once: true });
-  if (role === 'host') { __showHostBackdrop(); els.modal.show(); } else { els.modal.showModal(); }
+  els.modal.showModal();
 }
 
 function onModalCloseOnce(){
-  try{ __hideHostBackdrop(); }catch(e){}
   markBusyTile(false);
   stopTimer();
 
@@ -1016,10 +995,8 @@ function onModalCloseOnce(){
     const hb = document.getElementById('estimateHostBox');
     if (hb) hb.remove();
     if (__estimateUnsub) { __estimateUnsub(); __estimateUnsub = null; }
-    __estimateData = {};
-    __estimateReveal = {};
-    __estimateWinnerCid = null;
-    try{ __renderEstimateAudienceList(qid); }catch(e){}
+    __estimateData = {}; __estimateReveal = {};
+    __estimateHostDocRef = null; __estimateHostQid = null;
   }catch(e){}
 }
 
@@ -1529,94 +1506,11 @@ function getClientName(){
   return localStorage.getItem('aud_client_name') || '';
 }
 
-
-
-function __resetEstimateDocRemote(qid){
-  if (role !== 'host' || !window.db) return;
-  try{
-    const roomRef = window.db.collection('rooms').doc(remoteRoomId);
-    const docRef = roomRef.collection('estimates').doc(String(qid));
-    // WICHTIG: merge:false überschreibt das Dokument komplett -> alte Schätzungen werden gelöscht
-    docRef.set({ __reveal: {}, __winner: null, __round: Date.now() }, { merge: false });
-  }catch(e){}
-}
-
-function __saveEstimateMetaRemote(qid, meta){
-  if (role !== 'host' || !window.db) return;
-  try{
-    const roomRef = window.db.collection('rooms').doc(remoteRoomId);
-    const docRef = roomRef.collection('estimates').doc(String(qid));
-    docRef.set(meta, { merge: true });
-  }catch(e){}
-}
-function __stripEstimateMeta(d){
-  const out = {};
-  Object.keys(d||{}).forEach(k=>{
-    if (k.startsWith('__')) return;
-    out[k] = d[k];
-  });
-  return out;
-}
-function __renderEstimateAudienceList(qid){
-  if (role !== 'screen') return;
-  const list = document.getElementById('estimateAudienceList');
-  if (!list) return;
-  list.innerHTML = '';
-
-  const entries = Object.entries(__estimateData||{})
-    .map(([cid,v])=>({ cid, ...(v||{}) }))
-    .filter(x=>x && typeof x.value !== 'undefined')
-    .sort((a,b)=>(a.ts||0)-(b.ts||0));
-
-  if (!entries.length){
-    const empty = document.createElement('div');
-    empty.style.opacity = '.75';
-    empty.style.fontSize = '13px';
-    empty.textContent = 'Noch keine Schätzungen…';
-    list.appendChild(empty);
-    return;
-  }
-
-  const winner = (__estimateWinnerCid || null);
-
-  entries.forEach(ent=>{
-    const row = document.createElement('div');
-    row.style.display = 'flex';
-    row.style.justifyContent = 'space-between';
-    row.style.alignItems = 'center';
-    row.style.gap = '10px';
-    row.style.padding = '8px 10px';
-    row.style.borderRadius = '12px';
-    row.style.border = '1px solid rgba(255,255,255,.12)';
-    row.style.background = 'rgba(18,18,31,.45)';
-    row.style.fontSize = '14px';
-
-    const left = document.createElement('div');
-    left.style.fontWeight = '800';
-    left.textContent = ent.name || ent.cid;
-
-    const val = document.createElement('div');
-    val.style.fontVariantNumeric = 'tabular-nums';
-    const revealed = !!__estimateReveal[ent.cid];
-    val.textContent = revealed ? String(ent.value) : '•••';
-    val.style.opacity = revealed ? '1' : '.7';
-
-    row.append(left, val);
-
-    if (winner && ent.cid === winner){
-      row.style.border = '1px solid rgba(93,225,255,.55)';
-      row.style.boxShadow = '0 0 0 2px rgba(93,225,255,.22), 0 0 18px rgba(93,225,255,.18)';
-      row.style.background = 'rgba(93,225,255,.10)';
-    }
-
-    list.appendChild(row);
-  });
-}
-
 let __estimateUnsub = null;
 let __estimateData = {};
 let __estimateReveal = {};
-let __estimateWinnerCid = null;
+let __estimateHostDocRef = null;
+let __estimateHostQid = null;
 
 function ensureEstimateUIForScreen(qid, q){
   if (role !== 'screen') return;
@@ -1629,10 +1523,8 @@ function ensureEstimateUIForScreen(qid, q){
       const hb = document.getElementById('estimateHostBox');
       if (hb) hb.remove();
       if (__estimateUnsub) { __estimateUnsub(); __estimateUnsub = null; }
-      __estimateData = {};
-    __estimateReveal = {};
-    __estimateWinnerCid = null;
-    try{ __renderEstimateAudienceList(qid); }catch(e){}
+      __estimateData = {}; __estimateReveal = {};
+      __estimateHostDocRef = null; __estimateHostQid = null;
     }catch(e){}
     return;
   }
@@ -1711,20 +1603,6 @@ function ensureEstimateUIForScreen(qid, q){
     msg.style.opacity = '.9';
     msg.style.fontSize = '13px';
 
-    // Liste der Schätzungen (Name + zensiert/aufgedeckt)
-    const listTitle = document.createElement('div');
-    listTitle.textContent = 'Schätzungen';
-    listTitle.style.marginTop = '10px';
-    listTitle.style.fontWeight = '900';
-    listTitle.style.letterSpacing = '.04em';
-    listTitle.style.opacity = '.95';
-
-    const list = document.createElement('div');
-    list.id = 'estimateAudienceList';
-    list.style.display = 'grid';
-    list.style.gap = '8px';
-    list.style.marginTop = '8px';
-
     const submit = async () => {
       const v = Number(inp.value);
       const nm = (name.value || '').trim();
@@ -1734,7 +1612,8 @@ function ensureEstimateUIForScreen(qid, q){
       const cid = getClientId();
       try{
         const roomRef = window.db.collection('rooms').doc(remoteRoomId);
-        const docRef = roomRef.collection('estimates').doc(String(qid));
+        const curQid = String((document.getElementById('estimateBox')?.dataset.qid) || qid);
+        const docRef = roomRef.collection('estimates').doc(curQid);
         const payload = {};
         payload[cid] = { name: nm, value: v, ts: Date.now() };
         await docRef.set(payload, { merge: true });
@@ -1748,7 +1627,7 @@ function ensureEstimateUIForScreen(qid, q){
     inp.addEventListener('keydown', (e)=>{ if (e.key==='Enter') { e.preventDefault(); submit(); } });
 
     row.append(name, inp, btn);
-    box.append(t, row, msg, listTitle, list);
+    box.append(t, row, msg);
 
     const modalForm = document.querySelector('#qModal .modal');
     if (modalForm) modalForm.appendChild(box);
@@ -1764,28 +1643,23 @@ function ensureEstimateUIForScreen(qid, q){
       if (inp) inp.value = '';
     }catch(e){}
     // Reveal-Cache nur für diese Runde neu
-    __estimateData = {};
     __estimateReveal = {};
-    __estimateWinnerCid = null;
-    try{ __renderEstimateAudienceList(qid); }catch(e){}
   }
 
   if (window.db){
     try{
       const roomRef = window.db.collection('rooms').doc(remoteRoomId);
       const docRef = roomRef.collection('estimates').doc(String(qid));
+      __estimateHostDocRef = docRef;
+      __estimateHostQid = String(qid);
       if (__estimateUnsub) __estimateUnsub();
       __estimateUnsub = docRef.onSnapshot((d)=>{
-        const raw = d.exists ? (d.data() || {}) : {};
-        __estimateReveal = raw.__reveal || __estimateReveal || {};
-        __estimateWinnerCid = raw.__winner || null;
-        __estimateData = __stripEstimateMeta(raw);
+        __estimateData = d.exists ? (d.data() || {}) : {};
         try{
           const cid = getClientId();
           const msg = document.getElementById('estimateMsg');
-          if (msg) msg.textContent = __estimateData[cid] ? '✅ Abgegeben' : '';
+          if (msg && __estimateData[cid]) msg.textContent = '✅ Abgegeben';
         }catch(e){}
-        try{ __renderEstimateAudienceList(qid); }catch(e){}
       });
     }catch(e){}
   }
@@ -1799,17 +1673,14 @@ function ensureEstimateUIForHost(qid, q){
       const hb = document.getElementById('estimateHostBox');
       if (hb) hb.remove();
       if (__estimateUnsub) { __estimateUnsub(); __estimateUnsub = null; }
-      __estimateData = {};
-    __estimateReveal = {};
-    __estimateWinnerCid = null;
-    try{ __renderEstimateAudienceList(qid); }catch(e){}
+      __estimateData = {}; __estimateReveal = {};
+      __estimateHostDocRef = null; __estimateHostQid = null;
     }catch(e){}
     return;
   }
   if (!window.db) return;
 
   let box = document.getElementById('estimateHostBox');
-  const isNewQ = !box || box.dataset.qid !== String(qid);
   if (!box){
     box = document.createElement('div');
     box.id = 'estimateHostBox';
@@ -1844,7 +1715,7 @@ function ensureEstimateUIForHost(qid, q){
     btnRevealAll.style.color = 'white';
     btnRevealAll.style.fontWeight = '800';
     btnRevealAll.style.cursor = 'pointer';
-    btnRevealAll.onclick = ()=>{ Object.keys(__estimateData||{}).forEach(k=>__estimateReveal[k]=true); __saveEstimateMetaRemote(qid, { __reveal: __estimateReveal, __winner: __estimateWinnerCid||null }); renderEstimateHostList(q, qid); };
+    btnRevealAll.onclick = ()=>{ Object.keys(__estimateData||{}).forEach(k=>__estimateReveal[k]=true); renderEstimateHostList(q); };
 
     const btnClosest = document.createElement('button');
     btnClosest.type = 'button';
@@ -1856,7 +1727,7 @@ function ensureEstimateUIForHost(qid, q){
     btnClosest.style.color = 'white';
     btnClosest.style.fontWeight = '800';
     btnClosest.style.cursor = 'pointer';
-    btnClosest.onclick = ()=>{ markClosestEstimate(q, qid); };
+    btnClosest.onclick = ()=>{ markClosestEstimate(q); };
 
     actions.append(btnRevealAll, btnClosest);
     box.append(title, list, actions);
@@ -1865,28 +1736,18 @@ function ensureEstimateUIForHost(qid, q){
     if (wrap) wrap.appendChild(box);
   }
 
-  box.dataset.qid = String(qid);
-  if (isNewQ){
-    __resetEstimateDocRemote(qid);
-    __estimateData = {}; __estimateReveal = {}; __estimateWinnerCid = null;
-    try{ const l = document.getElementById('estimateHostList'); if (l) l.innerHTML = '<div style="opacity:.75">Noch keine Eingaben…</div>'; }catch(e){}
-  }
-
   try{
     const roomRef = window.db.collection('rooms').doc(remoteRoomId);
     const docRef = roomRef.collection('estimates').doc(String(qid));
     if (__estimateUnsub) __estimateUnsub();
     __estimateUnsub = docRef.onSnapshot((d)=>{
-      const raw = d.exists ? (d.data() || {}) : {};
-      __estimateReveal = raw.__reveal || __estimateReveal || {};
-      __estimateWinnerCid = raw.__winner || null;
-      __estimateData = __stripEstimateMeta(raw);
-      renderEstimateHostList(q, qid);
+      __estimateData = d.exists ? (d.data() || {}) : {};
+      renderEstimateHostList(q);
     });
   }catch(e){}
 }
 
-function renderEstimateHostList(q, qid){
+function renderEstimateHostList(q){
   const list = document.getElementById('estimateHostList');
   if (!list) return;
   list.innerHTML = '';
@@ -1927,9 +1788,28 @@ function renderEstimateHostList(q, qid){
     btn.style.color = 'white';
     btn.style.fontWeight = '800';
     btn.style.cursor = 'pointer';
-    btn.onclick = ()=>{ __estimateReveal[ent.cid] = !revealed; __saveEstimateMetaRemote(qid, { __reveal: __estimateReveal, __winner: __estimateWinnerCid||null }); renderEstimateHostList(q, qid); };
+    btn.onclick = ()=>{ __estimateReveal[ent.cid] = !revealed; renderEstimateHostList(q); };
 
-    row.append(left, val, btn);
+    const delBtn = document.createElement('button');
+    delBtn.type = 'button';
+    delBtn.textContent = '🗑';
+    delBtn.title = 'Entfernen';
+    delBtn.style.padding = '6px 10px';
+    delBtn.style.borderRadius = '10px';
+    delBtn.style.border = '1px solid rgba(255,255,255,.16)';
+    delBtn.style.background = 'rgba(255,92,116,.12)';
+    delBtn.style.color = 'white';
+    delBtn.style.fontWeight = '800';
+    delBtn.style.cursor = 'pointer';
+    delBtn.onclick = ()=>{ deleteEstimateEntry(ent.cid); };
+
+    const right = document.createElement('div');
+    right.style.display = 'flex';
+    right.style.gap = '8px';
+    right.style.alignItems = 'center';
+    right.append(btn, delBtn);
+
+    row.append(left, val, right);
     list.appendChild(row);
   });
 
@@ -1941,7 +1821,7 @@ function renderEstimateHostList(q, qid){
   }
 }
 
-function markClosestEstimate(q, qid){
+function markClosestEstimate(q){
   let ans = (q && q.answer) ? String(q.answer) : '';
   const m = ans.match(/-?\d+(?:[\.,]\d+)?/);
   if (!m) return;
@@ -1959,9 +1839,22 @@ function markClosestEstimate(q, qid){
   if (!best) return;
 
   __estimateReveal[best.cid] = true;
-  __estimateWinnerCid = best.cid;
-  __saveEstimateMetaRemote(qid, { __reveal: __estimateReveal, __winner: __estimateWinnerCid });
-  renderEstimateHostList(q, qid);
+  renderEstimateHostList(q);
+
+function deleteEstimateEntry(clientId){
+  if (role !== 'host') return;
+  try{
+    if (!window.db || !__estimateHostDocRef) return;
+    // Feld im Dokument löschen
+    const del = firebase.firestore.FieldValue.delete();
+    __estimateHostDocRef.update({ [String(clientId)]: del });
+    // Lokale Caches bereinigen (UI reagiert auch über onSnapshot)
+    try{ delete __estimateData[String(clientId)]; }catch(e){}
+    try{ delete __estimateReveal[String(clientId)]; }catch(e){}
+  }catch(e){
+    console.warn('Estimate delete failed', e);
+  }
+}
 }
 
 /* ======= Helper & Global ======= */
@@ -2057,10 +1950,7 @@ function attachGlobalHandlers() {
   }
 
   if (els.presentBtn && role === 'host') {
-    els.presentBtn.onclick = () => {
-      const room = encodeURIComponent(remoteRoomId || 'default');
-      window.open(`${location.pathname}?view=screen&room=${room}`, 'quiz-screen', 'width=1280,height=800');
-    };
+    els.presentBtn.onclick = () => window.open(`${location.pathname}?view=screen`, 'quiz-screen', 'width=1280,height=800');
   }
   if (els.addPlayerBtn && role==='host'){
     els.addPlayerBtn.onclick = () => {
