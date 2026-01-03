@@ -211,17 +211,29 @@ function bindAudienceAudioEventsOnce(){
 
 /* ======= Joker-FX (Publikum) ======= */
 function ensureJokerFxEl(){
-  let root = document.getElementById('jokerFx');
-  if (root) return root;
-  root = document.createElement('div');
-  root.id = 'jokerFx';
-  root.innerHTML = `
-    <div class="jokerfx-box" aria-hidden="true">
-      <div class="jokerfx-label">JOKER</div>
-      <div class="jokerfx-icon">★</div>
-    </div>
-  `;
-  document.body.appendChild(root);
+  let root = document.getElementById("jokerFxRoot");
+  if (!root){
+    root = document.createElement("div");
+    root.id = "jokerFxRoot";
+    root.innerHTML = `
+      <div class="joker-fx" id="jokerFx">
+        <div class="joker-fx-inner">
+          <div class="joker-fx-title">JOKER</div>
+          <div class="joker-fx-icon" id="jokerFxIcon"></div>
+          <div class="joker-fx-sub" id="jokerFxSub"></div>
+        </div>
+      </div>
+    `;
+  }
+
+  // IMPORTANT: If a <dialog> (question modal) is open, it lives in the browser's "top layer".
+  // Elements outside cannot appear above it (z-index won't help). So we mount the FX *inside* the dialog.
+  const openDialog = document.querySelector("dialog[open]");
+  const mountTarget = openDialog || document.body;
+  if (root.parentElement !== mountTarget){
+    try { root.remove(); } catch(e){}
+    mountTarget.appendChild(root);
+  }
   return root;
 }
 
@@ -1883,7 +1895,11 @@ function renderEstimateHostList(q){
     btn.style.color = 'white';
     btn.style.fontWeight = '800';
     btn.style.cursor = 'pointer';
-    btn.onclick = ()=>{ __estimateReveal[ent.cid] = !revealed; renderEstimateHostList(q); };
+    btn.onclick = () => {
+      __estimateReveal[ent.cid] = !revealed;
+      try { persistEstimateMeta(); } catch(e){}
+      renderEstimateHostList(q);
+    };
 
     const delBtn = document.createElement('button');
     delBtn.type = 'button';
