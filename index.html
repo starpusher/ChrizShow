@@ -67,6 +67,10 @@
           <option value="board1">Board 1 (100–500)</option>
           <option value="board2">Board 2 (200–1000)</option>
         </select>
+        <input id="editorBoardName" placeholder="Board-Name (z.B. DownUnder)" />
+        <button id="editorSaveBtn" type="button" title="Speichert das Board im Browser (local)">Speichern</button>
+        <button id="editorSaveAsBtn" type="button" title="Speichern unter…">Speichern unter…</button>
+
         <button id="editorLoadBtn" type="button">Laden</button>
         <button id="editorNewBtn" type="button">Neu</button>
         <button id="editorRefreshBoards" type="button">Boards aktualisieren</button>
@@ -134,8 +138,10 @@
 
   <audio id="sfxCorrect" preload="auto" hidden></audio>
 <audio id="sfxWrong" preload="auto" hidden></audio>
+  <dialog id="imgLightbox" class="img-lightbox">
+    <img id="imgLightboxImg" alt="">
+  </dialog>
 
-  <div id="lightbox" class="lightbox" hidden><img id="lightboxImg" alt=""></div>
-  <script src="app.js" defer></script>
+<script src="app.js" defer></script>
 </body>
 </html>

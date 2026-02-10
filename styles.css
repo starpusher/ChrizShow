@@ -148,8 +148,8 @@ body.audience audio, body.audience video { pointer-events:none }
   padding:18px 26px;
   border-radius:18px;
   border:1px solid rgba(255,255,255,.14);
-  background:rgba(23,23,42,.78);
-  backdrop-filter: blur(8px);
+  background:#17172a;
+  
   box-shadow: 0 10px 40px rgba(0,0,0,.55);
   transform: translateY(10px) scale(.96);
 }
@@ -305,10 +305,7 @@ dialog.nonmodal[open]{
 }
 
 
-/* ======= Lightbox ======= */
-.lightbox{ position: fixed; inset: 0; background: rgba(0,0,0,.85); display:flex; align-items:center; justify-content:center; z-index:9999; }
-.lightbox[hidden]{ display:none; }
-.lightbox img{ max-width:95vw; max-height:95vh; border-radius:12px; }
+
 
 /* ======= Editor ======= */
 .editorPage{ padding:16px; }
@@ -325,3 +322,27 @@ dialog.nonmodal[open]{
 .editor-table th, .editor-table td{ border-bottom:1px solid rgba(255,255,255,.12); padding:8px; vertical-align:top; }
 .editor-table textarea{ width:100%; }
 .editor-table input{ width:100%; }
+
+
+/* ======= Image Lightbox (Dialog, always on top) ======= */
+dialog.img-lightbox{
+  border: none;
+  padding: 0;
+  background: transparent;
+}
+dialog.img-lightbox::backdrop{
+  background: rgba(0,0,0,.88);
+}
+dialog.img-lightbox[open]{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+dialog.img-lightbox img{
+  max-width: 96vw;
+  max-height: 94vh;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,.14);
+  box-shadow: 0 18px 70px rgba(0,0,0,.65);
+  background: #0b0b12;
+}

@@ -199,6 +199,9 @@ const els = {
   editorTitle: document.getElementById('editorTitle'),
   editorBoards: document.getElementById('editorBoards'),
   editorBoardType: document.getElementById('editorBoardType'),
+  editorBoardName: document.getElementById('editorBoardName'),
+  editorSaveBtn: document.getElementById('editorSaveBtn'),
+  editorSaveAsBtn: document.getElementById('editorSaveAsBtn'),
   editorLoadBtn: document.getElementById('editorLoadBtn'),
   editorNewBtn: document.getElementById('editorNewBtn'),
   editorExportJson: document.getElementById('editorExportJson'),
@@ -206,29 +209,39 @@ const els = {
   editorFormHost: document.getElementById('editorFormHost')
 };
 
+/* ======= Image Lightbox (Dialog, toggle) ======= */
+let __imgLightbox = null;
+function ensureImgLightbox(){
+  if (__imgLightbox) return __imgLightbox;
+  const dlg = document.getElementById('imgLightbox');
+  const img = document.getElementById('imgLightboxImg');
+  if (!dlg || !img) return null;
+  __imgLightbox = { dlg, img };
 
-/* ======= Lightbox (Bild vergrößern) ======= */
-let __lightbox = null;
-function ensureLightbox(){
-  if (__lightbox) return __lightbox;
-  const root = document.getElementById('lightbox');
-  const img = document.getElementById('lightboxImg');
-  if (!root || !img) return null;
-  __lightbox = { root, img };
-  const close = () => { root.hidden = true; img.src = ''; };
-  root.addEventListener('click', close);
-  window.addEventListener('keydown', (e) => { if (e.key === 'Escape') close(); });
-  return __lightbox;
+  const close = () => { try{ dlg.close(); }catch(e){} try{ img.src=''; }catch(e){} };
+
+  dlg.addEventListener('click', close);
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && dlg.open) close();
+  });
+
+  return __imgLightbox;
 }
-function openLightboxFromImg(el){
+
+function toggleLightboxFromImg(el){
   try{
+    const lb = ensureImgLightbox(); if (!lb) return;
+    if (lb.dlg.open) { lb.dlg.close(); lb.img.src=''; return; }
     if (!el || el.hidden) return;
     const src = el.currentSrc || el.src;
     if (!src) return;
-    const lb = ensureLightbox(); if (!lb) return;
     lb.img.src = src;
-    lb.root.hidden = false;
+    lb.dlg.showModal();
   }catch(e){}
+}
+
+
+catch(e){}
 }
 
 
@@ -486,6 +499,26 @@ let __lastFxTs = 0;
 
 
 /* ======= Editor (Boards erstellen/bearbeiten) ======= */
+const LOCAL_BOARDS_KEY = 'quiz_local_boards_v1'; // array of {name, savedAt}
+function getLocalBoards(){ try{ return JSON.parse(localStorage.getItem(LOCAL_BOARDS_KEY) || '[]') || []; }catch(e){ return []; } }
+function setLocalBoards(list){ try{ localStorage.setItem(LOCAL_BOARDS_KEY, JSON.stringify(list||[])); }catch(e){} }
+function localBoardStorageKey(name){ return 'quiz_board_local__' + String(name||'').trim(); }
+function saveBoardToLocal(name, jsonText){
+  name = String(name||'').trim();
+  if (!name) return false;
+  try{
+    localStorage.setItem(localBoardStorageKey(name), jsonText);
+    const list = getLocalBoards();
+    const now = Date.now();
+    const idx = list.findIndex(x => x && x.name === name);
+    if (idx >= 0) list[idx].savedAt = now;
+    else list.push({ name, savedAt: now });
+    setLocalBoards(list);
+    return true;
+  }catch(e){ return false; }
+}
+function loadBoardFromLocal(name){ try{ return localStorage.getItem(localBoardStorageKey(name)) || null; }catch(e){ return null; } }
+
 let __editorLoadedUrl = null;
 function editorPointsForRow(row, boardType){ return (boardType==='board2' ? [200,400,600,800,1000] : [100,200,300,400,500])[row] || 100; }
 function editorEnsureDefaults(){
@@ -500,8 +533,19 @@ function escapeHtml(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;'
 function editorNewBoard(){
   editorEnsureDefaults();
   const bt = els.editorBoardType?.value || 'board1';
-  data.categories = Array.from({length:5}, (_,c)=>({ title:`Kategorie ${c+1}`, questions:Array.from({length:5},(_,r)=>({ id:`Q-${c+1}${r+1}`, points:editorPointsForRow(r,bt), text:'', answer:'' })) }));
+  if (bt === 'between') {
+    data.categories = [{
+      title: 'Zwischenboard',
+      questions: Array.from({length:5},(_,r)=>({ id:`Q-1${r+1}`, points:200, text:'', answer:'', type:'' }))
+    }];
+  } else {
+    data.categories = Array.from({length:5}, (_,c)=>({
+      title:`Kategorie ${c+1}`,
+      questions:Array.from({length:5},(_,r)=>({ id:`Q-${c+1}${r+1}`, points:editorPointsForRow(r,bt), text:'', answer:'', type:'' }))
+    }));
+  }
   __editorLoadedUrl=null;
+  if (els.editorBoardName) els.editorBoardName.value = '';
   renderEditor();
 }
 async function editorLoadSelected(){
@@ -521,20 +565,33 @@ function editorBuildFromForm(){
       const qtext=rowEl.querySelector('textarea[data-field="q-text"]')?.value?.trim()||'';
       const qType=rowEl.querySelector('select[data-field="q-type"]')?.value||'text';
       const qFile=rowEl.querySelector('input[data-field="q-file"]')?.value?.trim()||'';
+
       const atext=rowEl.querySelector('textarea[data-field="a-text"]')?.value?.trim()||'';
       const aType=rowEl.querySelector('select[data-field="a-type"]')?.value||'text';
       const a1=rowEl.querySelector('input[data-field="a-file1"]')?.value?.trim()||'';
       const a2=rowEl.querySelector('input[data-field="a-file2"]')?.value?.trim()||'';
-      const q={ id:`Q-${ci+1}${ri+1}`, points:editorPointsForRow(ri,bt) };
+
+      const ptsVal = Number(rowEl.querySelector('input[data-field="pts"]')?.value);
+      const ptsDefault = (bt==='between') ? 200 : editorPointsForRow(ri,bt);
+
+      const isEst = !!rowEl.querySelector('input[data-field="is-estimate"]')?.checked;
+
+      const q={ id:`Q-${ci+1}${ri+1}`, points: (Number.isFinite(ptsVal) && ptsVal>0) ? ptsVal : ptsDefault };
+
       if(qtext) q.text=qtext;
       if(atext) q.answer=atext;
-      if(qType==='image'&&qFile) q.image=qFile.endsWith('.jpg')?qFile:qFile+'.jpg';
-      if(qType==='mp3'&&qFile) q.audio=qFile.endsWith('.mp3')?qFile:qFile+'.mp3';
-      if(qType==='mp4'&&qFile) q.video=qFile.endsWith('.mp4')?qFile:qFile+'.mp4';
-      if(aType==='img1'&&a1) q.answer_images=[a1.endsWith('.jpg')?a1:a1+'.jpg'];
-      if(aType==='img2'&&a1&&a2) q.answer_images=[a1.endsWith('.jpg')?a1:a1+'.jpg', a2.endsWith('.jpg')?a2:a2+'.jpg'];
-      if(aType==='mp3'&&a1) q.answer_audio=a1.endsWith('.mp3')?a1:a1+'.mp3';
-      if(aType==='mp4'&&a1) q.answer_video=a1.endsWith('.mp4')?a1:a1+'.mp4';
+
+      if (isEst) q.type = 'estimate';
+
+      if(qType==='image'&&qFile) q.image=(qFile.endsWith('.jpg')?qFile:qFile+'.jpg');
+      if(qType==='mp3'&&qFile) q.audio=(qFile.endsWith('.mp3')?qFile:qFile+'.mp3');
+      if(qType==='mp4'&&qFile) q.video=(qFile.endsWith('.mp4')?qFile:qFile+'.mp4');
+
+      if(aType==='img1'&&a1) q.answer_images=[(a1.endsWith('.jpg')?a1:a1+'.jpg')];
+      if(aType==='img2'&&a1&&a2) q.answer_images=[(a1.endsWith('.jpg')?a1:a1+'.jpg'), (a2.endsWith('.jpg')?a2:a2+'.jpg')];
+      if(aType==='mp3'&&a1) q.answer_audio=(a1.endsWith('.mp3')?a1:a1+'.mp3');
+      if(aType==='mp4'&&a1) q.answer_video=(a1.endsWith('.mp4')?a1:a1+'.mp4');
+
       questions.push(q);
     });
     cats.push({ title, questions });
@@ -542,6 +599,26 @@ function editorBuildFromForm(){
   data.categories=cats;
   return data;
 }
+function editorSave(asNew=false){
+  const nameInput = (els.editorBoardName && els.editorBoardName.value) ? els.editorBoardName.value.trim() : '';
+  let name = nameInput;
+  if (!name) {
+    if (!asNew && __editorLoadedUrl) {
+      name = (__editorLoadedUrl.startsWith('local:') ? __editorLoadedUrl.slice(6) : (__editorLoadedUrl.split('/').pop()||'').replace(/\.json$/,''));
+    }
+  }
+  if (!name) { alert('Bitte Board-Name eingeben.'); return; }
+
+  const out = editorBuildFromForm();
+  const jsonText = JSON.stringify(out, null, 2);
+  const ok = saveBoardToLocal(name, jsonText);
+  if (!ok) { alert('Konnte nicht speichern (localStorage voll oder blockiert).'); return; }
+
+  __editorLoadedUrl = 'local:' + name;
+  loadBoardsList().then(()=>{ renderEditor(); }).catch(()=>{ renderEditor(); });
+  alert(`✅ Gespeichert als LOCAL • ${name}`);
+}
+
 function editorExport(){
   const out=editorBuildFromForm();
   const blob=new Blob([JSON.stringify(out,null,2)],{type:'application/json'});
@@ -564,12 +641,18 @@ function renderEditor(){
     (boards||[]).forEach(b=>{ const o=document.createElement('option'); o.value=b.url; o.textContent=b.label||b.url; if(__editorLoadedUrl&&b.url===__editorLoadedUrl) o.selected=true; els.editorBoards.appendChild(o); });
   }
   if(els.editorTitle) els.editorTitle.textContent=__editorLoadedUrl?`Bearbeite: ${__editorLoadedUrl}`:'Neues Board (nicht gespeichert)';
+  try{
+    if (els.editorBoardName && (!els.editorBoardName.value || __editorLoadedUrl)) {
+      const nameGuess = (__editorLoadedUrl||'').startsWith('local:') ? (__editorLoadedUrl.slice(6)) : (__editorLoadedUrl||'').split('/').pop()?.replace(/\.json$/,'');
+      if (nameGuess) els.editorBoardName.value = nameGuess;
+    }
+  }catch(e){}
   const host=document.getElementById('editorFormHost'); if(!host) return;
   host.innerHTML='';
   const bt=els.editorBoardType?.value||'board1';
   data.categories.forEach((cat,ci)=>{
     const wrap=document.createElement('div'); wrap.className='editor-cat'; wrap.dataset.cat=String(ci);
-    wrap.innerHTML=`<div class="editor-cat-head"><label>Kategorie ${ci+1}:</label><input data-field="cat-title" value="${escapeHtml(cat.title||'')}" /></div><div class="editor-tablewrap"><table class="editor-table"><thead><tr><th>Punkte</th><th>Frage</th><th>Frage-Medium</th><th>Datei</th><th>Antwort</th><th>Antwort-Medium</th><th>Datei 1</th><th>Datei 2</th></tr></thead><tbody></tbody></table></div>`;
+    wrap.innerHTML=`<div class="editor-cat-head"><label>Kategorie ${ci+1}:</label><input data-field="cat-title" value="${escapeHtml(cat.title||'')}" /></div><div class="editor-tablewrap"><table class="editor-table"><thead><tr><th>Punkte</th><th>Schätzfrage</th><th>Frage</th><th>Frage-Medium</th><th>Datei</th><th>Antwort</th><th>Antwort-Medium</th><th>Datei 1</th><th>Datei 2</th></tr></thead><tbody></tbody></table></div>`;
     const tbody=wrap.querySelector('tbody');
     const qs=Array.isArray(cat.questions)?cat.questions:[];
     for(let ri=0;ri<5;ri++){
@@ -583,7 +666,7 @@ function renderEditor(){
       if(q.answer_audio){aType='mp3'; f1=q.answer_audio;}
       if(q.answer_video){aType='mp4'; f1=q.answer_video;}
       const tr=document.createElement('tr'); tr.dataset.row=String(ri);
-      tr.innerHTML=`<td class="pts">${pts}</td><td><textarea data-field="q-text" rows="2">${escapeHtml(q.text||'')}</textarea></td><td><select data-field="q-type"><option value="text"${qType==='text'?' selected':''}>Text</option><option value="image"${qType==='image'?' selected':''}>Bild (.jpg)</option><option value="mp3"${qType==='mp3'?' selected':''}>MP3 (.mp3)</option><option value="mp4"${qType==='mp4'?' selected':''}>MP4 (.mp4)</option></select></td><td><input data-field="q-file" value="${escapeHtml(stripExt(qFile))}" placeholder="Dateiname ohne Endung" /></td><td><textarea data-field="a-text" rows="2">${escapeHtml(q.answer||'')}</textarea></td><td><select data-field="a-type"><option value="text"${aType==='text'?' selected':''}>Text</option><option value="img1"${aType==='img1'?' selected':''}>1 Bild (.jpg)</option><option value="img2"${aType==='img2'?' selected':''}>2 Bilder (.jpg)</option><option value="mp3"${aType==='mp3'?' selected':''}>MP3 (.mp3)</option><option value="mp4"${aType==='mp4'?' selected':''}>MP4 (.mp4)</option></select></td><td><input data-field="a-file1" value="${escapeHtml(stripExt(f1))}" placeholder="Dateiname ohne Endung" /></td><td><input data-field="a-file2" value="${escapeHtml(stripExt(f2))}" placeholder="nur bei 2 Bildern" /></td>`;
+      tr.innerHTML=`<td class="pts"><input data-field="pts" type="number" min="0" step="1" value="${(q.points||pts)}" /></td><td style="text-align:center"><input data-field="is-estimate" type="checkbox" ${((q.type==='estimate'||q.estimate===true)?'checked':'')} /></td><td><textarea data-field="q-text" rows="2">${escapeHtml(q.text||'')}</textarea></td><td><select data-field="q-type"><option value="text"${qType==='text'?' selected':''}>Text</option><option value="image"${qType==='image'?' selected':''}>Bild (.jpg)</option><option value="mp3"${qType==='mp3'?' selected':''}>MP3 (.mp3)</option><option value="mp4"${qType==='mp4'?' selected':''}>MP4 (.mp4)</option></select></td><td><input data-field="q-file" value="${escapeHtml(stripExt(qFile))}" placeholder="Dateiname ohne Endung" /></td><td><textarea data-field="a-text" rows="2">${escapeHtml(q.answer||'')}</textarea></td><td><select data-field="a-type"><option value="text"${aType==='text'?' selected':''}>Text</option><option value="img1"${aType==='img1'?' selected':''}>1 Bild (.jpg)</option><option value="img2"${aType==='img2'?' selected':''}>2 Bilder (.jpg)</option><option value="mp3"${aType==='mp3'?' selected':''}>MP3 (.mp3)</option><option value="mp4"${aType==='mp4'?' selected':''}>MP4 (.mp4)</option></select></td><td><input data-field="a-file1" value="${escapeHtml(stripExt(f1))}" placeholder="Dateiname ohne Endung" /></td><td><input data-field="a-file2" value="${escapeHtml(stripExt(f2))}" placeholder="nur bei 2 Bildern" /></td>`;
       tbody.appendChild(tr);
     }
     host.appendChild(wrap);
@@ -611,11 +694,11 @@ async function init() {
   }
 
   // Bild in Modal per Klick vergrößern (Host & Publikum)
-  if (els.qImg) els.qImg.addEventListener('click', () => openLightboxFromImg(els.qImg));
+  if (els.qImg) els.qImg.addEventListener('click', () => toggleLightboxFromImg(els.qImg));
   const a1 = document.getElementById('ansImg1');
   const a2 = document.getElementById('ansImg2');
-  if (a1) a1.addEventListener('click', () => openLightboxFromImg(a1));
-  if (a2) a2.addEventListener('click', () => openLightboxFromImg(a2));
+  if (a1) a1.addEventListener('click', () => toggleLightboxFromImg(a1));
+  if (a2) a2.addEventListener('click', () => toggleLightboxFromImg(a2));
 
   // Publikum: Kontextmenü auf Media sperren (Download-Menü etc.)
   if (role==='screen'){
@@ -646,6 +729,8 @@ async function init() {
     if (els.editorNewBtn) els.editorNewBtn.onclick = () => editorNewBoard();
     if (els.editorLoadBtn) els.editorLoadBtn.onclick = () => editorLoadSelected();
     if (els.editorExportJson) els.editorExportJson.onclick = () => editorExport();
+    if (els.editorSaveBtn) els.editorSaveBtn.onclick = () => editorSave(false);
+    if (els.editorSaveAsBtn) els.editorSaveAsBtn.onclick = () => editorSave(true);
     if (els.editorRefreshBoards) els.editorRefreshBoards.onclick = async () => { await loadBoardsList(); renderEditor(); };
     if (els.editorBoardType) els.editorBoardType.onchange = () => renderEditor();
     if (els.editorBoards) els.editorBoards.onchange = () => editorLoadSelected();
@@ -660,6 +745,15 @@ async function init() {
 }
 
 async function loadContent(urlOrFileText) {
+  if (typeof urlOrFileText === 'string' && urlOrFileText.startsWith('local:')) {
+    const name = urlOrFileText.slice(6);
+    const txt = loadBoardFromLocal(name);
+    if (!txt) throw new Error('Local board not found: ' + name);
+    data = JSON.parse(txt);
+    normalizeQuestions(data);
+    state.settings = data.settings || {};
+    return;
+  }
   if (typeof urlOrFileText === 'string' && urlOrFileText.trim().startsWith('{')) {
     data = JSON.parse(urlOrFileText);
   } else if (typeof urlOrFileText === 'string') {
@@ -700,6 +794,16 @@ async function loadBoardsList() {
         url
       };
     }).filter(b => !!b.url);
+
+
+    // Local boards (saved in browser)
+    try{
+      const locals = getLocalBoards();
+      locals.forEach((lb) => {
+        if (!lb || !lb.name) return;
+        boards.unshift({ id: `local_${lb.name}`, label: `LOCAL • ${lb.name}`, url: `local:${lb.name}` });
+      });
+    }catch(e){} 
 
     if (els.boardSelect) {
       els.boardSelect.innerHTML = '';
@@ -772,6 +876,8 @@ async function loadBoardFromUrl(url) {
     if (els.editorNewBtn) els.editorNewBtn.onclick = () => editorNewBoard();
     if (els.editorLoadBtn) els.editorLoadBtn.onclick = () => editorLoadSelected();
     if (els.editorExportJson) els.editorExportJson.onclick = () => editorExport();
+    if (els.editorSaveBtn) els.editorSaveBtn.onclick = () => editorSave(false);
+    if (els.editorSaveAsBtn) els.editorSaveAsBtn.onclick = () => editorSave(true);
     if (els.editorRefreshBoards) els.editorRefreshBoards.onclick = async () => { await loadBoardsList(); renderEditor(); };
     if (els.editorBoardType) els.editorBoardType.onchange = () => renderEditor();
     if (els.editorBoards) els.editorBoards.onchange = () => editorLoadSelected();
@@ -817,6 +923,8 @@ function __setPlayerAvatar(playerId, dataUrl){
     if (els.editorNewBtn) els.editorNewBtn.onclick = () => editorNewBoard();
     if (els.editorLoadBtn) els.editorLoadBtn.onclick = () => editorLoadSelected();
     if (els.editorExportJson) els.editorExportJson.onclick = () => editorExport();
+    if (els.editorSaveBtn) els.editorSaveBtn.onclick = () => editorSave(false);
+    if (els.editorSaveAsBtn) els.editorSaveAsBtn.onclick = () => editorSave(true);
     if (els.editorRefreshBoards) els.editorRefreshBoards.onclick = async () => { await loadBoardsList(); renderEditor(); };
     if (els.editorBoardType) els.editorBoardType.onchange = () => renderEditor();
     if (els.editorBoards) els.editorBoards.onchange = () => editorLoadSelected();
@@ -915,6 +1023,8 @@ function renderPlayersBar(readOnly=false) {
     if (els.editorNewBtn) els.editorNewBtn.onclick = () => editorNewBoard();
     if (els.editorLoadBtn) els.editorLoadBtn.onclick = () => editorLoadSelected();
     if (els.editorExportJson) els.editorExportJson.onclick = () => editorExport();
+    if (els.editorSaveBtn) els.editorSaveBtn.onclick = () => editorSave(false);
+    if (els.editorSaveAsBtn) els.editorSaveAsBtn.onclick = () => editorSave(true);
     if (els.editorRefreshBoards) els.editorRefreshBoards.onclick = async () => { await loadBoardsList(); renderEditor(); };
     if (els.editorBoardType) els.editorBoardType.onchange = () => renderEditor();
     if (els.editorBoards) els.editorBoards.onchange = () => editorLoadSelected();
@@ -1663,6 +1773,8 @@ function addPoints(pid, delta, {log=false}={}){
     if (els.editorNewBtn) els.editorNewBtn.onclick = () => editorNewBoard();
     if (els.editorLoadBtn) els.editorLoadBtn.onclick = () => editorLoadSelected();
     if (els.editorExportJson) els.editorExportJson.onclick = () => editorExport();
+    if (els.editorSaveBtn) els.editorSaveBtn.onclick = () => editorSave(false);
+    if (els.editorSaveAsBtn) els.editorSaveAsBtn.onclick = () => editorSave(true);
     if (els.editorRefreshBoards) els.editorRefreshBoards.onclick = async () => { await loadBoardsList(); renderEditor(); };
     if (els.editorBoardType) els.editorBoardType.onchange = () => renderEditor();
     if (els.editorBoards) els.editorBoards.onchange = () => editorLoadSelected();
