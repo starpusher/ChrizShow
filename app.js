@@ -3,12 +3,15 @@ const params = new URLSearchParams(location.search);
 
 const HOST_SECRET = '314159';
 
-let role = params.get('view') || 'screen';  // 'host' | 'screen' | 'editor'
+const requestedView = params.get('view');
+let __authFailed = false;
+let role = requestedView || 'screen';  // 'host' | 'screen' | 'editor'
 if (role === 'host' || role === 'editor') {
   const key = params.get('key');
   if (key !== HOST_SECRET) {
     // Falscher oder fehlender Schlüssel → auf Screen-Ansicht zurückfallen
     role = 'screen';
+    __authFailed = true;
   }
 }
 if (role === 'screen') document.body.classList.add('audience');
@@ -189,7 +192,18 @@ const els = {
   fx: document.getElementById('fx'),
   answerImages: document.getElementById('answerImages'),
   ansImg1: document.getElementById('ansImg1'),
-  ansImg2: document.getElementById('ansImg2')
+  ansImg2: document.getElementById('ansImg2'),
+  editorBtn: document.getElementById('editorBtn'),
+  refreshBoardsBtn: document.getElementById('refreshBoardsBtn'),
+  editorPage: document.getElementById('editorPage'),
+  editorTitle: document.getElementById('editorTitle'),
+  editorBoards: document.getElementById('editorBoards'),
+  editorBoardType: document.getElementById('editorBoardType'),
+  editorLoadBtn: document.getElementById('editorLoadBtn'),
+  editorNewBtn: document.getElementById('editorNewBtn'),
+  editorExportJson: document.getElementById('editorExportJson'),
+  editorRefreshBoards: document.getElementById('editorRefreshBoards'),
+  editorFormHost: document.getElementById('editorFormHost')
 };
 
 
@@ -591,6 +605,11 @@ async function init() {
   }
   loadState();
 
+  // Wenn jemand Host/Editor aufruft ohne richtigen Key, kurz Hinweis geben
+  if (__authFailed && (requestedView === 'host' || requestedView === 'editor')) {
+    alert('Falscher oder fehlender Key. Nutze z.B. ?view=host&key=314159 oder ?view=editor&key=314159');
+  }
+
   // Bild in Modal per Klick vergrößern (Host & Publikum)
   if (els.qImg) els.qImg.addEventListener('click', () => openLightboxFromImg(els.qImg));
   const a1 = document.getElementById('ansImg1');
@@ -627,6 +646,7 @@ async function init() {
     if (els.editorNewBtn) els.editorNewBtn.onclick = () => editorNewBoard();
     if (els.editorLoadBtn) els.editorLoadBtn.onclick = () => editorLoadSelected();
     if (els.editorExportJson) els.editorExportJson.onclick = () => editorExport();
+    if (els.editorRefreshBoards) els.editorRefreshBoards.onclick = async () => { await loadBoardsList(); renderEditor(); };
     if (els.editorBoardType) els.editorBoardType.onchange = () => renderEditor();
     if (els.editorBoards) els.editorBoards.onchange = () => editorLoadSelected();
     renderEditor();
@@ -752,6 +772,7 @@ async function loadBoardFromUrl(url) {
     if (els.editorNewBtn) els.editorNewBtn.onclick = () => editorNewBoard();
     if (els.editorLoadBtn) els.editorLoadBtn.onclick = () => editorLoadSelected();
     if (els.editorExportJson) els.editorExportJson.onclick = () => editorExport();
+    if (els.editorRefreshBoards) els.editorRefreshBoards.onclick = async () => { await loadBoardsList(); renderEditor(); };
     if (els.editorBoardType) els.editorBoardType.onchange = () => renderEditor();
     if (els.editorBoards) els.editorBoards.onchange = () => editorLoadSelected();
     renderEditor();
@@ -796,6 +817,7 @@ function __setPlayerAvatar(playerId, dataUrl){
     if (els.editorNewBtn) els.editorNewBtn.onclick = () => editorNewBoard();
     if (els.editorLoadBtn) els.editorLoadBtn.onclick = () => editorLoadSelected();
     if (els.editorExportJson) els.editorExportJson.onclick = () => editorExport();
+    if (els.editorRefreshBoards) els.editorRefreshBoards.onclick = async () => { await loadBoardsList(); renderEditor(); };
     if (els.editorBoardType) els.editorBoardType.onchange = () => renderEditor();
     if (els.editorBoards) els.editorBoards.onchange = () => editorLoadSelected();
     renderEditor();
@@ -893,6 +915,7 @@ function renderPlayersBar(readOnly=false) {
     if (els.editorNewBtn) els.editorNewBtn.onclick = () => editorNewBoard();
     if (els.editorLoadBtn) els.editorLoadBtn.onclick = () => editorLoadSelected();
     if (els.editorExportJson) els.editorExportJson.onclick = () => editorExport();
+    if (els.editorRefreshBoards) els.editorRefreshBoards.onclick = async () => { await loadBoardsList(); renderEditor(); };
     if (els.editorBoardType) els.editorBoardType.onchange = () => renderEditor();
     if (els.editorBoards) els.editorBoards.onchange = () => editorLoadSelected();
     renderEditor();
@@ -1640,6 +1663,7 @@ function addPoints(pid, delta, {log=false}={}){
     if (els.editorNewBtn) els.editorNewBtn.onclick = () => editorNewBoard();
     if (els.editorLoadBtn) els.editorLoadBtn.onclick = () => editorLoadSelected();
     if (els.editorExportJson) els.editorExportJson.onclick = () => editorExport();
+    if (els.editorRefreshBoards) els.editorRefreshBoards.onclick = async () => { await loadBoardsList(); renderEditor(); };
     if (els.editorBoardType) els.editorBoardType.onchange = () => renderEditor();
     if (els.editorBoards) els.editorBoards.onchange = () => editorLoadSelected();
     renderEditor();
@@ -2292,6 +2316,9 @@ function fx(type){
 function attachGlobalHandlers() {
   if (els.editorBtn && role === 'host') {
     els.editorBtn.onclick = () => window.open(`${location.pathname}?view=editor&key=${HOST_SECRET}`, 'quiz-editor');
+  }
+  if (els.refreshBoardsBtn && role === 'host') {
+    els.refreshBoardsBtn.onclick = async () => { await loadBoardsList(); };
   }
 
   if (els.boardSelect && role === 'host') {
