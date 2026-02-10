@@ -250,13 +250,6 @@ function toggleLightboxFromImg(el){
     openImgLightbox(src);
   }catch(e){}
 }
-    if (!el || el.hidden) return;
-    const src = el.currentSrc || el.src;
-    if (!src) return;
-    lb.img.src = src;
-    lb.dlg.showModal();
-  }catch(e){}
-}
 
 // Audience Audio: bei großen MP3s dauert "metadata/canplay" länger.
 // Wir syncen deshalb nach dem Laden nochmal und starten ggf. neu.
