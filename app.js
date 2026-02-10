@@ -3,46 +3,53 @@ const params = new URLSearchParams(location.search);
 
 const HOST_SECRET = '314159';
 
-let role = params.get('view') || 'screen';  // 'host' | 'screen'
-if (role === 'host') {
+const requestedView = params.get('view');
+let __authFailed = false;
+let role = requestedView || 'screen';  // 'host' | 'screen' | 'editor'
+if (role === 'host' || role === 'editor') {
   const key = params.get('key');
   if (key !== HOST_SECRET) {
     // Falscher oder fehlender Schlüssel → auf Screen-Ansicht zurückfallen
     role = 'screen';
+    __authFailed = true;
   }
 }
 if (role === 'screen') document.body.classList.add('audience');
-
-
-
+if (role === 'editor') document.body.classList.add('editor');
 
 /* ======= Buzzer (Steal-Reihenfolge) ======= */
-    const BUZZ_NAME_KEY = 'quiz_buzzer_name_v1';
-    const BUZZ_ID_KEY   = 'quiz_buzzer_id_v1';
-    function getLocalBuzzId(){
-      let id = localStorage.getItem(BUZZ_ID_KEY);
-      if (!id){
-        id = (crypto && crypto.randomUUID) ? crypto.randomUUID() : (String(Date.now()) + '-' + Math.random().toString(16).slice(2));
-        localStorage.setItem(BUZZ_ID_KEY, id);
-      }
-      return id;
-    }
-    function getLocalBuzzName(){
-      let name = localStorage.getItem(BUZZ_NAME_KEY);
-      if (!name){
-        name = prompt('Buzzer-Name (wird in der Queue angezeigt):') || '';
-        name = name.trim();
-        if (!name) name = 'Teilnehmer';
-        localStorage.setItem(BUZZ_NAME_KEY, name);
-      }
-      return name;
-    }
+const BUZZ_NAME_KEY = 'quiz_buzzer_name_v1';
+const BUZZ_ID_KEY   = 'quiz_buzzer_id_v1';
+function getLocalBuzzId(){
+  let id = localStorage.getItem(BUZZ_ID_KEY);
+  if (!id){
+    id = (crypto && crypto.randomUUID) ? crypto.randomUUID() : (String(Date.now()) + '-' + Math.random().toString(16).slice(2));
+    localStorage.setItem(BUZZ_ID_KEY, id);
+  }
+  return id;
+}
+function getLocalBuzzName(){
+  return (localStorage.getItem(BUZZ_NAME_KEY) || '').trim();
+}
+function ensureLocalBuzzName(){
+  let name = getLocalBuzzName();
+  if (!name){
+    name = (prompt('Name für den Buzzer (wird in der Queue angezeigt):') || '').trim();
+    if (!name) name = 'Teilnehmer';
+    localStorage.setItem(BUZZ_NAME_KEY, name);
+  }
+  return name;
+}
+
 const remoteRoomId = params.get('room') || 'default';
 
 // Avatare nicht im Firestore-State speichern (1MB-Limit). Stattdessen separate Avatar-Dokumente.
-let __avatarCache = {}
-let __lastJokerPulseId = null;;            // playerId -> dataURL
+let __avatarCache = {};            // playerId -> dataURL
 let __avatarUnsub = null;
+
+// Buzzer firestore listener (host)
+let __buzzUnsub = null;
+let __buzzQid = null;
 
 const chan = new BroadcastChannel('quiz-show');
 function send(type, payload={}) { if (role === 'host') chan.postMessage({ type, payload }); }
@@ -50,13 +57,11 @@ chan.onmessage = ({ data }) => handleMsg(data);
 
 function handleMsg(msg) {
   const { type, payload } = msg || {};
-  if (role !== 'screen') {
+  if (role !== 'screen') { 
     // Host listens to audience play/pause requests (if ever enabled)
     if (type === 'AUD_PLAY') { if (!els.qAud.hidden){ els.qAud.play().catch(()=>{}); } return; }
     if (type === 'AUD_PAUSE'){ if (!els.qAud.hidden){ els.qAud.pause(); } return; }
     if (type === 'SCREEN_READY'){ sendSync(); return; }
-    // Buzzer from audience (same browser via BroadcastChannel)
-    if (type === 'BUZZ') { try{ if(state.buzz && state.buzz.enabled) { addBuzzToQueue({id: payload.clientId, name: payload.name}); renderBuzzUI(); saveState(); sendSync(); } }catch(e){} return; }
     return;
   }
   switch (type) {
@@ -73,9 +78,8 @@ function handleMsg(msg) {
     case 'SHOW_Q': showForAudience(payload); break;
     case 'REVEAL_ANSWER':
       resetAnswerImages();
-      try{ clearBuzz(); renderBuzzUI(); }catch(e){}
-      try{ closeImgLightbox(); }catch(e){}
       showAnswerImagesForCurrent();
+      showAnswerMediaForCurrent();
       els.answer.hidden = false;
       break;
     case 'RESOLVE_Q':
@@ -85,11 +89,9 @@ function handleMsg(msg) {
 
       // NEU: Antwortbilder zurücksetzen (Publikum)
       resetAnswerImages();
-      try{ clearBuzz(); renderBuzzUI(); }catch(e){}
       try{ closeImgLightbox(); }catch(e){}
 
       renderBoard(); renderOverlay();
-  try{ renderBuzzUI(); }catch(e){}
       break;
     case 'SCORES':
       state.scores = payload.scores; renderPlayersBar(true); renderOverlay(); break;
@@ -124,11 +126,12 @@ function handleMsg(msg) {
       data = payload.data;
       window.SFX_BASE = (payload.data && payload.data.settings && payload.data.settings.media_base) || window.SFX_BASE || 'media/';
       if (!window.SFX_BASE.endsWith('/')) window.SFX_BASE += '/';
-      Object.assign(state, { players: payload.state.players, scores: payload.state.scores, q: payload.state.q||{}, settings: payload.state.settings||{}, turn: payload.state.turn||0, current: payload.state.current || null, audio: payload.state.audio || state.audio, fxPulse: payload.state.fxPulse || state.fxPulse, timer: payload.state.timer || state.timer, buzz: payload.state.buzz || state.buzz, timerPresetSeconds: payload.state.timerPresetSeconds || state.timerPresetSeconds || 10, jokerPulse: payload.state.jokerPulse || state.jokerPulse});
-state.used = new Set(payload.state.used || []);
+      Object.assign(state, { players: payload.state.players, scores: payload.state.scores, q: payload.state.q||{}, settings: payload.state.settings||{}, turn: payload.state.turn||0, current: payload.state.current || null, audio: payload.state.audio || state.audio, fxPulse: payload.state.fxPulse || state.fxPulse, jokerPulse: payload.state.jokerPulse || state.jokerPulse, timer: payload.state.timer || state.timer });
+      state.used = new Set(payload.state.used || []);
 
       // Avatare aus separater Sync-Quelle anwenden
       __applyAvatarCache();
+
       // Publikum: FX (Richtig/Falsch) auch remote über Sync auslösen
       try {
         const fp = payload.state && payload.state.fxPulse;
@@ -137,7 +140,16 @@ state.used = new Set(payload.state.used || []);
           fxLocal(fp.type || 'correct');
         }
       } catch(e) {}
-      try{ renderBuzzUI(); }catch(e){}
+
+      // Publikum: Joker-Animation zuverlässig über jokerPulse (verhindert Random-Pops)
+      try{
+        const jp = payload.state && payload.state.jokerPulse;
+        if (jp && jp.ts && Number(jp.ts) > __lastJokerTs) {
+          __lastJokerTs = Number(jp.ts);
+          try{ localStorage.setItem('quiz_lastJokerTs_v1', String(__lastJokerTs)); }catch(e){}
+          showJokerFx({ jokerKey: jp.jokerKey, playerId: jp.playerId });
+        }
+      }catch(e) {}
       renderPlayersBar(true); renderBoard(); renderOverlay();
       applyCurrentForScreen();
       try{ showTimer((state.timer && state.timer.seconds) ? state.timer.seconds : 0); }catch(e){}
@@ -173,6 +185,8 @@ const els = {
   qImg: document.getElementById('qImg'),
   qAud: document.getElementById('qAud'),
   qVid: document.getElementById('qVid'),
+  ansAud: document.getElementById('ansAud'),
+  ansVid: document.getElementById('ansVid'),
   answer: document.getElementById('answer'),
   revealBtn: document.getElementById('revealBtn'),
   swapImageBtn: document.getElementById('swapImageBtn'),
@@ -183,10 +197,11 @@ const els = {
   skipBtn: document.getElementById('skipBtn'),
   pauseAud: document.getElementById('pauseAud'),
   playAud: document.getElementById('playAud'),
-  timerBtn: document.getElementById('timerBtn'),
+  buzzerBtn: document.getElementById('buzzerBtn'),
+  buzzerQueue: document.getElementById('buzzerQueue'),
+  timer5Btn: document.getElementById('timer5Btn'),
+  timer10Btn: document.getElementById('timer10Btn'),
   timerBox: document.getElementById('timerBox'),
-  buzzBtn: document.getElementById('buzzBtn'),
-  buzzQueue: document.getElementById('buzzQueue'),
   turnBadge: document.getElementById('turnBadge'),
   resetBtn: document.getElementById('resetBtn'),
   roundResetBtn: document.getElementById('roundResetBtn'),
@@ -195,13 +210,6 @@ const els = {
   importFile: document.getElementById('importFile'),
   loadBtn: document.getElementById('loadBtn'),
   loadFile: document.getElementById('loadFile'),
-  editorBtn: document.getElementById('editorBtn'),
-  editorModal: document.getElementById('editorModal'),
-  editorText: document.getElementById('editorText'),
-  editorLoadBtn: document.getElementById('editorLoadBtn'),
-  editorApplyBtn: document.getElementById('editorApplyBtn'),
-  editorDownloadBtn: document.getElementById('editorDownloadBtn'),
-  editorFile: document.getElementById('editorFile'),
   boardSelect: document.getElementById('boardSelect'),
   presentBtn: document.getElementById('presentBtn'),
   addPlayerBtn: document.getElementById('addPlayerBtn'),
@@ -209,9 +217,179 @@ const els = {
   fx: document.getElementById('fx'),
   answerImages: document.getElementById('answerImages'),
   ansImg1: document.getElementById('ansImg1'),
-  ansImg2: document.getElementById('ansImg2')
+  ansImg2: document.getElementById('ansImg2'),
+  editorBtn: document.getElementById('editorBtn'),
+  refreshBoardsBtn: document.getElementById('refreshBoardsBtn'),
+  editorPage: document.getElementById('editorPage'),
+  editorTitle: document.getElementById('editorTitle'),
+  editorBoards: document.getElementById('editorBoards'),
+  editorBoardType: document.getElementById('editorBoardType'),
+  editorBoardName: document.getElementById('editorBoardName'),
+  editorSaveBtn: document.getElementById('editorSaveBtn'),
+  editorSaveAsBtn: document.getElementById('editorSaveAsBtn'),
+  editorLoadBtn: document.getElementById('editorLoadBtn'),
+  editorNewBtn: document.getElementById('editorNewBtn'),
+  editorExportJson: document.getElementById('editorExportJson'),
+  editorRefreshBoards: document.getElementById('editorRefreshBoards'),
+  editorFormHost: document.getElementById('editorFormHost')
 };
 
+/* ======= Buzzer UI / Sync ======= */
+function getBuzzState(){
+  return state.buzz || { qid: null, enabled: false, queue: [], locked: {} };
+}
+
+function renderBuzzUI(){
+  if (!els.buzzerBtn) return;
+  const b = getBuzzState();
+  const qid = current && current.id ? String(current.id) : null;
+  const activeForThisQ = (qid && b.qid && String(b.qid) === qid);
+  const enabled = !!(activeForThisQ && b.enabled);
+
+  // Button enabled only when buzz window is open and user not already in queue
+  const cid = getLocalBuzzId();
+  const already = !!(activeForThisQ && b.locked && b.locked[cid]);
+  const canClick = (role === 'screen') && enabled && !already;
+  els.buzzerBtn.disabled = !canClick;
+
+  // Queue
+  if (els.buzzerQueue){
+    const q = (activeForThisQ && Array.isArray(b.queue)) ? b.queue : [];
+    if (q.length){
+      els.buzzerQueue.hidden = false;
+      els.buzzerQueue.innerHTML = q.map((item, idx) => {
+        const n = (item && item.name) ? String(item.name) : 'Teilnehmer';
+        return `<span class="bz-item"><span class="bz-n">${idx+1}.</span>${escapeHtml(n)}</span>`;
+      }).join('');
+    } else {
+      els.buzzerQueue.hidden = true;
+      els.buzzerQueue.innerHTML = '';
+    }
+  }
+}
+
+function resetBuzzForQuestion(qid){
+  state.buzz = { qid: String(qid), enabled: false, queue: [], locked: {} };
+  // stop listening from previous question
+  if (__buzzUnsub){ try{ __buzzUnsub(); }catch(e){} __buzzUnsub = null; }
+  __buzzQid = null;
+}
+
+function enableBuzzForCurrent(){
+  const qid = current && current.id ? String(current.id) : null;
+  if (!qid) return;
+  if (!state.buzz || String(state.buzz.qid) !== qid){ resetBuzzForQuestion(qid); }
+  if (state.buzz.enabled) return;
+  state.buzz.enabled = true;
+  saveState(); sendSync();
+
+  // host listens for buzz entries in firestore
+  if (role === 'host' && window.db){
+    const roomRef = window.db.collection('rooms').doc(remoteRoomId);
+    if (__buzzUnsub){ try{ __buzzUnsub(); }catch(e){} }
+    __buzzQid = qid;
+    __buzzUnsub = roomRef.collection('buzz').doc(qid).collection('entries')
+      .onSnapshot((snap) => {
+        const entries = [];
+        snap.forEach((doc) => {
+          const d = doc.data() || {};
+          entries.push({ id: doc.id, name: d.name || 'Teilnehmer', ts: d.ts || 0 });
+        });
+        entries.sort((a,b)=> (a.ts||0) - (b.ts||0));
+        // lock + queue in shared state
+        const locked = {};
+        entries.forEach((e)=>{ locked[e.id] = true; });
+        state.buzz.queue = entries;
+        state.buzz.locked = locked;
+        saveState(); sendSync();
+        renderBuzzUI();
+      });
+  }
+}
+
+async function buzzNow(){
+  if (role !== 'screen') return;
+  const b = getBuzzState();
+  const qid = current && current.id ? String(current.id) : null;
+  if (!qid || !b.enabled || String(b.qid) !== qid) return;
+  const cid = getLocalBuzzId();
+  if (b.locked && b.locked[cid]) return;
+
+  // ensure name (but DO NOT prompt on click; prompt happens on question open)
+  const name = getLocalBuzzName();
+  if (!name) return;
+
+  try{
+    if (!window.db) return;
+    const roomRef = window.db.collection('rooms').doc(remoteRoomId);
+    const docRef = roomRef.collection('buzz').doc(qid).collection('entries').doc(cid);
+    await docRef.set({ name, ts: Date.now() }, { merge: true });
+  }catch(e){}
+}
+
+function clearBuzz(){
+  if (state.buzz){ state.buzz.enabled = false; state.buzz.queue = []; state.buzz.locked = {}; }
+  if (__buzzUnsub){ try{ __buzzUnsub(); }catch(e){} __buzzUnsub = null; }
+  __buzzQid = null;
+}
+
+function escapeHtml(s){
+  return String(s)
+    .replaceAll('&','&amp;')
+    .replaceAll('<','&lt;')
+    .replaceAll('>','&gt;')
+    .replaceAll('"','&quot;')
+    .replaceAll("'",'&#39;');
+}
+
+/* ======= Image Lightbox (Audience-safe overlay) ======= */
+let __imgLightbox = null;
+function ensureImgLightbox(){
+  if (__imgLightbox) return __imgLightbox;
+  // We'll render as a plain overlay DIV so it's always above question modal,
+  // and works consistently in audience view.
+  const host = document.querySelector('#qModal .modal') || document.body;
+  const wrap = document.createElement('div');
+  wrap.id = 'imgLightboxOverlay';
+  wrap.className = 'img-lightbox-overlay';
+  wrap.setAttribute('hidden','');
+
+  const img = document.createElement('img');
+  img.id = 'imgLightboxOverlayImg';
+  img.alt = '';
+  wrap.appendChild(img);
+
+  const close = () => closeImgLightbox();
+  wrap.addEventListener('click', close);
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') close();
+  });
+
+  host.appendChild(wrap);
+  __imgLightbox = { wrap, img };
+  return __imgLightbox;
+}
+function openImgLightbox(src){
+  const lb = ensureImgLightbox(); if (!lb) return;
+  if (!src) return;
+  lb.img.src = src;
+  lb.wrap.removeAttribute('hidden');
+}
+function closeImgLightbox(){
+  const lb = ensureImgLightbox(); if (!lb) return;
+  lb.wrap.setAttribute('hidden','');
+  try{ lb.img.src = ''; }catch(e){}
+}
+function toggleLightboxFromImg(el){
+  try{
+    const lb = ensureImgLightbox(); if (!lb) return;
+    if (!lb.wrap.hasAttribute('hidden')) { closeImgLightbox(); return; }
+    if (!el || el.hidden) return;
+    const src = el.currentSrc || el.src;
+    if (!src) return;
+    openImgLightbox(src);
+  }catch(e){}
+}
 
 // Audience Audio: bei großen MP3s dauert "metadata/canplay" länger.
 // Wir syncen deshalb nach dem Laden nochmal und starten ggf. neu.
@@ -250,8 +428,7 @@ function ensureJokerFxEl(){
     `;
   }
 
-  const lb = document.getElementById('imgLightbox');
-  const openDialog = (lb && lb.open) ? lb : document.querySelector('dialog[open]');
+  const openDialog = document.querySelector("dialog[open]");
   const mountTarget = openDialog || document.body;
 
   if (fx.parentElement !== mountTarget){
@@ -458,20 +635,197 @@ const state = {
   audio: { playing:false, t:0, ts:0 },
   current: null,                  // aktuell offene Frage (für Publikum)
   turn: 0                         // Index des aktuellen Spielers
-  ,buzz: { enabled:false, qid:null, queue:[], locked:{} }
-  ,timerPresetSeconds: 10
-  ,jokerPulse: null
 };
 let current = { col: -1, row: -1, q: null, id: null };
 let __screenShownId = null; // Publikum: zuletzt gerenderte Frage, um Media-Reloads zu vermeiden
 
 let timerInt = null;
 let __lastFxTs = 0;
+let __lastJokerTs = Number(localStorage.getItem('quiz_lastJokerTs_v1') || 0);
 
+
+/* ======= Editor (Boards erstellen/bearbeiten) ======= */
+const LOCAL_BOARDS_KEY = 'quiz_local_boards_v1'; // array of {name, savedAt}
+function getLocalBoards(){ try{ return JSON.parse(localStorage.getItem(LOCAL_BOARDS_KEY) || '[]') || []; }catch(e){ return []; } }
+function setLocalBoards(list){ try{ localStorage.setItem(LOCAL_BOARDS_KEY, JSON.stringify(list||[])); }catch(e){} }
+function localBoardStorageKey(name){ return 'quiz_board_local__' + String(name||'').trim(); }
+function saveBoardToLocal(name, jsonText){
+  name = String(name||'').trim();
+  if (!name) return false;
+  try{
+    localStorage.setItem(localBoardStorageKey(name), jsonText);
+    const list = getLocalBoards();
+    const now = Date.now();
+    const idx = list.findIndex(x => x && x.name === name);
+    if (idx >= 0) list[idx].savedAt = now;
+    else list.push({ name, savedAt: now });
+    setLocalBoards(list);
+    return true;
+  }catch(e){ return false; }
+}
+function loadBoardFromLocal(name){ try{ return localStorage.getItem(localBoardStorageKey(name)) || null; }catch(e){ return null; } }
+
+let __editorLoadedUrl = null;
+function editorPointsForRow(row, boardType){ return (boardType==='board2' ? [200,400,600,800,1000] : [100,200,300,400,500])[row] || 100; }
+function editorEnsureDefaults(){
+  if (!data || !data.categories) data = { settings:{ media_base:'media/', allow_steal:true }, players:['Spieler 1','Spieler 2','Spieler 3'], categories:[] };
+  if (!data.settings) data.settings = { media_base:'media/', allow_steal:true };
+  if (!Array.isArray(data.players)) data.players = ['Spieler 1','Spieler 2','Spieler 3'];
+  if (!Array.isArray(data.categories)) data.categories = [];
+}
+function stripExt(name){ return (name||'').replace(/\.(jpg|mp3|mp4)$/i,''); }
+function escapeHtml(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+function editorNewBoard(){
+  editorEnsureDefaults();
+  const bt = els.editorBoardType?.value || 'board1';
+  if (bt === 'between') {
+    data.categories = [{
+      title: 'Zwischenboard',
+      questions: Array.from({length:5},(_,r)=>({ id:`Q-1${r+1}`, points:200, text:'', answer:'', type:'' }))
+    }];
+  } else {
+    data.categories = Array.from({length:5}, (_,c)=>({
+      title:`Kategorie ${c+1}`,
+      questions:Array.from({length:5},(_,r)=>({ id:`Q-${c+1}${r+1}`, points:editorPointsForRow(r,bt), text:'', answer:'', type:'' }))
+    }));
+  }
+  __editorLoadedUrl=null;
+  if (els.editorBoardName) els.editorBoardName.value = '';
+  renderEditor();
+}
+async function editorLoadSelected(){
+  const url = els.editorBoards?.value; if(!url) return;
+  __editorLoadedUrl=url;
+  await loadContent(url);
+  renderEditor();
+}
+function editorBuildFromForm(){
+  editorEnsureDefaults();
+  const bt = els.editorBoardType?.value || 'board1';
+  const cats=[];
+  (els.editorPage?.querySelectorAll('[data-cat]')||[]).forEach((catEl,ci)=>{
+    const title=catEl.querySelector('input[data-field="cat-title"]')?.value?.trim()||`Kategorie ${ci+1}`;
+    const questions=[];
+    catEl.querySelectorAll('tr[data-row]').forEach((rowEl,ri)=>{
+      const qtext=rowEl.querySelector('textarea[data-field="q-text"]')?.value?.trim()||'';
+      const qType=rowEl.querySelector('select[data-field="q-type"]')?.value||'text';
+      const qFile=rowEl.querySelector('input[data-field="q-file"]')?.value?.trim()||'';
+
+      const atext=rowEl.querySelector('textarea[data-field="a-text"]')?.value?.trim()||'';
+      const aType=rowEl.querySelector('select[data-field="a-type"]')?.value||'text';
+      const a1=rowEl.querySelector('input[data-field="a-file1"]')?.value?.trim()||'';
+      const a2=rowEl.querySelector('input[data-field="a-file2"]')?.value?.trim()||'';
+
+      const ptsVal = Number(rowEl.querySelector('input[data-field="pts"]')?.value);
+      const ptsDefault = (bt==='between') ? 200 : editorPointsForRow(ri,bt);
+
+      const isEst = !!rowEl.querySelector('input[data-field="is-estimate"]')?.checked;
+
+      const q={ id:`Q-${ci+1}${ri+1}`, points: (Number.isFinite(ptsVal) && ptsVal>0) ? ptsVal : ptsDefault };
+
+      if(qtext) q.text=qtext;
+      if(atext) q.answer=atext;
+
+      if (isEst) q.type = 'estimate';
+
+      if(qType==='image'&&qFile) q.image=(qFile.endsWith('.jpg')?qFile:qFile+'.jpg');
+      if(qType==='mp3'&&qFile) q.audio=(qFile.endsWith('.mp3')?qFile:qFile+'.mp3');
+      if(qType==='mp4'&&qFile) q.video=(qFile.endsWith('.mp4')?qFile:qFile+'.mp4');
+
+      if(aType==='img1'&&a1) q.answer_images=[(a1.endsWith('.jpg')?a1:a1+'.jpg')];
+      if(aType==='img2'&&a1&&a2) q.answer_images=[(a1.endsWith('.jpg')?a1:a1+'.jpg'), (a2.endsWith('.jpg')?a2:a2+'.jpg')];
+      if(aType==='mp3'&&a1) q.answer_audio=(a1.endsWith('.mp3')?a1:a1+'.mp3');
+      if(aType==='mp4'&&a1) q.answer_video=(a1.endsWith('.mp4')?a1:a1+'.mp4');
+
+      questions.push(q);
+    });
+    cats.push({ title, questions });
+  });
+  data.categories=cats;
+  return data;
+}
+function editorSave(asNew=false){
+  const nameInput = (els.editorBoardName && els.editorBoardName.value) ? els.editorBoardName.value.trim() : '';
+  let name = nameInput;
+  if (!name) {
+    if (!asNew && __editorLoadedUrl) {
+      name = (__editorLoadedUrl.startsWith('local:') ? __editorLoadedUrl.slice(6) : (__editorLoadedUrl.split('/').pop()||'').replace(/\.json$/,''));
+    }
+  }
+  if (!name) { alert('Bitte Board-Name eingeben.'); return; }
+
+  const out = editorBuildFromForm();
+  const jsonText = JSON.stringify(out, null, 2);
+  const ok = saveBoardToLocal(name, jsonText);
+  if (!ok) { alert('Konnte nicht speichern (localStorage voll oder blockiert).'); return; }
+
+  __editorLoadedUrl = 'local:' + name;
+  loadBoardsList().then(()=>{ renderEditor(); }).catch(()=>{ renderEditor(); });
+  alert(`✅ Gespeichert als LOCAL • ${name}`);
+}
+
+function editorExport(){
+  const out=editorBuildFromForm();
+  const blob=new Blob([JSON.stringify(out,null,2)],{type:'application/json'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  const base=(__editorLoadedUrl?__editorLoadedUrl.split('/').pop().replace(/\.json$/,''):'board');
+  a.download=`${base}_${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+}
+function renderEditor(){
+  if(role!=='editor') return;
+  editorEnsureDefaults();
+  if(els.board) els.board.style.display='none';
+  if(els.overlay) els.overlay.style.display='none';
+  if(els.playersBar) els.playersBar.style.display='none';
+  const controls=document.querySelector('.controls'); if(controls) controls.style.display='none';
+  if(els.editorPage) els.editorPage.hidden=false;
+  if(els.editorBoards){
+    els.editorBoards.innerHTML='<option value="">Board wählen…</option>';
+    (boards||[]).forEach(b=>{ const o=document.createElement('option'); o.value=b.url; o.textContent=b.label||b.url; if(__editorLoadedUrl&&b.url===__editorLoadedUrl) o.selected=true; els.editorBoards.appendChild(o); });
+  }
+  if(els.editorTitle) els.editorTitle.textContent=__editorLoadedUrl?`Bearbeite: ${__editorLoadedUrl}`:'Neues Board (nicht gespeichert)';
+  try{
+    if (els.editorBoardName && (!els.editorBoardName.value || __editorLoadedUrl)) {
+      const nameGuess = (__editorLoadedUrl||'').startsWith('local:') ? (__editorLoadedUrl.slice(6)) : (__editorLoadedUrl||'').split('/').pop()?.replace(/\.json$/,'');
+      if (nameGuess) els.editorBoardName.value = nameGuess;
+    }
+  }catch(e){}
+  const host=document.getElementById('editorFormHost'); if(!host) return;
+  host.innerHTML='';
+  const bt=els.editorBoardType?.value||'board1';
+  data.categories.forEach((cat,ci)=>{
+    const wrap=document.createElement('div'); wrap.className='editor-cat'; wrap.dataset.cat=String(ci);
+    wrap.innerHTML=`<div class="editor-cat-head"><label>Kategorie ${ci+1}:</label><input data-field="cat-title" value="${escapeHtml(cat.title||'')}" /></div><div class="editor-tablewrap"><table class="editor-table"><thead><tr><th>Punkte</th><th>Schätzfrage</th><th>Frage</th><th>Frage-Medium</th><th>Datei</th><th>Antwort</th><th>Antwort-Medium</th><th>Datei 1</th><th>Datei 2</th></tr></thead><tbody></tbody></table></div>`;
+    const tbody=wrap.querySelector('tbody');
+    const qs=Array.isArray(cat.questions)?cat.questions:[];
+    for(let ri=0;ri<5;ri++){
+      const q=qs[ri]||{};
+      const pts=editorPointsForRow(ri,bt);
+      const qType=q.image?'image':(q.audio?'mp3':(q.video?'mp4':'text'));
+      const qFile=q.image||q.audio||q.video||'';
+      let aType='text', f1='', f2='';
+      if(Array.isArray(q.answer_images)&&q.answer_images.length===1){aType='img1'; f1=q.answer_images[0]||'';}
+      if(Array.isArray(q.answer_images)&&q.answer_images.length>=2){aType='img2'; f1=q.answer_images[0]||''; f2=q.answer_images[1]||'';}
+      if(q.answer_audio){aType='mp3'; f1=q.answer_audio;}
+      if(q.answer_video){aType='mp4'; f1=q.answer_video;}
+      const tr=document.createElement('tr'); tr.dataset.row=String(ri);
+      tr.innerHTML=`<td class="pts"><input data-field="pts" type="number" min="0" step="1" value="${(q.points||pts)}" /></td><td style="text-align:center"><input data-field="is-estimate" type="checkbox" ${((q.type==='estimate'||q.estimate===true)?'checked':'')} /></td><td><textarea data-field="q-text" rows="2">${escapeHtml(q.text||'')}</textarea></td><td><select data-field="q-type"><option value="text"${qType==='text'?' selected':''}>Text</option><option value="image"${qType==='image'?' selected':''}>Bild (.jpg)</option><option value="mp3"${qType==='mp3'?' selected':''}>MP3 (.mp3)</option><option value="mp4"${qType==='mp4'?' selected':''}>MP4 (.mp4)</option></select></td><td><input data-field="q-file" value="${escapeHtml(stripExt(qFile))}" placeholder="Dateiname ohne Endung" /></td><td><textarea data-field="a-text" rows="2">${escapeHtml(q.answer||'')}</textarea></td><td><select data-field="a-type"><option value="text"${aType==='text'?' selected':''}>Text</option><option value="img1"${aType==='img1'?' selected':''}>1 Bild (.jpg)</option><option value="img2"${aType==='img2'?' selected':''}>2 Bilder (.jpg)</option><option value="mp3"${aType==='mp3'?' selected':''}>MP3 (.mp3)</option><option value="mp4"${aType==='mp4'?' selected':''}>MP4 (.mp4)</option></select></td><td><input data-field="a-file1" value="${escapeHtml(stripExt(f1))}" placeholder="Dateiname ohne Endung" /></td><td><input data-field="a-file2" value="${escapeHtml(stripExt(f2))}" placeholder="nur bei 2 Bildern" /></td>`;
+      tbody.appendChild(tr);
+    }
+    host.appendChild(wrap);
+  });
+  host.querySelectorAll('select[data-field="a-type"]').forEach(sel=>{
+    const upd=()=>{ const tr=sel.closest('tr'); const file2=tr?.querySelector('input[data-field="a-file2"]'); if(!file2) return; file2.disabled=(sel.value!=='img2'); if(sel.value!=='img2') file2.value=''; };
+    sel.addEventListener('change', upd); upd();
+  });
+}
 /* ======= Init ======= */
 init();
 async function init() {
-  if (role === 'host') {
+  if (role === 'host' || role === 'editor') {
     await loadBoardsList();               // optional: lädt data/boards.json, falls vorhanden
     const startUrl = getInitialBoardUrl();
     await loadContent(startUrl);
@@ -479,6 +833,18 @@ async function init() {
     // Screen lädt kein eigenes JSON, sondern wartet auf Sync vom Host
   }
   loadState();
+
+  // Wenn jemand Host/Editor aufruft ohne richtigen Key, kurz Hinweis geben
+  if (__authFailed && (requestedView === 'host' || requestedView === 'editor')) {
+    alert('Falscher oder fehlender Key. Nutze z.B. ?view=host&key=314159 oder ?view=editor&key=314159');
+  }
+
+  // Bild in Modal per Klick vergrößern (Host & Publikum)
+  if (els.qImg) els.qImg.addEventListener('click', () => toggleLightboxFromImg(els.qImg));
+  const a1 = document.getElementById('ansImg1');
+  const a2 = document.getElementById('ansImg2');
+  if (a1) a1.addEventListener('click', () => toggleLightboxFromImg(a1));
+  if (a2) a2.addEventListener('click', () => toggleLightboxFromImg(a2));
 
   // Publikum: Kontextmenü auf Media sperren (Download-Menü etc.)
   if (role==='screen'){
@@ -505,6 +871,20 @@ async function init() {
   renderPlayersBar(role === 'screen');
   renderBoard();
   renderOverlay();
+  // Buzzer button (screen)
+  if (els.buzzerBtn) els.buzzerBtn.onclick = () => buzzNow();
+  try{ renderBuzzUI(); }catch(e){}
+  if (role === 'editor') {
+    if (els.editorNewBtn) els.editorNewBtn.onclick = () => editorNewBoard();
+    if (els.editorLoadBtn) els.editorLoadBtn.onclick = () => editorLoadSelected();
+    if (els.editorExportJson) els.editorExportJson.onclick = () => editorExport();
+    if (els.editorSaveBtn) els.editorSaveBtn.onclick = () => editorSave(false);
+    if (els.editorSaveAsBtn) els.editorSaveAsBtn.onclick = () => editorSave(true);
+    if (els.editorRefreshBoards) els.editorRefreshBoards.onclick = async () => { await loadBoardsList(); renderEditor(); };
+    if (els.editorBoardType) els.editorBoardType.onchange = () => renderEditor();
+    if (els.editorBoards) els.editorBoards.onchange = () => editorLoadSelected();
+    renderEditor();
+  }
   attachGlobalHandlers();
   if (role === 'host') {
     sendSync();
@@ -514,6 +894,15 @@ async function init() {
 }
 
 async function loadContent(urlOrFileText) {
+  if (typeof urlOrFileText === 'string' && urlOrFileText.startsWith('local:')) {
+    const name = urlOrFileText.slice(6);
+    const txt = loadBoardFromLocal(name);
+    if (!txt) throw new Error('Local board not found: ' + name);
+    data = JSON.parse(txt);
+    normalizeQuestions(data);
+    state.settings = data.settings || {};
+    return;
+  }
   if (typeof urlOrFileText === 'string' && urlOrFileText.trim().startsWith('{')) {
     data = JSON.parse(urlOrFileText);
   } else if (typeof urlOrFileText === 'string') {
@@ -529,7 +918,7 @@ async function loadContent(urlOrFileText) {
 }
 
 async function loadBoardsList() {
-  if (role !== 'host') return;
+  if (role !== 'host' && role !== 'editor') return;
   try {
     const res = await fetch('data/boards.json', { cache: 'no-store' });
     if (!res.ok) return;
@@ -554,6 +943,16 @@ async function loadBoardsList() {
         url
       };
     }).filter(b => !!b.url);
+
+
+    // Local boards (saved in browser)
+    try{
+      const locals = getLocalBoards();
+      locals.forEach((lb) => {
+        if (!lb || !lb.name) return;
+        boards.unshift({ id: `local_${lb.name}`, label: `LOCAL • ${lb.name}`, url: `local:${lb.name}` });
+      });
+    }catch(e){} 
 
     if (els.boardSelect) {
       els.boardSelect.innerHTML = '';
@@ -622,6 +1021,17 @@ async function loadBoardFromUrl(url) {
   renderPlayersBar();
   renderBoard();
   renderOverlay();
+  if (role === 'editor') {
+    if (els.editorNewBtn) els.editorNewBtn.onclick = () => editorNewBoard();
+    if (els.editorLoadBtn) els.editorLoadBtn.onclick = () => editorLoadSelected();
+    if (els.editorExportJson) els.editorExportJson.onclick = () => editorExport();
+    if (els.editorSaveBtn) els.editorSaveBtn.onclick = () => editorSave(false);
+    if (els.editorSaveAsBtn) els.editorSaveAsBtn.onclick = () => editorSave(true);
+    if (els.editorRefreshBoards) els.editorRefreshBoards.onclick = async () => { await loadBoardsList(); renderEditor(); };
+    if (els.editorBoardType) els.editorBoardType.onchange = () => renderEditor();
+    if (els.editorBoards) els.editorBoards.onchange = () => editorLoadSelected();
+    renderEditor();
+  }
   sendSync();
 }
 window.SFX_BASE = (data && data.settings && data.settings.media_base) || 'media/';
@@ -658,6 +1068,17 @@ function __setPlayerAvatar(playerId, dataUrl){
   else delete __avatarCache[playerId];
   saveState();
   renderOverlay();
+  if (role === 'editor') {
+    if (els.editorNewBtn) els.editorNewBtn.onclick = () => editorNewBoard();
+    if (els.editorLoadBtn) els.editorLoadBtn.onclick = () => editorLoadSelected();
+    if (els.editorExportJson) els.editorExportJson.onclick = () => editorExport();
+    if (els.editorSaveBtn) els.editorSaveBtn.onclick = () => editorSave(false);
+    if (els.editorSaveAsBtn) els.editorSaveAsBtn.onclick = () => editorSave(true);
+    if (els.editorRefreshBoards) els.editorRefreshBoards.onclick = async () => { await loadBoardsList(); renderEditor(); };
+    if (els.editorBoardType) els.editorBoardType.onchange = () => renderEditor();
+    if (els.editorBoards) els.editorBoards.onchange = () => editorLoadSelected();
+    renderEditor();
+  }
   if (els && els.playersBar) renderPlayersBar(role === 'screen');
   sendSync();
   __saveAvatarRemote(playerId, dataUrl);
@@ -747,14 +1168,22 @@ function renderPlayersBar(readOnly=false) {
           el.classList.toggle('off', !p.jokers[key]);
           saveState();
           renderOverlay();
+  if (role === 'editor') {
+    if (els.editorNewBtn) els.editorNewBtn.onclick = () => editorNewBoard();
+    if (els.editorLoadBtn) els.editorLoadBtn.onclick = () => editorLoadSelected();
+    if (els.editorExportJson) els.editorExportJson.onclick = () => editorExport();
+    if (els.editorSaveBtn) els.editorSaveBtn.onclick = () => editorSave(false);
+    if (els.editorSaveAsBtn) els.editorSaveAsBtn.onclick = () => editorSave(true);
+    if (els.editorRefreshBoards) els.editorRefreshBoards.onclick = async () => { await loadBoardsList(); renderEditor(); };
+    if (els.editorBoardType) els.editorBoardType.onchange = () => renderEditor();
+    if (els.editorBoards) els.editorBoards.onchange = () => editorLoadSelected();
+    renderEditor();
+  }
           sendSync();
           // Publikum: Animation nur beim "Verbrauchen" (an -> aus)
           if (prev && !p.jokers[key]) {
-            const jp = { id: String(Date.now()) + '-' + Math.random().toString(16).slice(2), jokerKey: key, playerId: p.id, ts: Date.now() };
-            state.jokerPulse = jp;
-            saveState();
-            sendSync();
-            send('JOKER_USED', jp);
+            try{ state.jokerPulse = { ts: Date.now(), jokerKey: key, playerId: p.id }; }catch(e){}
+            send('JOKER_USED', { jokerKey: key, playerId: p.id });
           }
         };
       }
@@ -845,11 +1274,8 @@ function renderOverlay(){
           saveState();
           sendSync();
           if (prev && !p.jokers[key]) {
-            const jp = { id: String(Date.now()) + '-' + Math.random().toString(16).slice(2), jokerKey: key, playerId: p.id, ts: Date.now() };
-            state.jokerPulse = jp;
-            saveState();
-            sendSync();
-            send('JOKER_USED', jp);
+            try{ state.jokerPulse = { ts: Date.now(), jokerKey: key, playerId: p.id }; }catch(e){}
+            send('JOKER_USED', { jokerKey: key, playerId: p.id });
           }
         };
       }
@@ -857,7 +1283,7 @@ function renderOverlay(){
     });
     meta.append(nm, pts); card.append(img, meta, jokers); els.overlay.appendChild(card);
 
-    if (role==='host') card.onclick = () => { state.turn = idx; saveState(); renderOverlay(); sendTurn(); };
+    if (role==='host') card.onclick = () => { state.turn = idx; saveState(); renderOverlay(); sendTurn(); sendSync(); };
   });
 }
 
@@ -879,6 +1305,7 @@ function openQuestion(col, row) {
   els.answer.hidden = role !== 'host';
   setMedia(q);
   resetAnswerImages();
+  try{ closeImgLightbox(); }catch(e){}
   try{ const vb = ensureAudienceVolumeUI(); if(vb){ vb.style.display = (q && q.audio) ? 'block' : 'none'; } }catch(e){}
   showAudioGateIfNeeded(q);
   try{ ensureEstimateUIForHost(id, q); }catch(e){}
@@ -892,10 +1319,16 @@ function openQuestion(col, row) {
   // aktuell offene Frage im globalen State merken (für Publikum)
   state.current = { id, answerRevealed: false };
   state.audio = { playing:false, t:0, ts: Date.now() };
+
+  // Buzzer: pro Frage zurücksetzen (erst bei "Falsch" aktiv)
+  resetBuzzForQuestion(id);
+
+  try{ renderBuzzUI(); }catch(e){}
+
   saveState();
   sendSync();
 
-  send('SHOW_Q', { id, q: { cat: cat.title, points: q.points, text: (q.text || q.question), answer: (q.answer || q.solution), image: q.image, image_reveal: q.image_reveal, audio: q.audio, video: q.video, answer_images: q.answer_images, ans1: q.ans1, ans2: q.ans2, type: q.type, estimate: q.estimate }});
+  send('SHOW_Q', { id, q: { cat: cat.title, points: q.points, text: (q.text || q.question), answer: (q.answer || q.solution), image: q.image, image_reveal: q.image_reveal, audio: q.audio, video: q.video, answer_images: q.answer_images, answer_audio: q.answer_audio, answer_video: q.answer_video, ans1: q.ans1, ans2: q.ans2, type: q.type, estimate: q.estimate }});
 
   populatePlayerSelect(id, starterId);
   updateAttemptInfo(id);
@@ -919,6 +1352,7 @@ function openQuestion(col, row) {
     }
     // answer images (0–2)
     showAnswerImages(current.q, base);
+    setAnswerMedia(current.q, base);
 };
 
   els.correctBtn.onclick = () => onResult('correct');
@@ -1024,20 +1458,10 @@ function openQuestion(col, row) {
     els.qAud.addEventListener('play', onPlay);
     els.qAud.addEventListener('pause', onPause);
   }
-  // Buzzer
-  resetBuzzForQuestion();
-  renderBuzzUI();
+  // Timer (Host)
+  if (els.timer5Btn) els.timer5Btn.onclick = () => startTimer(5);
+  if (els.timer10Btn) els.timer10Btn.onclick = () => startTimer(10);
 
-  // Timer (toggle 10s / 5s)
-  els.timerBtn.textContent = `⏱ ${(state.timerPresetSeconds||10)}s`;
-  els.timerBtn.onclick = () => {
-    const cur = (state.timerPresetSeconds || 10);
-    const next = (cur === 10) ? 5 : 10;
-    state.timerPresetSeconds = next;
-    els.timerBtn.textContent = `⏱ ${next}s`;
-    startTimer(next);
-    sendSync();
-  };
   els.modal.addEventListener('close', onModalCloseOnce, { once: true });
   if (role === 'host') { els.modal.classList.add('nonmodal'); els.modal.show(); } else { els.modal.classList.remove('nonmodal'); els.modal.showModal(); }
 }
@@ -1045,10 +1469,6 @@ function openQuestion(col, row) {
 function onModalCloseOnce(){
   markBusyTile(false);
   stopTimer();
-  closeImgLightbox();
-  clearBuzz();
-  try{ state.jokerPulse = null; }catch(e){}
-  sendSync();
 
   // NEU: Antwortbilder zuverlässig zurücksetzen
   resetAnswerImages();
@@ -1105,11 +1525,13 @@ function onResult(result) {
 
     const othersLeft = state.players.some(p => !state.q[qid].attempts.find(a => a.playerId === p.id));
     if (state.settings.allow_steal && othersLeft) {
-      try{ enableBuzzerHost(qid); }catch(e){}
-      try{ renderBuzzUI(); }catch(e){}
+      // Buzzer-Fenster öffnen (Queue bleibt bis Frage endet)
+      try{ enableBuzzForCurrent(); }catch(e){}
       populatePlayerSelect(qid, state.q[qid].starter);
       updateAttemptInfo(qid);
-      saveState(); sendSync(); sendScores(); return;
+      saveState(); sendSync(); sendScores();
+      try{ renderBuzzUI(); }catch(e){}
+      return;
     } else {
       finishQuestion(null);
     }
@@ -1123,15 +1545,18 @@ function finishQuestion(winnerId) {
   advanceTurn();
   pushHistory({ type:'RESOLVE', qid });
 
-    // Buzzer & Lightbox zurücksetzen
-  try{ clearBuzz(); }catch(e){}
-  try{ closeImgLightbox(); }catch(e){}
-
   // aktuelle Frage im State zurücksetzen
   state.current = null;
   state.audio = { playing:false, t:0, ts: Date.now() };
 
+  // Buzzer zurücksetzen
+  try{ clearBuzz(); }catch(e){}
+
+  // Wenn jemand ein Bild vergrößert hat: überall schließen
+  try{ closeImgLightbox(); }catch(e){}
+
   saveState(); renderBoard(); renderOverlay();
+  try{ renderBuzzUI(); }catch(e){}
   els.modal.close();
 
   send('RESOLVE_Q', { id: qid });
@@ -1204,7 +1629,6 @@ function applyCurrentForScreen() {
       // Timerbox nicht hart verstecken – wird über state.timer / TIMER Sync gesteuert
   // if (els.timerBox) els.timerBox.hidden = true;
       resetAnswerImages();
-      try{ clearBuzz(); renderBuzzUI(); }catch(e){}
       try{ closeImgLightbox(); }catch(e){}
     } catch (e) {}
     return;
@@ -1261,6 +1685,8 @@ function applyCurrentForScreen() {
     } catch (e) {}
     els.answer.hidden = false;
   }
+
+  try{ renderBuzzUI(); }catch(e){}
 }
 
 function setupRemoteListener() {
@@ -1288,26 +1714,7 @@ function setupRemoteListener() {
         }catch(e){}
       });
     }
-    
-
-// Buzzer events (Cross-Device): screens write to rooms/{room}/buzz, host consumes & builds queue
-    try{
-      if (role === 'host'){
-        roomRef.collection('buzz').orderBy('ts','asc').onSnapshot((snap)=>{
-          try{
-            snap.docChanges().forEach((ch)=>{
-              if (ch.type !== 'added') return;
-              const d = ch.doc.data() || {};
-              if (!state.buzz || !state.buzz.enabled) { try{ ch.doc.ref.delete(); }catch(e){}; return; }
-              addBuzzToQueue({ id: d.clientId, name: d.name });
-              renderBuzzUI();
-              try{ ch.doc.ref.delete(); }catch(e){}
-            });
-          }catch(e){}
-        });
-      }
-    }catch(e){}
-roomRef.onSnapshot(async (doc) => {
+    roomRef.onSnapshot(async (doc) => {
       if (!doc.exists) return;
       const raw = doc.data();
       if (!raw) return;
@@ -1363,6 +1770,9 @@ function showForAudience(payload){
   current = { id, q };
   __screenShownId = id;
 
+  // Buzzer: Name einmalig beim Öffnen einer Frage abfragen (nicht beim Buzzern)
+  try{ ensureLocalBuzzName(); }catch(e){}
+
   els.qCat.textContent = q.cat;
   els.qPts.innerHTML = `<span class="pos">+${q.points}</span> <span class="neg">-${Math.floor(q.points/2)}</span>`;
   els.qText.textContent = (q.text || q.question || '');
@@ -1370,6 +1780,7 @@ function showForAudience(payload){
   els.answer.hidden = true;
   setMedia(q);
   resetAnswerImages();
+  try{ closeImgLightbox(); }catch(e){}
   try{ const vb = ensureAudienceVolumeUI(); if(vb){ vb.style.display = (q && q.audio) ? 'block' : 'none'; } }catch(e){}
   showAudioGateIfNeeded(q);
   try{ ensureEstimateUIForScreen(id, q); }catch(e){}
@@ -1377,6 +1788,7 @@ function showForAudience(payload){
   // Timerbox nicht hart verstecken – wird über state.timer / TIMER Sync gesteuert
   // if (els.timerBox) els.timerBox.hidden = true;
   syncAudienceAudioFromState();
+  try{ renderBuzzUI(); }catch(e){}
   els.modal.showModal();
 }
 
@@ -1451,11 +1863,31 @@ function playSfx(kind, opts) {
 
 
 function resetAnswerImages(){
+  resetAnswerMedia();
   if (!els.answerImages) return;
   els.answerImages.hidden = true;
   els.answerImages.classList.remove('single');
   if (els.ansImg1) { els.ansImg1.src = ''; els.ansImg1.hidden = true; }
   if (els.ansImg2) { els.ansImg2.src = ''; els.ansImg2.hidden = true; }
+}
+
+
+function resetAnswerMedia(){
+  if (els.ansAud){ try{ els.ansAud.pause(); }catch(e){} els.ansAud.removeAttribute('src'); els.ansAud.hidden = true; }
+  if (els.ansVid){ try{ els.ansVid.pause(); }catch(e){} els.ansVid.removeAttribute('src'); els.ansVid.hidden = true; }
+}
+function setAnswerMedia(q, base){
+  resetAnswerMedia();
+  if (!q) return;
+  base = base || (data.settings && data.settings.media_base) || 'media/';
+  if (q.answer_audio && els.ansAud){
+    els.ansAud.src = base + q.answer_audio;
+    els.ansAud.hidden = false;
+  }
+  if (q.answer_video && els.ansVid){
+    els.ansVid.src = base + q.answer_video;
+    els.ansVid.hidden = false;
+  }
 }
 
 function showAnswerImages(q, base='media/'){
@@ -1498,6 +1930,13 @@ function showAnswerImagesForCurrent(){
     showAnswerImages((current && current.q) ? current.q : null, base);
   } catch (e) {}
 }
+function showAnswerMediaForCurrent(){
+  try{
+    const base = (data.settings && data.settings.media_base) || 'media/';
+    if (current && current.q) setAnswerMedia(current.q, base);
+  }catch(e){}
+}
+
 
 function setMedia(q){
   const base = (data.settings && data.settings.media_base) || 'media/';
@@ -1512,6 +1951,17 @@ function addPoints(pid, delta, {log=false}={}){
   const p = state.players.find(x => x.id === pid);
   if (p && p._scoreEl) p._scoreEl.textContent = state.scores[pid];
   renderOverlay();
+  if (role === 'editor') {
+    if (els.editorNewBtn) els.editorNewBtn.onclick = () => editorNewBoard();
+    if (els.editorLoadBtn) els.editorLoadBtn.onclick = () => editorLoadSelected();
+    if (els.editorExportJson) els.editorExportJson.onclick = () => editorExport();
+    if (els.editorSaveBtn) els.editorSaveBtn.onclick = () => editorSave(false);
+    if (els.editorSaveAsBtn) els.editorSaveAsBtn.onclick = () => editorSave(true);
+    if (els.editorRefreshBoards) els.editorRefreshBoards.onclick = async () => { await loadBoardsList(); renderEditor(); };
+    if (els.editorBoardType) els.editorBoardType.onchange = () => renderEditor();
+    if (els.editorBoards) els.editorBoards.onchange = () => editorLoadSelected();
+    renderEditor();
+  }
   if (log) pushHistory({ type:'POINTS', pid, delta });
   saveState(); sendScores();
 }
@@ -1537,9 +1987,8 @@ function saveState() {
     current: state.current,
     audio: state.audio,
     fxPulse: state.fxPulse || null,
-    timer: state.timer || { seconds:0, ts:0 },
-    buzz: state.buzz || { enabled:false, queue:[], locked:{} },
-    jokerPulse: state.jokerPulse || null
+    jokerPulse: state.jokerPulse || null,
+    timer: state.timer || { seconds:0, ts:0 }
   };
   localStorage.setItem('quiz_state', JSON.stringify(payload));
 }
@@ -1824,7 +2273,7 @@ function ensureEstimateUIForScreen(qid, q){
 }
 
 function ensureEstimateUIForHost(qid, q){
-  if (role !== 'host') return;
+  if (role !== 'host' && role !== 'editor') return;
 
   // Wenn keine Schätzfrage: Host-UI entfernen und Listener stoppen (Firestore unangetastet lassen)
   if (!isEstimateQuestion(q)) {
@@ -2042,7 +2491,7 @@ function markClosestEstimate(q){
 }
 
 function deleteEstimateEntry(clientId){
-  if (role !== 'host') return;
+  if (role !== 'host' && role !== 'editor') return;
   try{
     if (!window.db || !__estimateHostDocRef) return;
     const del = firebase.firestore.FieldValue.delete();
@@ -2066,7 +2515,7 @@ function deleteEstimateEntry(clientId){
 
 function persistEstimateMeta(){
   try{
-    if (role !== 'host') return;
+    if (role !== 'host' && role !== 'editor') return;
     if (!__estimateHostDocRef) return;
     __estimateHostDocRef.set({
       __reveal: __estimateReveal || {},
@@ -2076,102 +2525,6 @@ function persistEstimateMeta(){
   }catch(e){}
 }
 
-
-
-/* ======= Buzzer (Steal-Reihenfolge) ======= */
-function ensureBuzzState(){
-  if (!state.buzz) state.buzz = { enabled:false, qid:null, queue:[], locked:{} };
-  if (!state.buzz.locked) state.buzz.locked = {};
-  if (!Array.isArray(state.buzz.queue)) state.buzz.queue = [];
-  return state.buzz;
-}
-function resetBuzzForQuestion(){
-  const b = ensureBuzzState();
-  b.enabled = false;
-  b.qid = (current && current.id) ? String(current.id) : null;
-  b.queue = [];
-  b.locked = {};
-  saveState();
-  sendSync();
-}
-function clearBuzz(){
-  const b = ensureBuzzState();
-  b.enabled = false;
-  b.qid = null;
-  b.queue = [];
-  b.locked = {};
-  saveState();
-  sendSync();
-}
-function enableBuzzerHost(qid){
-  const b = ensureBuzzState();
-  b.enabled = true;
-  b.qid = String(qid || (current && current.id) || '');
-  b.queue = b.queue || [];
-  b.locked = b.locked || {};
-  saveState();
-  sendSync();
-}
-function addBuzzToQueue({id, name}){
-  const b = ensureBuzzState();
-  if (!b.enabled) return;
-  const qid = String(b.qid || '');
-  if (!qid) return;
-  const cid = String(id || '');
-  if (!cid) return;
-  if (b.locked[cid]) return;              // schon gebuzzert
-  b.locked[cid] = true;
-  b.queue.push({ id: cid, name: String(name || 'Teilnehmer') });
-}
-function renderBuzzUI(){
-  if (!els || !els.buzzBtn) return;
-  const b = ensureBuzzState();
-
-  // Publikum: Buzz-Button klick
-  if (role === 'screen' && !els.buzzBtn.__bound){
-    els.buzzBtn.__bound = true;
-    els.buzzBtn.addEventListener('click', async ()=>{
-      try{
-        const b2 = ensureBuzzState();
-        if (!b2.enabled) return;
-        const qid = String(b2.qid || '');
-        if (!qid) return;
-        const cid = getLocalBuzzId();
-        const nm = getLocalBuzzName();
-        if (b2.locked && b2.locked[cid]) return;
-
-        // local same-browser: BroadcastChannel
-        try{ chan.postMessage({ type:'BUZZ', payload:{ clientId: cid, name: nm, ts: Date.now() } }); }catch(e){}
-
-        // cross-device: Firestore
-        try{
-          if (window.db){
-            const roomRef = window.db.collection('rooms').doc(remoteRoomId);
-            await roomRef.collection('buzz').add({ qid, clientId: cid, name: nm, ts: Date.now() });
-          }
-        }catch(e){}
-      }catch(e){}
-    });
-  }
-
-  // Button state
-  const cid = (role==='screen') ? getLocalBuzzId() : null;
-  const isLocked = !!(cid && b.locked && b.locked[cid]);
-  els.buzzBtn.disabled = !(b.enabled) || isLocked;
-  els.buzzBtn.classList.toggle('on', !!b.enabled && !isLocked);
-
-  // Queue render
-  if (els.buzzQueue){
-    const q = Array.isArray(b.queue) ? b.queue : [];
-    if (!q.length){
-      els.buzzQueue.hidden = true;
-      els.buzzQueue.textContent = '';
-    } else {
-      els.buzzQueue.hidden = false;
-      els.buzzQueue.textContent = q.map((x,i)=>`${i+1}. ${x.name}`).join('  •  ');
-    }
-  }
-}
 
 /* ======= Helper & Global ======= */
 function idToName(pid){ return state.players.find(p => p.id === pid)?.name || pid; }
@@ -2194,9 +2547,8 @@ function sendSync() {
     current: state.current,
     audio: state.audio,
     fxPulse: state.fxPulse || null,
-    timer: state.timer || { seconds:0, ts:0 },
-    buzz: state.buzz || { enabled:false, queue:[], locked:{} },
-    jokerPulse: state.jokerPulse || null
+    jokerPulse: state.jokerPulse || null,
+    timer: state.timer || { seconds:0, ts:0 }
   };
 
   // lokal an andere Tabs (selber Browser)
@@ -2223,11 +2575,8 @@ function sendSync() {
         current: state.current,
         audio: state.audio,
         fxPulse: state.fxPulse || null,
-        timer: state.timer || { seconds:0, ts:0 },
-        buzz: state.buzz || { enabled:false, queue:[], locked:{} },
-        jokerPulse: state.jokerPulse || null,
-    buzz: state.buzz || { enabled:false, queue:[], locked:{} },
-    jokerPulse: state.jokerPulse || null
+    jokerPulse: state.jokerPulse || null,
+    timer: state.timer || { seconds:0, ts:0 }
       };
 
       const docData = {
@@ -2262,6 +2611,13 @@ function fx(type){
 }
 
 function attachGlobalHandlers() {
+  if (els.editorBtn && role === 'host') {
+    els.editorBtn.onclick = () => window.open(`${location.pathname}?view=editor&key=${HOST_SECRET}&room=${encodeURIComponent(remoteRoomId)}`, 'quiz-editor');
+  }
+  if (els.refreshBoardsBtn && role === 'host') {
+    els.refreshBoardsBtn.onclick = async () => { await loadBoardsList(); };
+  }
+
   if (els.boardSelect && role === 'host') {
     els.boardSelect.onchange = async (e) => {
       const id = e.target.value;
@@ -2288,7 +2644,7 @@ function attachGlobalHandlers() {
   }
 
   els.resetBtn.onclick = () => {
-    if (role !== 'host') return;
+    if (role !== 'host' && role !== 'editor') return;
     if (!confirm('Spielstand wirklich löschen?')) return;
     for (const p of state.players) state.scores[p.id] = 0;
     state.q = {}; state.used = new Set(); state.history = []; state.turn = 0;
@@ -2317,48 +2673,6 @@ function attachGlobalHandlers() {
     localStorage.setItem('quiz_state', text);
     loadState(); renderPlayersBar(); renderBoard(); renderOverlay(); sendSync();
   };
-
-
-  // Editor (einfach)
-  if (els.editorBtn && role==='host'){
-    els.editorBtn.onclick = () => {
-      try{
-        els.editorText.value = JSON.stringify(data || {}, null, 2);
-      }catch(e){
-        els.editorText.value = '';
-      }
-      els.editorModal.showModal();
-    };
-    els.editorLoadBtn.onclick = () => els.editorFile.click();
-    els.editorFile.onchange = async (e) => {
-      const f = e.target.files?.[0]; if (!f) return;
-      const text = await f.text();
-      els.editorText.value = text;
-      e.target.value = '';
-    };
-    els.editorApplyBtn.onclick = async () => {
-      try{
-        const obj = JSON.parse(els.editorText.value || '{}');
-        await loadContent(obj);
-        // nur Board-Fortschritt zurücksetzen (Punkte/Spieler bleiben)
-        state.q = {}; state.used = new Set(); state.history = [];
-        saveState(); renderBoard(); renderOverlay(); sendSync();
-        els.editorModal.close();
-      }catch(e){
-        alert('JSON ungültig: ' + (e && e.message ? e.message : e));
-      }
-    };
-    els.editorDownloadBtn.onclick = () => {
-      try{
-        const txt = els.editorText.value || '';
-        const blob = new Blob([txt], { type:'application/json' });
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = 'board.json';
-        a.click();
-      }catch(e){}
-    };
-  }
 
   els.loadBtn.onclick = () => els.loadFile.click();
   els.loadFile.onchange = async (e) => {
