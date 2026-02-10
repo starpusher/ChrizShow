@@ -3,8 +3,8 @@ const params = new URLSearchParams(location.search);
 
 const HOST_SECRET = '314159';
 
-let role = params.get('view') || 'screen';  // 'host' | 'screen'
-if (role === 'host') {
+let role = params.get('view') || 'screen';  // 'host' | 'screen' | 'editor'
+if (role === 'host' || role === 'editor') {
   const key = params.get('key');
   if (key !== HOST_SECRET) {
     // Falscher oder fehlender Schlüssel → auf Screen-Ansicht zurückfallen
@@ -12,6 +12,7 @@ if (role === 'host') {
   }
 }
 if (role === 'screen') document.body.classList.add('audience');
+if (role === 'editor') document.body.classList.add('editor');
 
 const remoteRoomId = params.get('room') || 'default';
 
@@ -47,6 +48,7 @@ function handleMsg(msg) {
     case 'REVEAL_ANSWER':
       resetAnswerImages();
       showAnswerImagesForCurrent();
+      showAnswerMediaForCurrent();
       els.answer.hidden = false;
       break;
     case 'RESOLVE_Q':
@@ -158,6 +160,8 @@ const els = {
   qImg: document.getElementById('qImg'),
   qAud: document.getElementById('qAud'),
   qVid: document.getElementById('qVid'),
+  ansAud: document.getElementById('ansAud'),
+  ansVid: document.getElementById('ansVid'),
   answer: document.getElementById('answer'),
   revealBtn: document.getElementById('revealBtn'),
   swapImageBtn: document.getElementById('swapImageBtn'),
@@ -187,6 +191,32 @@ const els = {
   ansImg1: document.getElementById('ansImg1'),
   ansImg2: document.getElementById('ansImg2')
 };
+
+
+/* ======= Lightbox (Bild vergrößern) ======= */
+let __lightbox = null;
+function ensureLightbox(){
+  if (__lightbox) return __lightbox;
+  const root = document.getElementById('lightbox');
+  const img = document.getElementById('lightboxImg');
+  if (!root || !img) return null;
+  __lightbox = { root, img };
+  const close = () => { root.hidden = true; img.src = ''; };
+  root.addEventListener('click', close);
+  window.addEventListener('keydown', (e) => { if (e.key === 'Escape') close(); });
+  return __lightbox;
+}
+function openLightboxFromImg(el){
+  try{
+    if (!el || el.hidden) return;
+    const src = el.currentSrc || el.src;
+    if (!src) return;
+    const lb = ensureLightbox(); if (!lb) return;
+    lb.img.src = src;
+    lb.root.hidden = false;
+  }catch(e){}
+}
+
 
 
 // Audience Audio: bei großen MP3s dauert "metadata/canplay" länger.
@@ -440,10 +470,119 @@ let __screenShownId = null; // Publikum: zuletzt gerenderte Frage, um Media-Relo
 let timerInt = null;
 let __lastFxTs = 0;
 
+
+/* ======= Editor (Boards erstellen/bearbeiten) ======= */
+let __editorLoadedUrl = null;
+function editorPointsForRow(row, boardType){ return (boardType==='board2' ? [200,400,600,800,1000] : [100,200,300,400,500])[row] || 100; }
+function editorEnsureDefaults(){
+  if (!data || !data.categories) data = { settings:{ media_base:'media/', allow_steal:true }, players:['Spieler 1','Spieler 2','Spieler 3'], categories:[] };
+  if (!data.settings) data.settings = { media_base:'media/', allow_steal:true };
+  if (!Array.isArray(data.players)) data.players = ['Spieler 1','Spieler 2','Spieler 3'];
+  if (!Array.isArray(data.categories)) data.categories = [];
+}
+function stripExt(name){ return (name||'').replace(/\.(jpg|mp3|mp4)$/i,''); }
+function escapeHtml(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+function editorNewBoard(){
+  editorEnsureDefaults();
+  const bt = els.editorBoardType?.value || 'board1';
+  data.categories = Array.from({length:5}, (_,c)=>({ title:`Kategorie ${c+1}`, questions:Array.from({length:5},(_,r)=>({ id:`Q-${c+1}${r+1}`, points:editorPointsForRow(r,bt), text:'', answer:'' })) }));
+  __editorLoadedUrl=null;
+  renderEditor();
+}
+async function editorLoadSelected(){
+  const url = els.editorBoards?.value; if(!url) return;
+  __editorLoadedUrl=url;
+  await loadContent(url);
+  renderEditor();
+}
+function editorBuildFromForm(){
+  editorEnsureDefaults();
+  const bt = els.editorBoardType?.value || 'board1';
+  const cats=[];
+  (els.editorPage?.querySelectorAll('[data-cat]')||[]).forEach((catEl,ci)=>{
+    const title=catEl.querySelector('input[data-field="cat-title"]')?.value?.trim()||`Kategorie ${ci+1}`;
+    const questions=[];
+    catEl.querySelectorAll('tr[data-row]').forEach((rowEl,ri)=>{
+      const qtext=rowEl.querySelector('textarea[data-field="q-text"]')?.value?.trim()||'';
+      const qType=rowEl.querySelector('select[data-field="q-type"]')?.value||'text';
+      const qFile=rowEl.querySelector('input[data-field="q-file"]')?.value?.trim()||'';
+      const atext=rowEl.querySelector('textarea[data-field="a-text"]')?.value?.trim()||'';
+      const aType=rowEl.querySelector('select[data-field="a-type"]')?.value||'text';
+      const a1=rowEl.querySelector('input[data-field="a-file1"]')?.value?.trim()||'';
+      const a2=rowEl.querySelector('input[data-field="a-file2"]')?.value?.trim()||'';
+      const q={ id:`Q-${ci+1}${ri+1}`, points:editorPointsForRow(ri,bt) };
+      if(qtext) q.text=qtext;
+      if(atext) q.answer=atext;
+      if(qType==='image'&&qFile) q.image=qFile.endsWith('.jpg')?qFile:qFile+'.jpg';
+      if(qType==='mp3'&&qFile) q.audio=qFile.endsWith('.mp3')?qFile:qFile+'.mp3';
+      if(qType==='mp4'&&qFile) q.video=qFile.endsWith('.mp4')?qFile:qFile+'.mp4';
+      if(aType==='img1'&&a1) q.answer_images=[a1.endsWith('.jpg')?a1:a1+'.jpg'];
+      if(aType==='img2'&&a1&&a2) q.answer_images=[a1.endsWith('.jpg')?a1:a1+'.jpg', a2.endsWith('.jpg')?a2:a2+'.jpg'];
+      if(aType==='mp3'&&a1) q.answer_audio=a1.endsWith('.mp3')?a1:a1+'.mp3';
+      if(aType==='mp4'&&a1) q.answer_video=a1.endsWith('.mp4')?a1:a1+'.mp4';
+      questions.push(q);
+    });
+    cats.push({ title, questions });
+  });
+  data.categories=cats;
+  return data;
+}
+function editorExport(){
+  const out=editorBuildFromForm();
+  const blob=new Blob([JSON.stringify(out,null,2)],{type:'application/json'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  const base=(__editorLoadedUrl?__editorLoadedUrl.split('/').pop().replace(/\.json$/,''):'board');
+  a.download=`${base}_${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+}
+function renderEditor(){
+  if(role!=='editor') return;
+  editorEnsureDefaults();
+  if(els.board) els.board.style.display='none';
+  if(els.overlay) els.overlay.style.display='none';
+  if(els.playersBar) els.playersBar.style.display='none';
+  const controls=document.querySelector('.controls'); if(controls) controls.style.display='none';
+  if(els.editorPage) els.editorPage.hidden=false;
+  if(els.editorBoards){
+    els.editorBoards.innerHTML='<option value="">Board wählen…</option>';
+    (boards||[]).forEach(b=>{ const o=document.createElement('option'); o.value=b.url; o.textContent=b.label||b.url; if(__editorLoadedUrl&&b.url===__editorLoadedUrl) o.selected=true; els.editorBoards.appendChild(o); });
+  }
+  if(els.editorTitle) els.editorTitle.textContent=__editorLoadedUrl?`Bearbeite: ${__editorLoadedUrl}`:'Neues Board (nicht gespeichert)';
+  const host=document.getElementById('editorFormHost'); if(!host) return;
+  host.innerHTML='';
+  const bt=els.editorBoardType?.value||'board1';
+  data.categories.forEach((cat,ci)=>{
+    const wrap=document.createElement('div'); wrap.className='editor-cat'; wrap.dataset.cat=String(ci);
+    wrap.innerHTML=`<div class="editor-cat-head"><label>Kategorie ${ci+1}:</label><input data-field="cat-title" value="${escapeHtml(cat.title||'')}" /></div><div class="editor-tablewrap"><table class="editor-table"><thead><tr><th>Punkte</th><th>Frage</th><th>Frage-Medium</th><th>Datei</th><th>Antwort</th><th>Antwort-Medium</th><th>Datei 1</th><th>Datei 2</th></tr></thead><tbody></tbody></table></div>`;
+    const tbody=wrap.querySelector('tbody');
+    const qs=Array.isArray(cat.questions)?cat.questions:[];
+    for(let ri=0;ri<5;ri++){
+      const q=qs[ri]||{};
+      const pts=editorPointsForRow(ri,bt);
+      const qType=q.image?'image':(q.audio?'mp3':(q.video?'mp4':'text'));
+      const qFile=q.image||q.audio||q.video||'';
+      let aType='text', f1='', f2='';
+      if(Array.isArray(q.answer_images)&&q.answer_images.length===1){aType='img1'; f1=q.answer_images[0]||'';}
+      if(Array.isArray(q.answer_images)&&q.answer_images.length>=2){aType='img2'; f1=q.answer_images[0]||''; f2=q.answer_images[1]||'';}
+      if(q.answer_audio){aType='mp3'; f1=q.answer_audio;}
+      if(q.answer_video){aType='mp4'; f1=q.answer_video;}
+      const tr=document.createElement('tr'); tr.dataset.row=String(ri);
+      tr.innerHTML=`<td class="pts">${pts}</td><td><textarea data-field="q-text" rows="2">${escapeHtml(q.text||'')}</textarea></td><td><select data-field="q-type"><option value="text"${qType==='text'?' selected':''}>Text</option><option value="image"${qType==='image'?' selected':''}>Bild (.jpg)</option><option value="mp3"${qType==='mp3'?' selected':''}>MP3 (.mp3)</option><option value="mp4"${qType==='mp4'?' selected':''}>MP4 (.mp4)</option></select></td><td><input data-field="q-file" value="${escapeHtml(stripExt(qFile))}" placeholder="Dateiname ohne Endung" /></td><td><textarea data-field="a-text" rows="2">${escapeHtml(q.answer||'')}</textarea></td><td><select data-field="a-type"><option value="text"${aType==='text'?' selected':''}>Text</option><option value="img1"${aType==='img1'?' selected':''}>1 Bild (.jpg)</option><option value="img2"${aType==='img2'?' selected':''}>2 Bilder (.jpg)</option><option value="mp3"${aType==='mp3'?' selected':''}>MP3 (.mp3)</option><option value="mp4"${aType==='mp4'?' selected':''}>MP4 (.mp4)</option></select></td><td><input data-field="a-file1" value="${escapeHtml(stripExt(f1))}" placeholder="Dateiname ohne Endung" /></td><td><input data-field="a-file2" value="${escapeHtml(stripExt(f2))}" placeholder="nur bei 2 Bildern" /></td>`;
+      tbody.appendChild(tr);
+    }
+    host.appendChild(wrap);
+  });
+  host.querySelectorAll('select[data-field="a-type"]').forEach(sel=>{
+    const upd=()=>{ const tr=sel.closest('tr'); const file2=tr?.querySelector('input[data-field="a-file2"]'); if(!file2) return; file2.disabled=(sel.value!=='img2'); if(sel.value!=='img2') file2.value=''; };
+    sel.addEventListener('change', upd); upd();
+  });
+}
 /* ======= Init ======= */
 init();
 async function init() {
-  if (role === 'host') {
+  if (role === 'host' || role === 'editor') {
     await loadBoardsList();               // optional: lädt data/boards.json, falls vorhanden
     const startUrl = getInitialBoardUrl();
     await loadContent(startUrl);
@@ -451,6 +590,13 @@ async function init() {
     // Screen lädt kein eigenes JSON, sondern wartet auf Sync vom Host
   }
   loadState();
+
+  // Bild in Modal per Klick vergrößern (Host & Publikum)
+  if (els.qImg) els.qImg.addEventListener('click', () => openLightboxFromImg(els.qImg));
+  const a1 = document.getElementById('ansImg1');
+  const a2 = document.getElementById('ansImg2');
+  if (a1) a1.addEventListener('click', () => openLightboxFromImg(a1));
+  if (a2) a2.addEventListener('click', () => openLightboxFromImg(a2));
 
   // Publikum: Kontextmenü auf Media sperren (Download-Menü etc.)
   if (role==='screen'){
@@ -477,6 +623,14 @@ async function init() {
   renderPlayersBar(role === 'screen');
   renderBoard();
   renderOverlay();
+  if (role === 'editor') {
+    if (els.editorNewBtn) els.editorNewBtn.onclick = () => editorNewBoard();
+    if (els.editorLoadBtn) els.editorLoadBtn.onclick = () => editorLoadSelected();
+    if (els.editorExportJson) els.editorExportJson.onclick = () => editorExport();
+    if (els.editorBoardType) els.editorBoardType.onchange = () => renderEditor();
+    if (els.editorBoards) els.editorBoards.onchange = () => editorLoadSelected();
+    renderEditor();
+  }
   attachGlobalHandlers();
   if (role === 'host') {
     sendSync();
@@ -501,7 +655,7 @@ async function loadContent(urlOrFileText) {
 }
 
 async function loadBoardsList() {
-  if (role !== 'host') return;
+  if (role !== 'host' && role !== 'editor') return;
   try {
     const res = await fetch('data/boards.json', { cache: 'no-store' });
     if (!res.ok) return;
@@ -594,6 +748,14 @@ async function loadBoardFromUrl(url) {
   renderPlayersBar();
   renderBoard();
   renderOverlay();
+  if (role === 'editor') {
+    if (els.editorNewBtn) els.editorNewBtn.onclick = () => editorNewBoard();
+    if (els.editorLoadBtn) els.editorLoadBtn.onclick = () => editorLoadSelected();
+    if (els.editorExportJson) els.editorExportJson.onclick = () => editorExport();
+    if (els.editorBoardType) els.editorBoardType.onchange = () => renderEditor();
+    if (els.editorBoards) els.editorBoards.onchange = () => editorLoadSelected();
+    renderEditor();
+  }
   sendSync();
 }
 window.SFX_BASE = (data && data.settings && data.settings.media_base) || 'media/';
@@ -630,6 +792,14 @@ function __setPlayerAvatar(playerId, dataUrl){
   else delete __avatarCache[playerId];
   saveState();
   renderOverlay();
+  if (role === 'editor') {
+    if (els.editorNewBtn) els.editorNewBtn.onclick = () => editorNewBoard();
+    if (els.editorLoadBtn) els.editorLoadBtn.onclick = () => editorLoadSelected();
+    if (els.editorExportJson) els.editorExportJson.onclick = () => editorExport();
+    if (els.editorBoardType) els.editorBoardType.onchange = () => renderEditor();
+    if (els.editorBoards) els.editorBoards.onchange = () => editorLoadSelected();
+    renderEditor();
+  }
   if (els && els.playersBar) renderPlayersBar(role === 'screen');
   sendSync();
   __saveAvatarRemote(playerId, dataUrl);
@@ -719,6 +889,14 @@ function renderPlayersBar(readOnly=false) {
           el.classList.toggle('off', !p.jokers[key]);
           saveState();
           renderOverlay();
+  if (role === 'editor') {
+    if (els.editorNewBtn) els.editorNewBtn.onclick = () => editorNewBoard();
+    if (els.editorLoadBtn) els.editorLoadBtn.onclick = () => editorLoadSelected();
+    if (els.editorExportJson) els.editorExportJson.onclick = () => editorExport();
+    if (els.editorBoardType) els.editorBoardType.onchange = () => renderEditor();
+    if (els.editorBoards) els.editorBoards.onchange = () => editorLoadSelected();
+    renderEditor();
+  }
           sendSync();
           // Publikum: Animation nur beim "Verbrauchen" (an -> aus)
           if (prev && !p.jokers[key]) send('JOKER_USED', { jokerKey: key, playerId: p.id });
@@ -855,7 +1033,7 @@ function openQuestion(col, row) {
   saveState();
   sendSync();
 
-  send('SHOW_Q', { id, q: { cat: cat.title, points: q.points, text: (q.text || q.question), answer: (q.answer || q.solution), image: q.image, image_reveal: q.image_reveal, audio: q.audio, video: q.video, answer_images: q.answer_images, ans1: q.ans1, ans2: q.ans2, type: q.type, estimate: q.estimate }});
+  send('SHOW_Q', { id, q: { cat: cat.title, points: q.points, text: (q.text || q.question), answer: (q.answer || q.solution), image: q.image, image_reveal: q.image_reveal, audio: q.audio, video: q.video, answer_images: q.answer_images, answer_audio: q.answer_audio, answer_video: q.answer_video, ans1: q.ans1, ans2: q.ans2, type: q.type, estimate: q.estimate }});
 
   populatePlayerSelect(id, starterId);
   updateAttemptInfo(id);
@@ -879,6 +1057,7 @@ function openQuestion(col, row) {
     }
     // answer images (0–2)
     showAnswerImages(current.q, base);
+    setAnswerMedia(current.q, base);
 };
 
   els.correctBtn.onclick = () => onResult('correct');
@@ -1369,11 +1548,31 @@ function playSfx(kind, opts) {
 
 
 function resetAnswerImages(){
+  resetAnswerMedia();
   if (!els.answerImages) return;
   els.answerImages.hidden = true;
   els.answerImages.classList.remove('single');
   if (els.ansImg1) { els.ansImg1.src = ''; els.ansImg1.hidden = true; }
   if (els.ansImg2) { els.ansImg2.src = ''; els.ansImg2.hidden = true; }
+}
+
+
+function resetAnswerMedia(){
+  if (els.ansAud){ try{ els.ansAud.pause(); }catch(e){} els.ansAud.removeAttribute('src'); els.ansAud.hidden = true; }
+  if (els.ansVid){ try{ els.ansVid.pause(); }catch(e){} els.ansVid.removeAttribute('src'); els.ansVid.hidden = true; }
+}
+function setAnswerMedia(q, base){
+  resetAnswerMedia();
+  if (!q) return;
+  base = base || (data.settings && data.settings.media_base) || 'media/';
+  if (q.answer_audio && els.ansAud){
+    els.ansAud.src = base + q.answer_audio;
+    els.ansAud.hidden = false;
+  }
+  if (q.answer_video && els.ansVid){
+    els.ansVid.src = base + q.answer_video;
+    els.ansVid.hidden = false;
+  }
 }
 
 function showAnswerImages(q, base='media/'){
@@ -1416,6 +1615,13 @@ function showAnswerImagesForCurrent(){
     showAnswerImages((current && current.q) ? current.q : null, base);
   } catch (e) {}
 }
+function showAnswerMediaForCurrent(){
+  try{
+    const base = (data.settings && data.settings.media_base) || 'media/';
+    if (current && current.q) setAnswerMedia(current.q, base);
+  }catch(e){}
+}
+
 
 function setMedia(q){
   const base = (data.settings && data.settings.media_base) || 'media/';
@@ -1430,6 +1636,14 @@ function addPoints(pid, delta, {log=false}={}){
   const p = state.players.find(x => x.id === pid);
   if (p && p._scoreEl) p._scoreEl.textContent = state.scores[pid];
   renderOverlay();
+  if (role === 'editor') {
+    if (els.editorNewBtn) els.editorNewBtn.onclick = () => editorNewBoard();
+    if (els.editorLoadBtn) els.editorLoadBtn.onclick = () => editorLoadSelected();
+    if (els.editorExportJson) els.editorExportJson.onclick = () => editorExport();
+    if (els.editorBoardType) els.editorBoardType.onchange = () => renderEditor();
+    if (els.editorBoards) els.editorBoards.onchange = () => editorLoadSelected();
+    renderEditor();
+  }
   if (log) pushHistory({ type:'POINTS', pid, delta });
   saveState(); sendScores();
 }
@@ -1740,7 +1954,7 @@ function ensureEstimateUIForScreen(qid, q){
 }
 
 function ensureEstimateUIForHost(qid, q){
-  if (role !== 'host') return;
+  if (role !== 'host' && role !== 'editor') return;
 
   // Wenn keine Schätzfrage: Host-UI entfernen und Listener stoppen (Firestore unangetastet lassen)
   if (!isEstimateQuestion(q)) {
@@ -1958,7 +2172,7 @@ function markClosestEstimate(q){
 }
 
 function deleteEstimateEntry(clientId){
-  if (role !== 'host') return;
+  if (role !== 'host' && role !== 'editor') return;
   try{
     if (!window.db || !__estimateHostDocRef) return;
     const del = firebase.firestore.FieldValue.delete();
@@ -1982,7 +2196,7 @@ function deleteEstimateEntry(clientId){
 
 function persistEstimateMeta(){
   try{
-    if (role !== 'host') return;
+    if (role !== 'host' && role !== 'editor') return;
     if (!__estimateHostDocRef) return;
     __estimateHostDocRef.set({
       __reveal: __estimateReveal || {},
@@ -2076,6 +2290,10 @@ function fx(type){
 }
 
 function attachGlobalHandlers() {
+  if (els.editorBtn && role === 'host') {
+    els.editorBtn.onclick = () => window.open(`${location.pathname}?view=editor&key=${HOST_SECRET}`, 'quiz-editor');
+  }
+
   if (els.boardSelect && role === 'host') {
     els.boardSelect.onchange = async (e) => {
       const id = e.target.value;
@@ -2102,7 +2320,7 @@ function attachGlobalHandlers() {
   }
 
   els.resetBtn.onclick = () => {
-    if (role !== 'host') return;
+    if (role !== 'host' && role !== 'editor') return;
     if (!confirm('Spielstand wirklich löschen?')) return;
     for (const p of state.players) state.scores[p.id] = 0;
     state.q = {}; state.used = new Set(); state.history = []; state.turn = 0;

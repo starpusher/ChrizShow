@@ -303,3 +303,25 @@ dialog.nonmodal[open]{
   margin:0;
   z-index:20;
 }
+
+
+/* ======= Lightbox ======= */
+.lightbox{ position: fixed; inset: 0; background: rgba(0,0,0,.85); display:flex; align-items:center; justify-content:center; z-index:9999; }
+.lightbox[hidden]{ display:none; }
+.lightbox img{ max-width:95vw; max-height:95vh; border-radius:12px; }
+
+/* ======= Editor ======= */
+.editorPage{ padding:16px; }
+.editorTop{ display:flex; flex-direction:column; gap:10px; margin:12px 0 18px; }
+.editorTitle{ font-size:28px; font-family:'Bebas Neue', sans-serif; letter-spacing:1px; }
+.editorBar{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+.editorHint{ opacity:.8; font-size:14px; }
+.editorFormHost{ display:flex; flex-direction:column; gap:18px; }
+.editor-cat{ background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.12); border-radius:14px; padding:12px; }
+.editor-cat-head{ display:flex; gap:10px; align-items:center; margin-bottom:10px; }
+.editor-cat-head input{ flex:1; }
+.editor-tablewrap{ overflow:auto; }
+.editor-table{ width:100%; border-collapse:collapse; min-width:950px; }
+.editor-table th, .editor-table td{ border-bottom:1px solid rgba(255,255,255,.12); padding:8px; vertical-align:top; }
+.editor-table textarea{ width:100%; }
+.editor-table input{ width:100%; }
