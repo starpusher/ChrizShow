@@ -89,7 +89,7 @@ body.audience #buzzEnableBtn{display:none !important}
 /* Buzzer-Queue Sidebox (öffnet/schließt mit dem Frage-Modal) */
 .buzz-side{
   position:absolute;
-  right:24px;
+  right:-300px;
   top:92px;
   width:260px;
   max-height:calc(100% - 140px);
@@ -100,6 +100,9 @@ body.audience #buzzEnableBtn{display:none !important}
   background:rgba(10,12,25,.65);
   backdrop-filter: blur(10px);
   box-shadow: 0 18px 50px rgba(0,0,0,.45);
+}
+@media (max-width: 1200px){
+  .buzz-side{ right: 16px; width: 240px; }
 }
 .buzz-side-title{font-weight:800;letter-spacing:.02em;opacity:.9;margin-bottom:10px;text-align:center}
 .buzz-side-list{display:flex;flex-direction:column;gap:8px}

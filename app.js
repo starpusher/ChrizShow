@@ -66,7 +66,14 @@ function handleMsg(msg) {
   }
   switch (type) {
     case 'JOKER_USED': {
-      // Publikum: kurze Joker-Animation
+      // Publikum: kurze Joker-Animation (auch __lastJokerTs aktualisieren, damit es nicht erneut bei SYNC_STATE triggert)
+      try{
+        const ts = (payload && payload.ts) ? Number(payload.ts) : Date.now();
+        if (ts > __lastJokerTs){
+          __lastJokerTs = ts;
+          try{ localStorage.setItem('quiz_lastJokerTs_v1', String(__lastJokerTs)); }catch(e){}
+        }
+      }catch(e){}
       if (payload) showJokerFx(payload);
       break;
     }
@@ -126,7 +133,7 @@ function handleMsg(msg) {
       data = payload.data;
       window.SFX_BASE = (payload.data && payload.data.settings && payload.data.settings.media_base) || window.SFX_BASE || 'media/';
       if (!window.SFX_BASE.endsWith('/')) window.SFX_BASE += '/';
-      Object.assign(state, { players: payload.state.players, scores: payload.state.scores, q: payload.state.q||{}, settings: payload.state.settings||{}, turn: payload.state.turn||0, current: payload.state.current || null, audio: payload.state.audio || state.audio, fxPulse: payload.state.fxPulse || state.fxPulse, jokerPulse: payload.state.jokerPulse || state.jokerPulse, timer: payload.state.timer || state.timer });
+      Object.assign(state, { players: payload.state.players, scores: payload.state.scores, q: payload.state.q||{}, settings: payload.state.settings||{}, turn: payload.state.turn||0, current: payload.state.current || null, audio: payload.state.audio || state.audio, fxPulse: payload.state.fxPulse || state.fxPulse, jokerPulse: payload.state.jokerPulse || state.jokerPulse, timer: payload.state.timer || state.timer, buzz: payload.state.buzz || state.buzz });
       state.used = new Set(payload.state.used || []);
 
       // Avatare aus separater Sync-Quelle anwenden
@@ -152,6 +159,7 @@ function handleMsg(msg) {
       }catch(e) {}
       renderPlayersBar(true); renderBoard(); renderOverlay();
       applyCurrentForScreen();
+      try{ renderBuzzUI(); }catch(e){}
       try{ showTimer((state.timer && state.timer.seconds) ? state.timer.seconds : 0); }catch(e){}
       syncAudienceAudioFromState();
       break;
@@ -1200,8 +1208,9 @@ function renderPlayersBar(readOnly=false) {
           sendSync();
           // Publikum: Animation nur beim "Verbrauchen" (an -> aus)
           if (prev && !p.jokers[key]) {
-            try{ state.jokerPulse = { ts: Date.now(), jokerKey: key, playerId: p.id }; }catch(e){}
-            send('JOKER_USED', { jokerKey: key, playerId: p.id });
+            const __ts = Date.now();
+            try{ state.jokerPulse = { ts: __ts, jokerKey: key, playerId: p.id }; }catch(e){}
+            send('JOKER_USED', { jokerKey: key, playerId: p.id, ts: __ts });
           }
         };
       }
@@ -1292,8 +1301,9 @@ function renderOverlay(){
           saveState();
           sendSync();
           if (prev && !p.jokers[key]) {
-            try{ state.jokerPulse = { ts: Date.now(), jokerKey: key, playerId: p.id }; }catch(e){}
-            send('JOKER_USED', { jokerKey: key, playerId: p.id });
+            const __ts = Date.now();
+            try{ state.jokerPulse = { ts: __ts, jokerKey: key, playerId: p.id }; }catch(e){}
+            send('JOKER_USED', { jokerKey: key, playerId: p.id, ts: __ts });
           }
         };
       }
@@ -1803,6 +1813,8 @@ function setupRemoteListener() {
 
 /* ======= Publikum ======= */
 function showForAudience(payload){
+  // Buzzer-Name einmalig abfragen: beim Öffnen einer Frage (nicht beim Buzz-Klick)
+  try{ if(!getLocalBuzzName()) ensureLocalBuzzName(); }catch(e){}
   const { id, q } = payload;
   current = { id, q };
   __screenShownId = id;
