@@ -207,6 +207,7 @@ const els = {
   playAud: document.getElementById('playAud'),
   buzzerBtn: document.getElementById('buzzerBtn'),
   buzzerQueue: document.getElementById('buzzerQueue'),
+  buzzWinner: document.getElementById('buzzWinner'),
   timer5Btn: document.getElementById('timer5Btn'),
   timer10Btn: document.getElementById('timer10Btn'),
   timerBox: document.getElementById('timerBox'),
@@ -247,7 +248,7 @@ const els = {
 
 /* ======= Buzzer UI / Sync ======= */
 function getBuzzState(){
-  return state.buzz || { qid: null, enabled: false, queue: [], locked: {} };
+  return state.buzz || { qid: null, enabled: false, winnerId: null, winnerName: null, ts: 0 };
 }
 
 function renderBuzzUI(){
@@ -257,80 +258,89 @@ function renderBuzzUI(){
   const activeForThisQ = (qid && b.qid && String(b.qid) === qid);
   const enabled = !!(activeForThisQ && b.enabled);
 
-  // Button enabled only when buzz window is open and user not already in queue
-  const cid = getLocalBuzzId();
-  const already = !!(activeForThisQ && b.locked && b.locked[cid]);
-  const canClick = (role === 'screen') && enabled && !already;
+  const hasWinner = !!(activeForThisQ && b.winnerName);
+
+  // Publikum kann nur buzzern, wenn freigegeben UND noch niemand gebuzzert hat
+  const canClick = (role === 'screen') && enabled && !hasWinner;
   els.buzzerBtn.disabled = !canClick;
 
-  // Queue
-  const q = (activeForThisQ && Array.isArray(b.queue)) ? b.queue : [];
-
-  // Side box (always present when modal is open)
-  if (els.buzzSide && els.buzzSideList){
-    els.buzzSide.hidden = !(current && current.id);
-    if (q.length){
-      els.buzzSideList.innerHTML = q.map((item, idx) => {
-        const n = (item && item.name) ? String(item.name) : 'Teilnehmer';
-        return `<div class="buzz-side-item"><span class="n">${idx+1}.</span><span class="name">${escapeHtml(n)}</span></div>`;
-      }).join('');
+  // Gewinnertext unter der Frage (Host + Publikum)
+  if (els.buzzWinner){
+    if (activeForThisQ && b.winnerName){
+      els.buzzWinner.hidden = false;
+      els.buzzWinner.textContent = `${b.winnerName} hat gebuzzert`;
     } else {
-      els.buzzSideList.innerHTML = `<div class="buzz-side-item"><span class="n">–</span><span class="name">Noch niemand</span></div>`;
+      els.buzzWinner.hidden = true;
+      els.buzzWinner.textContent = '';
     }
   }
 
-  // (optional) compact queue bar (legacy)
-  if (els.buzzerQueue){
-    if (q.length){
-      els.buzzerQueue.hidden = false;
-      els.buzzerQueue.innerHTML = q.map((item, idx) => {
-        const n = (item && item.name) ? String(item.name) : 'Teilnehmer';
-        return `<span class="bz-item"><span class="bz-n">${idx+1}.</span>${escapeHtml(n)}</span>`;
-      }).join('');
-    } else {
-      els.buzzerQueue.hidden = true;
-      els.buzzerQueue.innerHTML = '';
-    }
-  }
+  // Alte Queue-Elemente ausblenden (falls im DOM vorhanden)
+  if (els.buzzerQueue){ els.buzzerQueue.hidden = true; els.buzzerQueue.innerHTML = ''; }
+  if (els.buzzSide){ els.buzzSide.hidden = true; }
 }
 
 function resetBuzzForQuestion(qid){
-  state.buzz = { qid: String(qid), enabled: false, queue: [], locked: {} };
+  state.buzz = { qid: String(qid), enabled: false, winnerId: null, winnerName: null, ts: 0 };
+
   // stop listening from previous question
   if (__buzzUnsub){ try{ __buzzUnsub(); }catch(e){} __buzzUnsub = null; }
   __buzzQid = null;
+
+  // Firestore-Buzz-Doc zurücksetzen
+  try{
+    if (window.db){
+      const roomRef = window.db.collection('rooms').doc(remoteRoomId);
+      roomRef.collection('buzz').doc(String(qid)).set({ enabled:false, winnerId:null, winnerName:null, ts:0 }, { merge:true });
+    }
+  }catch(e){}
+}
+
+function startBuzzDocListener(qid){
+  if (!window.db) return;
+  const roomRef = window.db.collection('rooms').doc(remoteRoomId);
+  if (__buzzUnsub){ try{ __buzzUnsub(); }catch(e){} __buzzUnsub = null; }
+  __buzzQid = String(qid);
+  __buzzUnsub = roomRef.collection('buzz').doc(String(qid)).onSnapshot((doc)=>{
+    const d = (doc && doc.exists) ? (doc.data()||{}) : {};
+    const cur = getBuzzState();
+    // nur updaten, wenn wir auch wirklich in dieser Frage sind
+    const currentQid = current && current.id ? String(current.id) : null;
+    if (!currentQid || String(currentQid) !== String(qid)) return;
+
+    state.buzz = {
+      qid: String(qid),
+      enabled: !!d.enabled,
+      winnerId: d.winnerId || null,
+      winnerName: d.winnerName || null,
+      ts: Number(d.ts||0)
+    };
+
+    // Host spiegelt das in den globalen Sync-State, Publikum rendert lokal
+    try{ if (role === 'host'){ saveState(); sendSync(); } }catch(e){}
+    renderBuzzUI();
+  });
 }
 
 function enableBuzzForCurrent(){
   const qid = current && current.id ? String(current.id) : null;
   if (!qid) return;
   if (!state.buzz || String(state.buzz.qid) !== qid){ resetBuzzForQuestion(qid); }
-  if (state.buzz.enabled) return;
+  // freigeben (auch mehrfach möglich)
   state.buzz.enabled = true;
+  state.buzz.winnerId = null;
+  state.buzz.winnerName = null;
+  state.buzz.ts = Date.now();
   saveState(); sendSync();
 
-  // host listens for buzz entries in firestore
-  if (role === 'host' && window.db){
-    const roomRef = window.db.collection('rooms').doc(remoteRoomId);
-    if (__buzzUnsub){ try{ __buzzUnsub(); }catch(e){} }
-    __buzzQid = qid;
-    __buzzUnsub = roomRef.collection('buzz').doc(qid).collection('entries')
-      .onSnapshot((snap) => {
-        const entries = [];
-        snap.forEach((doc) => {
-          const d = doc.data() || {};
-          entries.push({ id: doc.id, name: d.name || 'Teilnehmer', ts: d.ts || 0 });
-        });
-        entries.sort((a,b)=> (a.ts||0) - (b.ts||0));
-        // lock + queue in shared state
-        const locked = {};
-        entries.forEach((e)=>{ locked[e.id] = true; });
-        state.buzz.queue = entries;
-        state.buzz.locked = locked;
-        saveState(); sendSync();
-        renderBuzzUI();
-      });
-  }
+  // Firestore-Doc setzen + Listener starten (Host + Publikum)
+  try{
+    if (window.db){
+      const roomRef = window.db.collection('rooms').doc(remoteRoomId);
+      roomRef.collection('buzz').doc(qid).set({ enabled:true, winnerId:null, winnerName:null, ts: Date.now() }, { merge:true });
+      startBuzzDocListener(qid);
+    }
+  }catch(e){}
 }
 
 async function buzzNow(){
@@ -338,23 +348,31 @@ async function buzzNow(){
   const b = getBuzzState();
   const qid = current && current.id ? String(current.id) : null;
   if (!qid || !b.enabled || String(b.qid) !== qid) return;
-  const cid = getLocalBuzzId();
-  if (b.locked && b.locked[cid]) return;
+  if (b.winnerName) return; // schon jemand gebuzzert
 
-  // ensure name (but DO NOT prompt on click; prompt happens on question open)
+  const cid = getLocalBuzzId();
+
+  // Name muss vorher gesetzt sein (Prompt beim Öffnen der Frage)
   const name = getLocalBuzzName();
   if (!name) return;
 
   try{
     if (!window.db) return;
     const roomRef = window.db.collection('rooms').doc(remoteRoomId);
-    const docRef = roomRef.collection('buzz').doc(qid).collection('entries').doc(cid);
-    await docRef.set({ name, ts: Date.now() }, { merge: true });
+    const docRef = roomRef.collection('buzz').doc(qid);
+
+    // Atomar: nur erster gewinnt
+    await window.db.runTransaction(async (tx) => {
+      const snap = await tx.get(docRef);
+      const d = snap.exists ? (snap.data()||{}) : {};
+      if (d.winnerId) return;
+      tx.set(docRef, { enabled:false, winnerId: cid, winnerName: name, ts: Date.now() }, { merge:true });
+    });
   }catch(e){}
 }
 
 function clearBuzz(){
-  if (state.buzz){ state.buzz.enabled = false; state.buzz.queue = []; state.buzz.locked = {}; }
+  if (state.buzz){ state.buzz.enabled = false; state.buzz.winnerId = null; state.buzz.winnerName = null; state.buzz.ts = 0; }
   if (__buzzUnsub){ try{ __buzzUnsub(); }catch(e){} __buzzUnsub = null; }
   __buzzQid = null;
 }
@@ -1355,13 +1373,9 @@ function openQuestion(col, row) {
   if (els.buzzEnableBtn){
     if (role === 'host'){
       els.buzzEnableBtn.hidden = false;
-      els.buzzEnableBtn.disabled = false;
       els.buzzEnableBtn.textContent = 'Buzzer freigeben';
       els.buzzEnableBtn.onclick = () => {
         try{ enableBuzzForCurrent(); }catch(e){}
-        // nach Freigabe nicht nochmal toggeln (Queue bleibt bis Frage endet)
-        els.buzzEnableBtn.disabled = true;
-        els.buzzEnableBtn.textContent = 'Buzzer freigegeben';
         try{ renderBuzzUI(); }catch(e){}
       };
     } else {
@@ -1596,8 +1610,8 @@ function finishQuestion(winnerId) {
   state.current = null;
   state.audio = { playing:false, t:0, ts: Date.now() };
 
-  // Buzzer zurücksetzen
-  try{ clearBuzz(); }catch(e){}
+  // Buzzer zurücksetzen (auch Firestore)
+  try{ resetBuzzForQuestion(qid); clearBuzz(); }catch(e){}
 
   // Wenn jemand ein Bild vergrößert hat: überall schließen
   try{ closeImgLightbox(); }catch(e){}
@@ -2037,7 +2051,9 @@ function saveState() {
     audio: state.audio,
     fxPulse: state.fxPulse || null,
     jokerPulse: state.jokerPulse || null,
-    timer: state.timer || { seconds:0, ts:0 }
+    timer: state.timer || { seconds:0, ts:0 },
+    // Buzzer (wird für Publikum/Host synchronisiert)
+    buzz: state.buzz || { qid:null, enabled:false, winnerId:null, winnerName:null, ts:0 }
   };
   localStorage.setItem('quiz_state', JSON.stringify(payload));
 }
@@ -2597,7 +2613,8 @@ function sendSync() {
     audio: state.audio,
     fxPulse: state.fxPulse || null,
     jokerPulse: state.jokerPulse || null,
-    timer: state.timer || { seconds:0, ts:0 }
+    timer: state.timer || { seconds:0, ts:0 },
+    buzz: state.buzz || { qid:null, enabled:false, winnerId:null, winnerName:null, ts:0 }
   };
 
   // lokal an andere Tabs (selber Browser)
@@ -2625,7 +2642,8 @@ function sendSync() {
         audio: state.audio,
         fxPulse: state.fxPulse || null,
     jokerPulse: state.jokerPulse || null,
-    timer: state.timer || { seconds:0, ts:0 }
+    timer: state.timer || { seconds:0, ts:0 },
+    buzz: state.buzz || { qid:null, enabled:false, winnerId:null, winnerName:null, ts:0 }
       };
 
       const docData = {

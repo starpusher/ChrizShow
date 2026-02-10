@@ -109,8 +109,43 @@ body.audience #buzzEnableBtn{display:none !important}
 .buzz-side-item{display:flex;align-items:center;gap:10px;padding:10px 10px;border-radius:14px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.06)}
 .buzz-side-item .n{font-weight:900;opacity:.85;min-width:26px;text-align:right}
 .buzz-side-item .name{font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.buzzer{background:#2a193f;border:1px solid #3a2a60;border-radius:.6rem;color:#d6c9ff;padding:.45rem .85rem;font-weight:900;letter-spacing:.06em;cursor:pointer}
-.buzzer:disabled{opacity:.35;cursor:not-allowed;filter:grayscale(1)}
+.buzzer{
+  width:84px;
+  height:44px;
+  border-radius:999px;
+  border:1px solid rgba(255,255,255,.18);
+  background:radial-gradient(circle at 30% 30%, rgba(255,255,255,.35), rgba(255,255,255,.08) 40%, rgba(0,0,0,.35) 75%),
+             radial-gradient(circle at 50% 50%, #ff3b3b, #9b0f0f 70%);
+  box-shadow:0 10px 25px rgba(0,0,0,.35), inset 0 2px 8px rgba(255,255,255,.25);
+  color:#fff;
+  font-weight:900;
+  letter-spacing:.08em;
+  cursor:pointer;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+}
+.buzzer:active{ transform: translateY(1px); }
+.buzzer:disabled{
+  cursor:not-allowed;
+  filter:grayscale(1);
+  opacity:.45;
+  background:radial-gradient(circle at 30% 30%, rgba(255,255,255,.25), rgba(255,255,255,.06) 40%, rgba(0,0,0,.35) 75%),
+             radial-gradient(circle at 50% 50%, #7a7a7a, #2f2f2f 70%);
+}
+
+.buzz-winner{
+  margin:.35rem auto .2rem;
+  max-width:860px;
+  text-align:center;
+  font-weight:900;
+  letter-spacing:.02em;
+  color:#fff;
+  background:rgba(0,0,0,.25);
+  border:1px solid rgba(255,255,255,.12);
+  border-radius:.8rem;
+  padding:.45rem .75rem;
+}
 .timer{background:var(--panel);border:1px solid #2b2b47;color:var(--text);padding:.45rem .65rem;border-radius:.6rem;cursor:pointer}
 .timerbox{background:#2a2a45;border:1px solid #3a3a60;padding:.25rem .5rem;border-radius:.5rem}
 .qtext{font-size:1.6rem;margin:.8rem 0}
