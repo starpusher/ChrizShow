@@ -94,6 +94,7 @@
         <div id="turnBadge" class="turnbadge" hidden></div>
         <div class="midcontrols" id="midControls">
           <button id="buzzerBtn" type="button" class="buzzer" disabled>BUZZ</button>
+          <button id="buzzEnableBtn" type="button" class="timer" title="Buzzer freigeben (Host)">Buzzer freigeben</button>
           <button id="timer5Btn" type="button" class="timer">⏱ 5s</button>
           <button id="timer10Btn" type="button" class="timer">⏱ 10s</button>
           <div id="timerBox" class="timerbox" hidden>10</div>
@@ -102,6 +103,13 @@
       </header>
 
       <div id="qText" class="qtext"></div>
+
+      <!-- Buzzer-Queue: rechts neben der Frage (öffnet/schließt mit Modal) -->
+      <div id="buzzSide" class="buzz-side" hidden>
+        <div class="buzz-side-title">Buzzer-Reihenfolge</div>
+        <div id="buzzSideList" class="buzz-side-list"></div>
+      </div>
+
       <div id="buzzerQueue" class="buzzer-queue" hidden></div>
       <img id="qImg" class="qimg" alt="" hidden />
       <audio id="qAud" controls hidden></audio>

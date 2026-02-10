@@ -218,6 +218,9 @@ const els = {
   answerImages: document.getElementById('answerImages'),
   ansImg1: document.getElementById('ansImg1'),
   ansImg2: document.getElementById('ansImg2'),
+  buzzEnableBtn: document.getElementById('buzzEnableBtn'),
+  buzzSide: document.getElementById('buzzSide'),
+  buzzSideList: document.getElementById('buzzSideList'),
   editorBtn: document.getElementById('editorBtn'),
   refreshBoardsBtn: document.getElementById('refreshBoardsBtn'),
   editorPage: document.getElementById('editorPage'),
@@ -253,8 +256,23 @@ function renderBuzzUI(){
   els.buzzerBtn.disabled = !canClick;
 
   // Queue
+  const q = (activeForThisQ && Array.isArray(b.queue)) ? b.queue : [];
+
+  // Side box (always present when modal is open)
+  if (els.buzzSide && els.buzzSideList){
+    els.buzzSide.hidden = !(current && current.id);
+    if (q.length){
+      els.buzzSideList.innerHTML = q.map((item, idx) => {
+        const n = (item && item.name) ? String(item.name) : 'Teilnehmer';
+        return `<div class="buzz-side-item"><span class="n">${idx+1}.</span><span class="name">${escapeHtml(n)}</span></div>`;
+      }).join('');
+    } else {
+      els.buzzSideList.innerHTML = `<div class="buzz-side-item"><span class="n">–</span><span class="name">Noch niemand</span></div>`;
+    }
+  }
+
+  // (optional) compact queue bar (legacy)
   if (els.buzzerQueue){
-    const q = (activeForThisQ && Array.isArray(b.queue)) ? b.queue : [];
     if (q.length){
       els.buzzerQueue.hidden = false;
       els.buzzerQueue.innerHTML = q.map((item, idx) => {
@@ -1320,8 +1338,28 @@ function openQuestion(col, row) {
   state.current = { id, answerRevealed: false };
   state.audio = { playing:false, t:0, ts: Date.now() };
 
-  // Buzzer: pro Frage zurücksetzen (erst bei "Falsch" aktiv)
+  // Buzzer: pro Frage zurücksetzen (Freigabe manuell per Host-Button)
   resetBuzzForQuestion(id);
+
+  // Host: Buzzer-Fenster manuell freigeben
+  if (els.buzzEnableBtn){
+    if (role === 'host'){
+      els.buzzEnableBtn.hidden = false;
+      els.buzzEnableBtn.disabled = false;
+      els.buzzEnableBtn.textContent = 'Buzzer freigeben';
+      els.buzzEnableBtn.onclick = () => {
+        try{ enableBuzzForCurrent(); }catch(e){}
+        // nach Freigabe nicht nochmal toggeln (Queue bleibt bis Frage endet)
+        els.buzzEnableBtn.disabled = true;
+        els.buzzEnableBtn.textContent = 'Buzzer freigegeben';
+        try{ renderBuzzUI(); }catch(e){}
+      };
+    } else {
+      // audience/screen
+      els.buzzEnableBtn.hidden = true;
+      els.buzzEnableBtn.onclick = null;
+    }
+  }
 
   try{ renderBuzzUI(); }catch(e){}
 
@@ -1525,8 +1563,7 @@ function onResult(result) {
 
     const othersLeft = state.players.some(p => !state.q[qid].attempts.find(a => a.playerId === p.id));
     if (state.settings.allow_steal && othersLeft) {
-      // Buzzer-Fenster öffnen (Queue bleibt bis Frage endet)
-      try{ enableBuzzForCurrent(); }catch(e){}
+      // Steal möglich: Host kann den Buzzer manuell freigeben (Button im Modal)
       populatePlayerSelect(qid, state.q[qid].starter);
       updateAttemptInfo(qid);
       saveState(); sendSync(); sendScores();
