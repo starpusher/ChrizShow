@@ -138,7 +138,7 @@ body.audience audio, body.audience video { pointer-events:none }
 @keyframes fxflash{ 0%{opacity:0} 10%{opacity:.7} 100%{opacity:0} }
 
 /* ===== Joker-FX (nur sichtbar wenn ausgelöst) ===== */
-#jokerFx{position:fixed;inset:0;pointer-events:none;display:grid;place-items:center;opacity:0;z-index:99999}
+#jokerFx{position:fixed;inset:0;pointer-events:none;display:grid;place-items:center;opacity:0;z-index:999}
 #jokerFx.show{animation:jfxFade 1.6s ease both}
 
 /* Box selbst (kein Layout-Shift, nur Overlay) */
@@ -148,8 +148,8 @@ body.audience audio, body.audience video { pointer-events:none }
   padding:18px 26px;
   border-radius:18px;
   border:1px solid rgba(255,255,255,.14);
-  background: rgba(23,23,42,.98);
-  
+  background:rgba(23,23,42,.78);
+  backdrop-filter: blur(8px);
   box-shadow: 0 10px 40px rgba(0,0,0,.55);
   transform: translateY(10px) scale(.96);
 }
@@ -305,66 +305,51 @@ dialog.nonmodal[open]{
 }
 
 
-
-
-/* ======= Editor ======= */
-.editorPage{ padding:16px; }
-.editorTop{ display:flex; flex-direction:column; gap:10px; margin:12px 0 18px; }
-.editorTitle{ font-size:28px; font-family:'Bebas Neue', sans-serif; letter-spacing:1px; }
-.editorBar{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
-.editorHint{ opacity:.8; font-size:14px; }
-.editorFormHost{ display:flex; flex-direction:column; gap:18px; }
-.editor-cat{ background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.12); border-radius:14px; padding:12px; }
-.editor-cat-head{ display:flex; gap:10px; align-items:center; margin-bottom:10px; }
-.editor-cat-head input{ flex:1; }
-.editor-tablewrap{ overflow:auto; }
-.editor-table{ width:100%; border-collapse:collapse; min-width:950px; }
-.editor-table th, .editor-table td{ border-bottom:1px solid rgba(255,255,255,.12); padding:8px; vertical-align:top; }
-.editor-table textarea{ width:100%; }
-.editor-table input{ width:100%; }
-
-
-/* ======= Image Lightbox (Dialog, always on top) ======= */
-dialog.img-lightbox{
-  border: none;
-  padding: 0;
-  background: transparent;
+/* ======= Buzzer ======= */
+.qhead{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+.qhead h3{ flex:1 1 180px; min-width:140px; }
+.qhead .qpts{ margin-left:auto; }
+.buzzwrap{
+  display:flex; align-items:center; gap:10px;
+  margin-left:auto;
 }
-dialog.img-lightbox::backdrop{
-  background: rgba(0,0,0,.88);
+.buzz{
+  padding:10px 16px;
+  border-radius:999px;
+  border:1px solid rgba(255,255,255,.18);
+  background: rgba(23,23,42,.65);
+  color: var(--text);
+  font-weight:900;
+  letter-spacing:.06em;
+  cursor:pointer;
+  min-width:140px;
+  text-transform:uppercase;
+  box-shadow: 0 10px 30px rgba(0,0,0,.28);
 }
-dialog.img-lightbox[open]{
-  display:flex;
-  align-items:center;
-  justify-content:center;
+.buzz:disabled{
+  opacity:.45;
+  filter:grayscale(1);
+  cursor:not-allowed;
 }
-dialog.img-lightbox img{
-  max-width: 96vw;
-  max-height: 94vh;
-  border-radius: 14px;
-  border: 1px solid rgba(255,255,255,.14);
-  box-shadow: 0 18px 70px rgba(0,0,0,.65);
-  background: #0b0b12;
+.buzz.on{
+  opacity:1;
+  filter:none;
+  background: rgba(155,107,255,.92);
+  border-color: rgba(255,255,255,.22);
+  box-shadow: 0 14px 40px rgba(155,107,255,.22);
 }
-
-
-/* ======= Image Lightbox Overlay (works inside dialog) ======= */
-.img-lightbox-overlay{
-  position: fixed;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 24px;
-  background: rgba(0,0,0,.88);
-  z-index:3000;
+.buzzqueue{
+  font-variant-numeric: tabular-nums;
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.10);
+  padding: 8px 12px;
+  border-radius: 12px;
+  max-width: min(62vw, 680px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
-.img-lightbox-overlay[hidden]{ display:none !important; }
-.img-lightbox-overlay img{
-  max-width: 96vw;
-  max-height: 94vh;
-  border-radius: 14px;
-  border: 1px solid rgba(255,255,255,.14);
-  box-shadow: 0 18px 70px rgba(0,0,0,.65);
-  background: #0b0b12;
-}
+body.audience .buzzwrap{ width:100%; justify-content:center; margin:8px 0 0; }
+body.audience .qhead{ justify-content:center; }
+body.audience .qhead h3{ flex:1 1 100%; text-align:center; }
+body.audience .qhead .qpts, body.audience #turnBadge{ display:none !important; }

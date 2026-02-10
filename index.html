@@ -35,8 +35,6 @@
 
     <div class="controls">
       <button id="presentBtn" title="Publikumsfenster öffnen">Präsentation</button>
-      <button id="editorBtn" title="Board-Editor öffnen">Editor</button>
-      <button id="refreshBoardsBtn" title="Boards-Liste neu laden">Boards aktualisieren</button>
       <button id="addPlayerBtn">+ Spieler</button>
       <button id="undoBtn" title="Letzte Aktion rückgängig (Strg+Z)">Undo</button>
       <button id="exportBtn">Export</button>
@@ -56,33 +54,6 @@
     <section id="board" class="board" aria-live="polite"></section>
   </main>
 
-  <section id="editorPage" class="editorPage" hidden>
-    <div class="editorTop">
-      <div class="editorTitle" id="editorTitle">Editor</div>
-      <div class="editorBar">
-        <select id="editorBoards">
-          <option value="">Board wählen…</option>
-        </select>
-        <select id="editorBoardType">
-          <option value="board1">Board 1 (100–500)</option>
-          <option value="board2">Board 2 (200–1000)</option>
-          <option value="between">Zwischenboard (1 Kategorie, 5×200)</option>
-        </select>
-        <input id="editorBoardName" placeholder="Board-Name (z.B. DownUnder)" />
-        <button id="editorSaveBtn" type="button" title="Speichert das Board im Browser (local)">Speichern</button>
-        <button id="editorSaveAsBtn" type="button" title="Speichern unter…">Speichern unter…</button>
-
-        <button id="editorLoadBtn" type="button">Laden</button>
-        <button id="editorNewBtn" type="button">Neu</button>
-        <button id="editorRefreshBoards" type="button">Boards aktualisieren</button>
-        <button id="editorExportJson" type="button">Export JSON</button>
-      </div>
-      <div class="editorHint">Dateinamen ohne Endung eingeben (Bild .jpg, Audio .mp3, Video .mp4).</div>
-    </div>
-    <div id="editorFormHost" class="editorFormHost"></div>
-  </section>
-
-
   <!-- Overlay unten -->
   <footer id="overlay" class="overlay"></footer>
 
@@ -93,7 +64,12 @@
         <h3 id="qCat"></h3>
         <span id="qPts" class="qpts"></span>
         <div id="turnBadge" class="turnbadge" hidden></div>
-        <button id="timerBtn" type="button" class="timer">⏱ 10s</button>
+        
+        <div class="buzzwrap">
+          <button id="buzzBtn" type="button" class="buzz" disabled>🔔 BUZZ</button>
+          <div id="buzzQueue" class="buzzqueue" hidden></div>
+        </div>
+<button id="timerBtn" type="button" class="timer">⏱ 10s</button>
         <div id="timerBox" class="timerbox" hidden>10</div>
       </header>
 
@@ -110,8 +86,6 @@
   <img id="ansImg1" class="ansimg" alt="">
   <img id="ansImg2" class="ansimg" alt="">
 </div>
-  <audio id="ansAud" controls hidden></audio>
-  <video id="ansVid" controls class="qvid" hidden></video>
       </div>
 
       <div class="attempts">
@@ -139,10 +113,6 @@
 
   <audio id="sfxCorrect" preload="auto" hidden></audio>
 <audio id="sfxWrong" preload="auto" hidden></audio>
-  <dialog id="imgLightbox" class="img-lightbox">
-    <img id="imgLightboxImg" alt="">
-  </dialog>
-
-<script src="app.js" defer></script>
+  <script src="app.js" defer></script>
 </body>
 </html>
