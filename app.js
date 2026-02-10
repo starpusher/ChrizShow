@@ -240,12 +240,6 @@ function toggleLightboxFromImg(el){
   }catch(e){}
 }
 
-
-catch(e){}
-}
-
-
-
 // Audience Audio: bei großen MP3s dauert "metadata/canplay" länger.
 // Wir syncen deshalb nach dem Laden nochmal und starten ggf. neu.
 let __audBindDone = false;
