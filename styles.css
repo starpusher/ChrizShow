@@ -138,7 +138,7 @@ body.audience audio, body.audience video { pointer-events:none }
 @keyframes fxflash{ 0%{opacity:0} 10%{opacity:.7} 100%{opacity:0} }
 
 /* ===== Joker-FX (nur sichtbar wenn ausgelöst) ===== */
-#jokerFx{position:fixed;inset:0;pointer-events:none;display:grid;place-items:center;opacity:0;z-index:999}
+#jokerFx{position:fixed;inset:0;pointer-events:none;display:grid;place-items:center;opacity:0;z-index:99999}
 #jokerFx.show{animation:jfxFade 1.6s ease both}
 
 /* Box selbst (kein Layout-Shift, nur Overlay) */

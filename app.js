@@ -50,11 +50,13 @@ chan.onmessage = ({ data }) => handleMsg(data);
 
 function handleMsg(msg) {
   const { type, payload } = msg || {};
-  if (role !== 'screen') { 
+  if (role !== 'screen') {
     // Host listens to audience play/pause requests (if ever enabled)
     if (type === 'AUD_PLAY') { if (!els.qAud.hidden){ els.qAud.play().catch(()=>{}); } return; }
     if (type === 'AUD_PAUSE'){ if (!els.qAud.hidden){ els.qAud.pause(); } return; }
     if (type === 'SCREEN_READY'){ sendSync(); return; }
+    // Buzzer from audience (same browser via BroadcastChannel)
+    if (type === 'BUZZ') { try{ if(state.buzz && state.buzz.enabled) { addBuzzToQueue({id: payload.clientId, name: payload.name}); renderBuzzUI(); saveState(); sendSync(); } }catch(e){} return; }
     return;
   }
   switch (type) {
@@ -71,6 +73,8 @@ function handleMsg(msg) {
     case 'SHOW_Q': showForAudience(payload); break;
     case 'REVEAL_ANSWER':
       resetAnswerImages();
+      try{ clearBuzz(); renderBuzzUI(); }catch(e){}
+      try{ closeImgLightbox(); }catch(e){}
       showAnswerImagesForCurrent();
       els.answer.hidden = false;
       break;
@@ -81,8 +85,11 @@ function handleMsg(msg) {
 
       // NEU: Antwortbilder zurücksetzen (Publikum)
       resetAnswerImages();
+      try{ clearBuzz(); renderBuzzUI(); }catch(e){}
+      try{ closeImgLightbox(); }catch(e){}
 
       renderBoard(); renderOverlay();
+  try{ renderBuzzUI(); }catch(e){}
       break;
     case 'SCORES':
       state.scores = payload.scores; renderPlayersBar(true); renderOverlay(); break;
@@ -112,44 +119,16 @@ function handleMsg(msg) {
         }
       }
       break;
-   
-renderBuzzUI();
-// Joker FX pulse (nur einmal pro pulse-id)
-try{
-  const jp = state.jokerPulse;
-  if (jp && jp.id && jp.id !== __lastJokerPulseId){
-    __lastJokerPulseId = jp.id;
-    showJokerFx({ jokerKey: jp.jokerKey, playerId: jp.playerId });
-  }
-}catch(e){}
- case 'SYNC_STATE':
+    case 'SYNC_STATE':
       const __prevPlayers = Array.isArray(state.players) ? state.players.map(p=>({id:p.id, jokers:{...(p.jokers||{})}})) : [];
       data = payload.data;
       window.SFX_BASE = (payload.data && payload.data.settings && payload.data.settings.media_base) || window.SFX_BASE || 'media/';
       if (!window.SFX_BASE.endsWith('/')) window.SFX_BASE += '/';
-      Object.assign(state, { players: payload.state.players, scores: payload.state.scores, q: payload.state.q||{}, settings: payload.state.settings||{}, turn: payload.state.turn||0, current: payload.state.current || null, audio: payload.state.audio || state.audio, fxPulse: payload.state.fxPulse || state.fxPulse, timer: payload.state.timer || state.timer });
-      state.used = new Set(payload.state.used || []);
+      Object.assign(state, { players: payload.state.players, scores: payload.state.scores, q: payload.state.q||{}, settings: payload.state.settings||{}, turn: payload.state.turn||0, current: payload.state.current || null, audio: payload.state.audio || state.audio, fxPulse: payload.state.fxPulse || state.fxPulse, timer: payload.state.timer || state.timer, buzz: payload.state.buzz || state.buzz, timerPresetSeconds: payload.state.timerPresetSeconds || state.timerPresetSeconds || 10, jokerPulse: payload.state.jokerPulse || state.jokerPulse});
+state.used = new Set(payload.state.used || []);
 
       // Avatare aus separater Sync-Quelle anwenden
       __applyAvatarCache();
-
-      // Publikum (remote): Joker-Animation auch ohne BroadcastChannel auslösen.
-      if (role === 'screen') {
-        try {
-          const prev = {};
-          (__prevPlayers || []).forEach(p => { prev[p.id] = p.jokers || {}; });
-          (state.players || []).forEach(p => {
-            const pj = prev[p.id] || {};
-            ['j1','j2','j3'].forEach(k => {
-              if (pj[k] === true && (p.jokers && p.jokers[k] === false)) {
-                showJokerFx({ jokerKey: k, playerId: p.id });
-              }
-            });
-          });
-        } catch(e) {}
-      }
-
-
       // Publikum: FX (Richtig/Falsch) auch remote über Sync auslösen
       try {
         const fp = payload.state && payload.state.fxPulse;
@@ -158,6 +137,7 @@ try{
           fxLocal(fp.type || 'correct');
         }
       } catch(e) {}
+      try{ renderBuzzUI(); }catch(e){}
       renderPlayersBar(true); renderBoard(); renderOverlay();
       applyCurrentForScreen();
       try{ showTimer((state.timer && state.timer.seconds) ? state.timer.seconds : 0); }catch(e){}
@@ -215,6 +195,13 @@ const els = {
   importFile: document.getElementById('importFile'),
   loadBtn: document.getElementById('loadBtn'),
   loadFile: document.getElementById('loadFile'),
+  editorBtn: document.getElementById('editorBtn'),
+  editorModal: document.getElementById('editorModal'),
+  editorText: document.getElementById('editorText'),
+  editorLoadBtn: document.getElementById('editorLoadBtn'),
+  editorApplyBtn: document.getElementById('editorApplyBtn'),
+  editorDownloadBtn: document.getElementById('editorDownloadBtn'),
+  editorFile: document.getElementById('editorFile'),
   boardSelect: document.getElementById('boardSelect'),
   presentBtn: document.getElementById('presentBtn'),
   addPlayerBtn: document.getElementById('addPlayerBtn'),
@@ -263,7 +250,8 @@ function ensureJokerFxEl(){
     `;
   }
 
-  const openDialog = document.querySelector("dialog[open]");
+  const lb = document.getElementById('imgLightbox');
+  const openDialog = (lb && lb.open) ? lb : document.querySelector('dialog[open]');
   const mountTarget = openDialog || document.body;
 
   if (fx.parentElement !== mountTarget){
@@ -470,6 +458,9 @@ const state = {
   audio: { playing:false, t:0, ts:0 },
   current: null,                  // aktuell offene Frage (für Publikum)
   turn: 0                         // Index des aktuellen Spielers
+  ,buzz: { enabled:false, qid:null, queue:[], locked:{} }
+  ,timerPresetSeconds: 10
+  ,jokerPulse: null
 };
 let current = { col: -1, row: -1, q: null, id: null };
 let __screenShownId = null; // Publikum: zuletzt gerenderte Frage, um Media-Reloads zu vermeiden
@@ -758,7 +749,13 @@ function renderPlayersBar(readOnly=false) {
           renderOverlay();
           sendSync();
           // Publikum: Animation nur beim "Verbrauchen" (an -> aus)
-          if (prev && !p.jokers[key]) send('JOKER_USED', { jokerKey: key, playerId: p.id });
+          if (prev && !p.jokers[key]) {
+            const jp = { id: String(Date.now()) + '-' + Math.random().toString(16).slice(2), jokerKey: key, playerId: p.id, ts: Date.now() };
+            state.jokerPulse = jp;
+            saveState();
+            sendSync();
+            send('JOKER_USED', jp);
+          }
         };
       }
       jokers.appendChild(el);
@@ -847,7 +844,13 @@ function renderOverlay(){
           el.classList.toggle('off', !p.jokers[key]);
           saveState();
           sendSync();
-          if (prev && !p.jokers[key]) send('JOKER_USED', { jokerKey: key, playerId: p.id });
+          if (prev && !p.jokers[key]) {
+            const jp = { id: String(Date.now()) + '-' + Math.random().toString(16).slice(2), jokerKey: key, playerId: p.id, ts: Date.now() };
+            state.jokerPulse = jp;
+            saveState();
+            sendSync();
+            send('JOKER_USED', jp);
+          }
         };
       }
       jokers.appendChild(el);
@@ -1026,6 +1029,7 @@ function openQuestion(col, row) {
   renderBuzzUI();
 
   // Timer (toggle 10s / 5s)
+  els.timerBtn.textContent = `⏱ ${(state.timerPresetSeconds||10)}s`;
   els.timerBtn.onclick = () => {
     const cur = (state.timerPresetSeconds || 10);
     const next = (cur === 10) ? 5 : 10;
@@ -1101,6 +1105,8 @@ function onResult(result) {
 
     const othersLeft = state.players.some(p => !state.q[qid].attempts.find(a => a.playerId === p.id));
     if (state.settings.allow_steal && othersLeft) {
+      try{ enableBuzzerHost(qid); }catch(e){}
+      try{ renderBuzzUI(); }catch(e){}
       populatePlayerSelect(qid, state.q[qid].starter);
       updateAttemptInfo(qid);
       saveState(); sendSync(); sendScores(); return;
@@ -1116,6 +1122,10 @@ function finishQuestion(winnerId) {
   state.used.add(qid);
   advanceTurn();
   pushHistory({ type:'RESOLVE', qid });
+
+    // Buzzer & Lightbox zurücksetzen
+  try{ clearBuzz(); }catch(e){}
+  try{ closeImgLightbox(); }catch(e){}
 
   // aktuelle Frage im State zurücksetzen
   state.current = null;
@@ -1194,6 +1204,8 @@ function applyCurrentForScreen() {
       // Timerbox nicht hart verstecken – wird über state.timer / TIMER Sync gesteuert
   // if (els.timerBox) els.timerBox.hidden = true;
       resetAnswerImages();
+      try{ clearBuzz(); renderBuzzUI(); }catch(e){}
+      try{ closeImgLightbox(); }catch(e){}
     } catch (e) {}
     return;
   }
@@ -2065,6 +2077,102 @@ function persistEstimateMeta(){
 }
 
 
+
+/* ======= Buzzer (Steal-Reihenfolge) ======= */
+function ensureBuzzState(){
+  if (!state.buzz) state.buzz = { enabled:false, qid:null, queue:[], locked:{} };
+  if (!state.buzz.locked) state.buzz.locked = {};
+  if (!Array.isArray(state.buzz.queue)) state.buzz.queue = [];
+  return state.buzz;
+}
+function resetBuzzForQuestion(){
+  const b = ensureBuzzState();
+  b.enabled = false;
+  b.qid = (current && current.id) ? String(current.id) : null;
+  b.queue = [];
+  b.locked = {};
+  saveState();
+  sendSync();
+}
+function clearBuzz(){
+  const b = ensureBuzzState();
+  b.enabled = false;
+  b.qid = null;
+  b.queue = [];
+  b.locked = {};
+  saveState();
+  sendSync();
+}
+function enableBuzzerHost(qid){
+  const b = ensureBuzzState();
+  b.enabled = true;
+  b.qid = String(qid || (current && current.id) || '');
+  b.queue = b.queue || [];
+  b.locked = b.locked || {};
+  saveState();
+  sendSync();
+}
+function addBuzzToQueue({id, name}){
+  const b = ensureBuzzState();
+  if (!b.enabled) return;
+  const qid = String(b.qid || '');
+  if (!qid) return;
+  const cid = String(id || '');
+  if (!cid) return;
+  if (b.locked[cid]) return;              // schon gebuzzert
+  b.locked[cid] = true;
+  b.queue.push({ id: cid, name: String(name || 'Teilnehmer') });
+}
+function renderBuzzUI(){
+  if (!els || !els.buzzBtn) return;
+  const b = ensureBuzzState();
+
+  // Publikum: Buzz-Button klick
+  if (role === 'screen' && !els.buzzBtn.__bound){
+    els.buzzBtn.__bound = true;
+    els.buzzBtn.addEventListener('click', async ()=>{
+      try{
+        const b2 = ensureBuzzState();
+        if (!b2.enabled) return;
+        const qid = String(b2.qid || '');
+        if (!qid) return;
+        const cid = getLocalBuzzId();
+        const nm = getLocalBuzzName();
+        if (b2.locked && b2.locked[cid]) return;
+
+        // local same-browser: BroadcastChannel
+        try{ chan.postMessage({ type:'BUZZ', payload:{ clientId: cid, name: nm, ts: Date.now() } }); }catch(e){}
+
+        // cross-device: Firestore
+        try{
+          if (window.db){
+            const roomRef = window.db.collection('rooms').doc(remoteRoomId);
+            await roomRef.collection('buzz').add({ qid, clientId: cid, name: nm, ts: Date.now() });
+          }
+        }catch(e){}
+      }catch(e){}
+    });
+  }
+
+  // Button state
+  const cid = (role==='screen') ? getLocalBuzzId() : null;
+  const isLocked = !!(cid && b.locked && b.locked[cid]);
+  els.buzzBtn.disabled = !(b.enabled) || isLocked;
+  els.buzzBtn.classList.toggle('on', !!b.enabled && !isLocked);
+
+  // Queue render
+  if (els.buzzQueue){
+    const q = Array.isArray(b.queue) ? b.queue : [];
+    if (!q.length){
+      els.buzzQueue.hidden = true;
+      els.buzzQueue.textContent = '';
+    } else {
+      els.buzzQueue.hidden = false;
+      els.buzzQueue.textContent = q.map((x,i)=>`${i+1}. ${x.name}`).join('  •  ');
+    }
+  }
+}
+
 /* ======= Helper & Global ======= */
 function idToName(pid){ return state.players.find(p => p.id === pid)?.name || pid; }
 function sendSync() {
@@ -2209,6 +2317,48 @@ function attachGlobalHandlers() {
     localStorage.setItem('quiz_state', text);
     loadState(); renderPlayersBar(); renderBoard(); renderOverlay(); sendSync();
   };
+
+
+  // Editor (einfach)
+  if (els.editorBtn && role==='host'){
+    els.editorBtn.onclick = () => {
+      try{
+        els.editorText.value = JSON.stringify(data || {}, null, 2);
+      }catch(e){
+        els.editorText.value = '';
+      }
+      els.editorModal.showModal();
+    };
+    els.editorLoadBtn.onclick = () => els.editorFile.click();
+    els.editorFile.onchange = async (e) => {
+      const f = e.target.files?.[0]; if (!f) return;
+      const text = await f.text();
+      els.editorText.value = text;
+      e.target.value = '';
+    };
+    els.editorApplyBtn.onclick = async () => {
+      try{
+        const obj = JSON.parse(els.editorText.value || '{}');
+        await loadContent(obj);
+        // nur Board-Fortschritt zurücksetzen (Punkte/Spieler bleiben)
+        state.q = {}; state.used = new Set(); state.history = [];
+        saveState(); renderBoard(); renderOverlay(); sendSync();
+        els.editorModal.close();
+      }catch(e){
+        alert('JSON ungültig: ' + (e && e.message ? e.message : e));
+      }
+    };
+    els.editorDownloadBtn.onclick = () => {
+      try{
+        const txt = els.editorText.value || '';
+        const blob = new Blob([txt], { type:'application/json' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'board.json';
+        a.click();
+      }catch(e){}
+    };
+  }
 
   els.loadBtn.onclick = () => els.loadFile.click();
   els.loadFile.onchange = async (e) => {

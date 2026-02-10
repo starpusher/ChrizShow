@@ -35,6 +35,7 @@
 
     <div class="controls">
       <button id="presentBtn" title="Publikumsfenster öffnen">Präsentation</button>
+      <button id="editorBtn" title="Board-JSON bearbeiten und herunterladen">Editor</button>
       <button id="addPlayerBtn">+ Spieler</button>
       <button id="undoBtn" title="Letzte Aktion rückgängig (Strg+Z)">Undo</button>
       <button id="exportBtn">Export</button>
@@ -105,6 +106,26 @@
       <menu>
         <button id="closeBtn" value="close">Schließen</button>
       </menu>
+    </form>
+  </dialog>
+
+
+  <!-- Editor-Modal (einfach: JSON bearbeiten & herunterladen) -->
+  <dialog id="editorModal">
+    <form method="dialog" class="modal editor">
+      <header class="qhead">
+        <h3>Board-Editor</h3>
+        <div style="margin-left:auto;display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end">
+          <button id="editorLoadBtn" type="button">JSON laden…</button>
+          <button id="editorApplyBtn" type="button">Als Board laden</button>
+          <button id="editorDownloadBtn" type="button">Download JSON</button>
+        </div>
+      </header>
+      <textarea id="editorText" spellcheck="false" style="width:100%;height:60vh;resize:vertical;background:#0f0f1e;color:#f4f5f9;border:1px solid #2f2f4b;border-radius:12px;padding:12px;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace;font-size:13px;line-height:1.4"></textarea>
+      <menu>
+        <button value="close">Schließen</button>
+      </menu>
+      <input id="editorFile" type="file" accept="application/json" hidden />
     </form>
   </dialog>
 
