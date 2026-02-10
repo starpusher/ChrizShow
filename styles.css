@@ -138,7 +138,7 @@ body.audience audio, body.audience video { pointer-events:none }
 @keyframes fxflash{ 0%{opacity:0} 10%{opacity:.7} 100%{opacity:0} }
 
 /* ===== Joker-FX (nur sichtbar wenn ausgelöst) ===== */
-#jokerFx{position:fixed;inset:0;pointer-events:none;display:grid;place-items:center;opacity:0;z-index:999}
+#jokerFx{position:fixed;inset:0;pointer-events:none;display:grid;place-items:center;opacity:0;z-index:99999}
 #jokerFx.show{animation:jfxFade 1.6s ease both}
 
 /* Box selbst (kein Layout-Shift, nur Overlay) */
@@ -148,7 +148,7 @@ body.audience audio, body.audience video { pointer-events:none }
   padding:18px 26px;
   border-radius:18px;
   border:1px solid rgba(255,255,255,.14);
-  background:#17172a;
+  background: rgba(23,23,42,.98);
   
   box-shadow: 0 10px 40px rgba(0,0,0,.55);
   transform: translateY(10px) scale(.96);
@@ -339,6 +339,28 @@ dialog.img-lightbox[open]{
   justify-content:center;
 }
 dialog.img-lightbox img{
+  max-width: 96vw;
+  max-height: 94vh;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,.14);
+  box-shadow: 0 18px 70px rgba(0,0,0,.65);
+  background: #0b0b12;
+}
+
+
+/* ======= Image Lightbox Overlay (works inside dialog) ======= */
+.img-lightbox-overlay{
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(0,0,0,.88);
+  z-index:3000;
+}
+.img-lightbox-overlay[hidden]{ display:none !important; }
+.img-lightbox-overlay img{
   max-width: 96vw;
   max-height: 94vh;
   border-radius: 14px;

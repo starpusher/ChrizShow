@@ -61,6 +61,7 @@ function handleMsg(msg) {
 
       // NEU: Antwortbilder zurücksetzen (Publikum)
       resetAnswerImages();
+      try{ closeImgLightbox(); }catch(e){}
 
       renderBoard(); renderOverlay();
       break;
@@ -97,28 +98,11 @@ function handleMsg(msg) {
       data = payload.data;
       window.SFX_BASE = (payload.data && payload.data.settings && payload.data.settings.media_base) || window.SFX_BASE || 'media/';
       if (!window.SFX_BASE.endsWith('/')) window.SFX_BASE += '/';
-      Object.assign(state, { players: payload.state.players, scores: payload.state.scores, q: payload.state.q||{}, settings: payload.state.settings||{}, turn: payload.state.turn||0, current: payload.state.current || null, audio: payload.state.audio || state.audio, fxPulse: payload.state.fxPulse || state.fxPulse, timer: payload.state.timer || state.timer });
+      Object.assign(state, { players: payload.state.players, scores: payload.state.scores, q: payload.state.q||{}, settings: payload.state.settings||{}, turn: payload.state.turn||0, current: payload.state.current || null, audio: payload.state.audio || state.audio, fxPulse: payload.state.fxPulse || state.fxPulse, jokerPulse: payload.state.jokerPulse || state.jokerPulse, timer: payload.state.timer || state.timer });
       state.used = new Set(payload.state.used || []);
 
       // Avatare aus separater Sync-Quelle anwenden
       __applyAvatarCache();
-
-      // Publikum (remote): Joker-Animation auch ohne BroadcastChannel auslösen.
-      if (role === 'screen') {
-        try {
-          const prev = {};
-          (__prevPlayers || []).forEach(p => { prev[p.id] = p.jokers || {}; });
-          (state.players || []).forEach(p => {
-            const pj = prev[p.id] || {};
-            ['j1','j2','j3'].forEach(k => {
-              if (pj[k] === true && (p.jokers && p.jokers[k] === false)) {
-                showJokerFx({ jokerKey: k, playerId: p.id });
-              }
-            });
-          });
-        } catch(e) {}
-      }
-
 
       // Publikum: FX (Richtig/Falsch) auch remote über Sync auslösen
       try {
@@ -128,6 +112,15 @@ function handleMsg(msg) {
           fxLocal(fp.type || 'correct');
         }
       } catch(e) {}
+
+      // Publikum: Joker-Animation zuverlässig über jokerPulse (verhindert Random-Pops)
+      try{
+        const jp = payload.state && payload.state.jokerPulse;
+        if (jp && jp.ts && Number(jp.ts) > __lastJokerTs) {
+          __lastJokerTs = Number(jp.ts);
+          showJokerFx({ jokerKey: jp.jokerKey, playerId: jp.playerId });
+        }
+      }catch(e) {}
       renderPlayersBar(true); renderBoard(); renderOverlay();
       applyCurrentForScreen();
       try{ showTimer((state.timer && state.timer.seconds) ? state.timer.seconds : 0); }catch(e){}
@@ -209,29 +202,54 @@ const els = {
   editorFormHost: document.getElementById('editorFormHost')
 };
 
-/* ======= Image Lightbox (Dialog, toggle) ======= */
+/* ======= Image Lightbox (Audience-safe overlay) ======= */
 let __imgLightbox = null;
 function ensureImgLightbox(){
   if (__imgLightbox) return __imgLightbox;
-  const dlg = document.getElementById('imgLightbox');
-  const img = document.getElementById('imgLightboxImg');
-  if (!dlg || !img) return null;
-  __imgLightbox = { dlg, img };
+  // We'll render as a plain overlay DIV so it's always above question modal,
+  // and works consistently in audience view.
+  const host = document.querySelector('#qModal .modal') || document.body;
+  const wrap = document.createElement('div');
+  wrap.id = 'imgLightboxOverlay';
+  wrap.className = 'img-lightbox-overlay';
+  wrap.setAttribute('hidden','');
 
-  const close = () => { try{ dlg.close(); }catch(e){} try{ img.src=''; }catch(e){} };
+  const img = document.createElement('img');
+  img.id = 'imgLightboxOverlayImg';
+  img.alt = '';
+  wrap.appendChild(img);
 
-  dlg.addEventListener('click', close);
+  const close = () => closeImgLightbox();
+  wrap.addEventListener('click', close);
   window.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && dlg.open) close();
+    if (e.key === 'Escape') close();
   });
 
+  host.appendChild(wrap);
+  __imgLightbox = { wrap, img };
   return __imgLightbox;
 }
-
+function openImgLightbox(src){
+  const lb = ensureImgLightbox(); if (!lb) return;
+  if (!src) return;
+  lb.img.src = src;
+  lb.wrap.removeAttribute('hidden');
+}
+function closeImgLightbox(){
+  const lb = ensureImgLightbox(); if (!lb) return;
+  lb.wrap.setAttribute('hidden','');
+  try{ lb.img.src = ''; }catch(e){}
+}
 function toggleLightboxFromImg(el){
   try{
     const lb = ensureImgLightbox(); if (!lb) return;
-    if (lb.dlg.open) { lb.dlg.close(); lb.img.src=''; return; }
+    if (!lb.wrap.hasAttribute('hidden')) { closeImgLightbox(); return; }
+    if (!el || el.hidden) return;
+    const src = el.currentSrc || el.src;
+    if (!src) return;
+    openImgLightbox(src);
+  }catch(e){}
+}
     if (!el || el.hidden) return;
     const src = el.currentSrc || el.src;
     if (!src) return;
@@ -277,8 +295,9 @@ function ensureJokerFxEl(){
     `;
   }
 
-  const openDialog = document.querySelector("dialog[open]");
-  const mountTarget = openDialog || document.body;
+  const lb = document.getElementById('imgLightbox');
+  const qdlg = document.getElementById('qModal');
+  const mountTarget = (lb && lb.open) ? lb : ((qdlg && qdlg.open) ? qdlg : document.body);
 
   if (fx.parentElement !== mountTarget){
     try { fx.remove(); } catch(e){}
@@ -482,6 +501,7 @@ const state = {
   settings: {},
   history: [],
   audio: { playing:false, t:0, ts:0 },
+  jokerPulse: null,
   current: null,                  // aktuell offene Frage (für Publikum)
   turn: 0                         // Index des aktuellen Spielers
 };
@@ -490,6 +510,7 @@ let __screenShownId = null; // Publikum: zuletzt gerenderte Frage, um Media-Relo
 
 let timerInt = null;
 let __lastFxTs = 0;
+let __lastJokerTs = 0;
 
 
 /* ======= Editor (Boards erstellen/bearbeiten) ======= */
@@ -1026,7 +1047,10 @@ function renderPlayersBar(readOnly=false) {
   }
           sendSync();
           // Publikum: Animation nur beim "Verbrauchen" (an -> aus)
-          if (prev && !p.jokers[key]) send('JOKER_USED', { jokerKey: key, playerId: p.id });
+          if (prev && !p.jokers[key]) {
+            try{ state.jokerPulse = { ts: Date.now(), jokerKey: key, playerId: p.id }; }catch(e){}
+            send('JOKER_USED', { jokerKey: key, playerId: p.id });
+          }
         };
       }
       jokers.appendChild(el);
@@ -1115,14 +1139,17 @@ function renderOverlay(){
           el.classList.toggle('off', !p.jokers[key]);
           saveState();
           sendSync();
-          if (prev && !p.jokers[key]) send('JOKER_USED', { jokerKey: key, playerId: p.id });
+          if (prev && !p.jokers[key]) {
+            try{ state.jokerPulse = { ts: Date.now(), jokerKey: key, playerId: p.id }; }catch(e){}
+            send('JOKER_USED', { jokerKey: key, playerId: p.id });
+          }
         };
       }
       jokers.appendChild(el);
     });
     meta.append(nm, pts); card.append(img, meta, jokers); els.overlay.appendChild(card);
 
-    if (role==='host') card.onclick = () => { state.turn = idx; saveState(); renderOverlay(); sendTurn(); };
+    if (role==='host') card.onclick = () => { state.turn = idx; saveState(); renderOverlay(); sendTurn(); sendSync(); };
   });
 }
 
@@ -1144,6 +1171,7 @@ function openQuestion(col, row) {
   els.answer.hidden = role !== 'host';
   setMedia(q);
   resetAnswerImages();
+  try{ closeImgLightbox(); }catch(e){}
   try{ const vb = ensureAudienceVolumeUI(); if(vb){ vb.style.display = (q && q.audio) ? 'block' : 'none'; } }catch(e){}
   showAudioGateIfNeeded(q);
   try{ ensureEstimateUIForHost(id, q); }catch(e){}
@@ -1356,6 +1384,8 @@ function onResult(result) {
 
     const othersLeft = state.players.some(p => !state.q[qid].attempts.find(a => a.playerId === p.id));
     if (state.settings.allow_steal && othersLeft) {
+      try{ enableBuzzerHost(qid); }catch(e){}
+      renderBuzzerUI();
       populatePlayerSelect(qid, state.q[qid].starter);
       updateAttemptInfo(qid);
       saveState(); sendSync(); sendScores(); return;
@@ -1375,6 +1405,9 @@ function finishQuestion(winnerId) {
   // aktuelle Frage im State zurücksetzen
   state.current = null;
   state.audio = { playing:false, t:0, ts: Date.now() };
+
+  // Wenn jemand ein Bild vergrößert hat: überall schließen
+  try{ closeImgLightbox(); }catch(e){}
 
   saveState(); renderBoard(); renderOverlay();
   els.modal.close();
@@ -1449,6 +1482,7 @@ function applyCurrentForScreen() {
       // Timerbox nicht hart verstecken – wird über state.timer / TIMER Sync gesteuert
   // if (els.timerBox) els.timerBox.hidden = true;
       resetAnswerImages();
+      try{ closeImgLightbox(); }catch(e){}
     } catch (e) {}
     return;
   }
@@ -1594,6 +1628,7 @@ function showForAudience(payload){
   els.answer.hidden = true;
   setMedia(q);
   resetAnswerImages();
+  try{ closeImgLightbox(); }catch(e){}
   try{ const vb = ensureAudienceVolumeUI(); if(vb){ vb.style.display = (q && q.audio) ? 'block' : 'none'; } }catch(e){}
   showAudioGateIfNeeded(q);
   try{ ensureEstimateUIForScreen(id, q); }catch(e){}
@@ -1799,6 +1834,7 @@ function saveState() {
     current: state.current,
     audio: state.audio,
     fxPulse: state.fxPulse || null,
+    jokerPulse: state.jokerPulse || null,
     timer: state.timer || { seconds:0, ts:0 }
   };
   localStorage.setItem('quiz_state', JSON.stringify(payload));
@@ -2358,6 +2394,7 @@ function sendSync() {
     current: state.current,
     audio: state.audio,
     fxPulse: state.fxPulse || null,
+    jokerPulse: state.jokerPulse || null,
     timer: state.timer || { seconds:0, ts:0 }
   };
 
@@ -2385,7 +2422,8 @@ function sendSync() {
         current: state.current,
         audio: state.audio,
         fxPulse: state.fxPulse || null,
-        timer: state.timer || { seconds:0, ts:0 }
+    jokerPulse: state.jokerPulse || null,
+    timer: state.timer || { seconds:0, ts:0 }
       };
 
       const docData = {
