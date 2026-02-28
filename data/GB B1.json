@@ -1,0 +1,206 @@
+{
+  "settings": {
+    "media_base": "media/",
+    "allow_steal": true
+  },
+  "players": [
+    "Spieler 1",
+    "Spieler 2",
+    "Spieler 3"
+  ],
+  "categories": [
+    {
+      "title": "Abkürzungen",
+      "questions": [
+        {
+          "id": "Q-11",
+          "points": 100,
+          "text": "MwS.",
+          "answer": "Mehrwertsteuer"
+        },
+        {
+          "id": "Q-12",
+          "points": 200,
+          "text": "EC (-Karte)",
+          "answer": "Electronic Cash"
+        },
+        {
+          "id": "Q-13",
+          "points": 300,
+          "text": "Haribo",
+          "answer": "Hans Riegel Bonn"
+        },
+        {
+          "id": "Q-14",
+          "points": 400,
+          "text": "QR (-Code)",
+          "answer": "Quick Response"
+        },
+        {
+          "id": "Q-15",
+          "points": 500,
+          "text": "BAföG",
+          "answer": "Bundesausbildungsförderungsgesetz"
+        }
+      ]
+    },
+    {
+      "title": "Grammatik",
+      "questions": [
+        {
+          "id": "Q-21",
+          "points": 100,
+          "text": "Welchen Fall hat „der Hund“ im folgenden Satz: „Ich gebe dem Hund einen Knochen.“?",
+          "answer": "Dativ"
+        },
+        {
+          "id": "Q-22",
+          "points": 200,
+          "text": "Bilde einen Satz im Plusquamperfekt."
+        },
+        {
+          "id": "Q-23",
+          "points": 300,
+          "text": "Buchstabiere das folgende Wort.",
+          "answer": "Silhouette"
+        },
+        {
+          "id": "Q-24",
+          "points": 400,
+          "text": "Bilde einen Satz im Passiv."
+        },
+        {
+          "id": "Q-25",
+          "points": 500,
+          "text": "Wie lautet die indirekte Rede von: Er sagte: „Ich habe keine Zeit.“",
+          "answer": "Er sagte, er habe keine Zeit."
+        }
+      ]
+    },
+    {
+      "title": "Tiere",
+      "questions": [
+        {
+          "id": "Q-31",
+          "points": 100,
+          "text": "Wie heißt die Kreuzung aus Pferd und Esel?",
+          "answer": "Maultier (bzw. Maulesel)"
+        },
+        {
+          "id": "Q-32",
+          "points": 200,
+          "text": "Nenne ein Amphibium.",
+          "answer": "Frosch, Kröte, Molch, Salamander"
+        },
+        {
+          "id": "Q-33",
+          "points": 300,
+          "text": "Nenne ein Säugetier, das Eier legt.",
+          "answer": "Schnabeltier oder Ameisenigel"
+        },
+        {
+          "id": "Q-34",
+          "points": 400,
+          "text": "Wie nennt man die äußere Körperhülle von Insekten?",
+          "answer": "Exoskelett"
+        },
+        {
+          "id": "Q-35",
+          "points": 500,
+          "text": "Wie heißt die Wissenschaft der Vögel?",
+          "answer": "Ornithologie"
+        }
+      ]
+    },
+    {
+      "title": "Wer oder Was?",
+      "questions": [
+        {
+          "id": "Q-41",
+          "points": 100,
+          "text": "Wer oder was ist das?",
+          "answer": "Manuel Neuer",
+          "image": "WW1.jpg",
+          "answer_images": [
+            "WW1A.jpg"
+          ]
+        },
+        {
+          "id": "Q-42",
+          "points": 200,
+          "text": "Wer oder was ist das?",
+          "answer": "Pretty Woman",
+          "image": "WW2.jpg",
+          "answer_images": [
+            "WW2A.jpg"
+          ]
+        },
+        {
+          "id": "Q-43",
+          "points": 300,
+          "text": "Wer oder was ist das?",
+          "answer": "Eiffelturm",
+          "image": "WW3.jpg",
+          "answer_images": [
+            "WW3A.jpg"
+          ]
+        },
+        {
+          "id": "Q-44",
+          "points": 400,
+          "text": "Wer oder was ist das?",
+          "answer": "Feige",
+          "image": "WW4.jpg",
+          "answer_images": [
+            "WW4A.jpg"
+          ]
+        },
+        {
+          "id": "Q-45",
+          "points": 500,
+          "text": "Wer oder was ist das?",
+          "answer": "Spitzer",
+          "image": "WW5.jpg",
+          "answer_images": [
+            "WW5A.jpg"
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Lyrics",
+      "questions": [
+        {
+          "id": "Q-51",
+          "points": 100,
+          "text": "Buddy, you're a boy, make a big noise\nPlaying in the street, gonna be a big man someday",
+          "answer": "We will rock you, Queen"
+        },
+        {
+          "id": "Q-52",
+          "points": 200,
+          "text": "Friday night and the lights are low\nLooking out for a place to go\nMmm, where they play the right music\nGetting in the swing\nYou come to look for a king",
+          "answer": "Dancing Queen, ABBA"
+        },
+        {
+          "id": "Q-53",
+          "points": 300,
+          "text": "I must've called a thousand times\nTo tell you I'm sorry for everything that I've done\nBut when I call, you never seem to be home",
+          "answer": "Hello, Adele"
+        },
+        {
+          "id": "Q-54",
+          "points": 400,
+          "text": "I hear Jerusalem bells a-ringin'\nRoman Cavalry choirs are singin'\nBe my mirror, my sword and shield\nMy missionaries in a foreign field",
+          "answer": "Viva la vida, Coldplay"
+        },
+        {
+          "id": "Q-55",
+          "points": 500,
+          "text": "She say, \"Do you love me?\" I tell her, \"Only partly\nI only love my bed and my momma, I'm sorry\"",
+          "answer": "God´s plan, Drake"
+        }
+      ]
+    }
+  ]
+}
