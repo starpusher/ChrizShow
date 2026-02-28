@@ -1,0 +1,216 @@
+{
+  "settings": {
+    "media_base": "media/",
+    "allow_steal": true
+  },
+  "players": [
+    "Spieler 1",
+    "Spieler 2",
+    "Spieler 3"
+  ],
+  "categories": [
+    {
+      "title": "Geschwurbel",
+      "questions": [
+        {
+          "id": "Q-11",
+          "points": 100,
+          "text": "Wer sind die beiden Originale?",
+          "answer": "Joko & Klaas",
+          "image": "jokoklaas.jpg",
+          "answer_images": [
+            "joko.png.jpg",
+            "klaas.png.jpg"
+          ]
+        },
+        {
+          "id": "Q-12",
+          "points": 200,
+          "text": "Wer sind die beiden Originale?",
+          "answer": "Vin Diesel & The Rock",
+          "image": "therockvindiesel.jpg",
+          "answer_images": [
+            "vindiesel.jpg",
+            "therock.jpg"
+          ]
+        },
+        {
+          "id": "Q-13",
+          "points": 300,
+          "text": "Wer sind die beiden Originale?",
+          "answer": "Merkel & Lady Gaga",
+          "image": "merkelladygaga.jpg",
+          "answer_images": [
+            "merkel.jpg",
+            "ladygaga.jpg"
+          ]
+        },
+        {
+          "id": "Q-14",
+          "points": 400,
+          "text": "Wer sind die beiden Originale?",
+          "answer": "Sheldon & Will Smith",
+          "image": "sheldonwillsmith.jpg",
+          "answer_images": [
+            "sheldon.jpg",
+            "willsmith.jpg"
+          ]
+        },
+        {
+          "id": "Q-15",
+          "points": 500,
+          "text": "Wer sind die beiden Originale?",
+          "answer": "Elon Musk & Dieter Bohlen",
+          "image": "elonmuskdieterbohlen.jpg",
+          "answer_images": [
+            "elonmusk.jpg",
+            "dieterbohlen.jpg"
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Fasse dich kurz",
+      "questions": [
+        {
+          "id": "Q-21",
+          "points": 100,
+          "text": "MfG",
+          "answer": "Mit freundlichen Grüßen",
+          "audio": "Pixar.mp3"
+        },
+        {
+          "id": "Q-22",
+          "points": 200,
+          "text": "asap",
+          "answer": "as soon as possible"
+        },
+        {
+          "id": "Q-23",
+          "points": 300,
+          "text": "FAQ",
+          "answer": "Frequently Asked Questions"
+        },
+        {
+          "id": "Q-24",
+          "points": 400,
+          "text": "PS (Brief)",
+          "answer": "Postskriptum"
+        },
+        {
+          "id": "Q-25",
+          "points": 500,
+          "text": "NASA",
+          "answer": "National Aeronautics and Space Administration"
+        }
+      ]
+    },
+    {
+      "title": "Mampfi",
+      "questions": [
+        {
+          "id": "Q-31",
+          "points": 100,
+          "text": "Woraus wird Guacamole hauptsächlich gemacht?",
+          "answer": "Avocado"
+        },
+        {
+          "id": "Q-32",
+          "points": 200,
+          "text": "Welche Pasta-Sorte ist spiralförmig gedreht?",
+          "answer": "Fusilli"
+        },
+        {
+          "id": "Q-33",
+          "points": 300,
+          "text": "Welches Gewürz stammt von der getrockneten Blüte einer tropischen Pflanze und zählt zu den teuersten der Welt?",
+          "answer": "Safran"
+        },
+        {
+          "id": "Q-34",
+          "points": 400,
+          "text": "Welches Land ist der größte Kaffeeproduzent der Welt?",
+          "answer": "Brasilien"
+        },
+        {
+          "id": "Q-35",
+          "points": 500,
+          "text": "Wie nennt man den Vorgang, bei dem Milch zu Joghurt wird?",
+          "answer": "Fermentation"
+        }
+      ]
+    },
+    {
+      "title": "Down Under",
+      "questions": [
+        {
+          "id": "Q-41",
+          "points": 100,
+          "text": "Wo liegt Australien?",
+          "answer": "unten rechts",
+          "image": "weltkarte.jpg"
+        },
+        {
+          "id": "Q-42",
+          "points": 200,
+          "text": "Wie heißt das größte Korallenriffsystem der Erde?",
+          "answer": "Great Barrier Reef"
+        },
+        {
+          "id": "Q-43",
+          "points": 300,
+          "text": "Was ist das?",
+          "answer": "Ayers Rock bzw. Uluru",
+          "image": "uluru.jpg"
+        },
+        {
+          "id": "Q-44",
+          "points": 400,
+          "text": "Wie heißt die Ureinwohnerbevölkerung Australiens?",
+          "answer": "Aborigines"
+        },
+        {
+          "id": "Q-45",
+          "points": 500,
+          "text": "Wie nennt man das trockene, dünn besiedelte Landesinnere Australiens?",
+          "answer": "Outback"
+        }
+      ]
+    },
+    {
+      "title": "Sprachen",
+      "questions": [
+        {
+          "id": "Q-51",
+          "points": 100,
+          "text": "In welchem Land sagt man Ciao zur Begrüßung?",
+          "answer": "Italien"
+        },
+        {
+          "id": "Q-52",
+          "points": 200,
+          "text": "Welche Sprache hat die meisten Muttersprachler weltweit?",
+          "answer": "Chinesisch (Mandarin)"
+        },
+        {
+          "id": "Q-53",
+          "points": 300,
+          "text": "Wie nennt man die Sprache, die in Brasilien gesprochen wird?",
+          "answer": "Portugiesisch"
+        },
+        {
+          "id": "Q-54",
+          "points": 400,
+          "text": "Aus welcher Sprache stammen die Wörter „Karaoke“ und „Emoji“?",
+          "answer": "Japanisch"
+        },
+        {
+          "id": "Q-55",
+          "points": 500,
+          "text": "Wie viele offizielle Sprachen hat die Schweiz?",
+          "answer": "Vier (Deutsch, Französisch, Italienisch, Rätoromanisch)"
+        }
+      ]
+    }
+  ]
+}
