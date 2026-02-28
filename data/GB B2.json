@@ -1,0 +1,193 @@
+{
+  "settings": {
+    "media_base": "media/",
+    "allow_steal": true
+  },
+  "players": [
+    "Spieler 1",
+    "Spieler 2",
+    "Spieler 3"
+  ],
+  "categories": [
+    {
+      "title": "Werbung",
+      "questions": [
+        {
+          "id": "Q-11",
+          "points": 200,
+          "text": "Quadratisch. Praktisch. Gut.",
+          "answer": "Ritter Sport"
+        },
+        {
+          "id": "Q-12",
+          "points": 400,
+          "text": "Just do it",
+          "answer": "Nike"
+        },
+        {
+          "id": "Q-13",
+          "points": 600,
+          "text": "Sind sie zu stark, bist du zu schwach",
+          "answer": "Fisherman's Friend"
+        },
+        {
+          "id": "Q-14",
+          "points": 800,
+          "text": "Vorsprung durch Technik",
+          "answer": "Audi"
+        },
+        {
+          "id": "Q-15",
+          "points": 1000,
+          "text": "Zeit für das Beste (früher:  See what's next)",
+          "answer": "Netflix"
+        }
+      ]
+    },
+    {
+      "title": "Sprachen",
+      "questions": [
+        {
+          "id": "Q-21",
+          "points": 200,
+          "text": "Übersetze ins englische: „Ich habe meinen Schlüssel verloren.“",
+          "answer": "I lost my key."
+        },
+        {
+          "id": "Q-22",
+          "points": 400,
+          "text": "Was bedeutet „Fortuna“?",
+          "answer": "Glück, Schicksal"
+        },
+        {
+          "id": "Q-23",
+          "points": 600,
+          "text": "Wie viele Sprachen gibt es weltweit?",
+          "answer": "7100-7150 (Toleranz +-300, 6800-7450)"
+        },
+        {
+          "id": "Q-24",
+          "points": 800,
+          "text": "Was bedeutet „Karaoke“ übersetzt?",
+          "answer": "Leeres Orchester"
+        },
+        {
+          "id": "Q-25",
+          "points": 1000,
+          "text": "Übersetze ins Deutsche „Il fait très froid aujourd’hui.“",
+          "answer": "Heute ist es sehr kalt."
+        }
+      ]
+    },
+    {
+      "title": "Geschichte",
+      "questions": [
+        {
+          "id": "Q-31",
+          "points": 200,
+          "text": "In welchem Jahr fiel die Berliner Mauer?",
+          "answer": "1989"
+        },
+        {
+          "id": "Q-32",
+          "points": 400,
+          "text": "Welcher Reformator veröffentlichte 1517 seine Thesen und wie viele waren es?",
+          "answer": "Martin Luther, 95"
+        },
+        {
+          "id": "Q-33",
+          "points": 600,
+          "text": "Welches Land war früher als Persien bekannt?",
+          "answer": "Iran"
+        },
+        {
+          "id": "Q-34",
+          "points": 800,
+          "text": "Wer war der erste Mensch im All?",
+          "answer": "Juri Gagarin"
+        },
+        {
+          "id": "Q-35",
+          "points": 1000,
+          "text": "Wie nennt man die große Pestepidemie im 14. Jahrhundert?",
+          "answer": "Schwarzer Tod"
+        }
+      ]
+    },
+    {
+      "title": "Titelsongs",
+      "questions": [
+        {
+          "id": "Q-41",
+          "points": 200,
+          "text": "Aus welchem Film/ welcher Serie stammt dieser Song?",
+          "answer": "Squid Game",
+          "audio": "frage 1 musik.mp3"
+        },
+        {
+          "id": "Q-42",
+          "points": 400,
+          "text": "Aus welchem Film/ welcher Serie stammt dieser Song?",
+          "answer": "Indiana Jones",
+          "audio": "Frage 2 musik.mp3"
+        },
+        {
+          "id": "Q-43",
+          "points": 600,
+          "text": "Aus welchem Film/ welcher Serie stammt dieser Song?",
+          "answer": "Forrest Gump",
+          "audio": "frage 3 musik.mp3"
+        },
+        {
+          "id": "Q-44",
+          "points": 800,
+          "text": "Aus welchem Film/ welcher Serie stammt dieser Song?",
+          "answer": "The walking dead",
+          "audio": "frage 4 musik.mp3"
+        },
+        {
+          "id": "Q-45",
+          "points": 1000,
+          "text": "Aus welchem Film/ welcher Serie stammt dieser Song?",
+          "answer": "Vampire diaries",
+          "audio": "frage 5 musik.mp3"
+        }
+      ]
+    },
+    {
+      "title": "Nahrung",
+      "questions": [
+        {
+          "id": "Q-51",
+          "points": 200,
+          "text": "Was ist die Hauptzutat von Hummus?",
+          "answer": "Kichererbsen"
+        },
+        {
+          "id": "Q-52",
+          "points": 400,
+          "text": "Nenne die 5 grundlegenden Geschmacksrichtungen des Menschen.",
+          "answer": "süß, sauer, salzig, bitter, umami"
+        },
+        {
+          "id": "Q-53",
+          "points": 600,
+          "text": "Nenne ein Gemüse, das im rohen Zustand giftig für den Menschen sein kann.",
+          "answer": "Bohnen, Aubergine, Kartoffel"
+        },
+        {
+          "id": "Q-54",
+          "points": 800,
+          "text": "Was ist ein „Sous-vide“-Verfahren?",
+          "answer": "Eine Garmethode, bei der Lebensmittel vakuumiert und bei niedriger, exakt kontrollierter Temperatur im Wasserbad gegart werden."
+        },
+        {
+          "id": "Q-55",
+          "points": 1000,
+          "text": "Welches Obst war früher als „persischer Apfel“ bekannt?",
+          "answer": "Pfirsich"
+        }
+      ]
+    }
+  ]
+}
