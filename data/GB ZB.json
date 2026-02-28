@@ -1,0 +1,48 @@
+{
+  "settings": {
+    "media_base": "media/",
+    "allow_steal": true
+  },
+  "players": [
+    "Spieler 1",
+    "Spieler 2",
+    "Spieler 3"
+  ],
+  "categories": [
+    {
+      "title": "Zwischenboard",
+      "questions": [
+        {
+          "id": "Q-11",
+          "points": 200,
+          "text": "[ˈfoːɡəl]",
+          "answer": "Vogel"
+        },
+        {
+          "id": "Q-12",
+          "points": 200,
+          "text": "[ˈkuːxən]",
+          "answer": "Kuchen"
+        },
+        {
+          "id": "Q-13",
+          "points": 200,
+          "text": "[ˈfryːlɪŋ]",
+          "answer": "Frühling"
+        },
+        {
+          "id": "Q-14",
+          "points": 200,
+          "text": "[ˈzɔnənʃaɪn]",
+          "answer": "Sonnenschein"
+        },
+        {
+          "id": "Q-15",
+          "points": 200,
+          "text": "[ʃtɾˈa͡ɪçhɔlt͡sʃˌɛçtəlçən]",
+          "answer": "Streichholzschächtelchen"
+        }
+      ]
+    }
+  ]
+}
