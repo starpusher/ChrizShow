@@ -104,6 +104,21 @@
     "label": "Final ZB",
     "file": "Final ZB.json"
   },
+    {
+    "id": "GB B1",
+    "label": "GB B1",
+    "file": "GB B1.json"
+  },
+  {
+    "id": "GB B2",
+    "label": "GB B2",
+    "file": "GB B2.json"
+  },
+  {
+    "id": "GB ZB",
+    "label": "GB ZB",
+    "file": "GB ZB.json"
+  },
   {
     "id": "Show 6 Board 1",
     "label": "Show 6 Board 1",
